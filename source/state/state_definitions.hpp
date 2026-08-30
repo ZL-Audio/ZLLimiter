@@ -1,0 +1,582 @@
+// Copyright (C) 2026 - zsliu98
+// This file is part of ZLLimiter
+//
+// ZLLimiter is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License Version 3 as published by the Free Software Foundation.
+//
+// ZLLimiter is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License along with ZLLimiter. If not, see <https://www.gnu.org/licenses/>.
+
+#pragma once
+
+#include <juce_audio_processors/juce_audio_processors.h>
+
+namespace zlstate {
+    inline constexpr int kVersionHint = 1;
+
+    // float
+    template <class T>
+    class FloatParameters {
+    public:
+        static std::unique_ptr<juce::AudioParameterFloat> get(const bool automate = true) {
+            auto attributes = juce::AudioParameterFloatAttributes().withAutomatable(automate).withLabel(T::kName);
+            return std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(T::kID, kVersionHint),
+                                                               T::kName, T::kRange, T::kDefaultV, attributes);
+        }
+
+        static std::unique_ptr<juce::AudioParameterFloat> get(const std::string& suffix, const bool automate = true) {
+            auto attributes = juce::AudioParameterFloatAttributes().withAutomatable(automate).withLabel(T::kName);
+            return std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(T::kID + suffix, kVersionHint),
+                                                               T::kName + suffix, T::kRange, T::kDefaultV, attributes);
+        }
+
+        static std::unique_ptr<juce::AudioParameterFloat> get(const std::string& suffix, const bool meta,
+                                                              const bool automate = true) {
+            auto attributes = juce::AudioParameterFloatAttributes().withAutomatable(automate).withLabel(T::kName).
+                withMeta(meta);
+            return std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(T::kID + suffix, kVersionHint),
+                                                               T::kName + suffix, T::kRange, T::kDefaultV, attributes);
+        }
+
+        inline static float convertTo01(const float x) {
+            return T::kRange.convertTo0to1(x);
+        }
+    };
+
+    // bool
+    template <class T>
+    class BoolParameters {
+    public:
+        static std::unique_ptr<juce::AudioParameterBool> get(bool automate = true) {
+            auto attributes = juce::AudioParameterBoolAttributes().withAutomatable(automate).withLabel(T::kName);
+            return std::make_unique<juce::AudioParameterBool>(juce::ParameterID(T::kID, kVersionHint),
+                                                              T::kName, T::kDefaultV, attributes);
+        }
+
+        static std::unique_ptr<juce::AudioParameterBool> get(const std::string& suffix, bool automate = true) {
+            auto attributes = juce::AudioParameterBoolAttributes().withAutomatable(automate).withLabel(T::kName);
+            return std::make_unique<juce::AudioParameterBool>(juce::ParameterID(T::kID + suffix, kVersionHint),
+                                                              T::kName + suffix, T::kDefaultV, attributes);
+        }
+
+        static std::unique_ptr<juce::AudioParameterBool> get(const std::string& suffix, const bool meta,
+                                                             const bool automate = true) {
+            auto attributes = juce::AudioParameterBoolAttributes().withAutomatable(automate).withLabel(T::kName).
+                withMeta(meta);
+            return std::make_unique<juce::AudioParameterBool>(juce::ParameterID(T::kID + suffix, kVersionHint),
+                                                              T::kName + suffix, T::kDefaultV, attributes);
+        }
+
+        inline static float convertTo01(const bool x) {
+            return x ? 1.f : 0.f;
+        }
+    };
+
+    // choice
+    template <class T>
+    class ChoiceParameters {
+    public:
+        static std::unique_ptr<juce::AudioParameterChoice> get(const bool automate = true) {
+            auto attributes = juce::AudioParameterChoiceAttributes().withAutomatable(automate).withLabel(T::kName);
+            return std::make_unique<juce::AudioParameterChoice>(juce::ParameterID(T::kID, kVersionHint),
+                                                                T::kName, T::kChoices, T::kDefaultI, attributes);
+        }
+
+        static std::unique_ptr<juce::AudioParameterChoice> get(const std::string& suffix, const bool automate = true) {
+            auto attributes = juce::AudioParameterChoiceAttributes().withAutomatable(automate).withLabel(T::kName);
+            return std::make_unique<juce::AudioParameterChoice>(juce::ParameterID(T::kID + suffix, kVersionHint),
+                                                                T::kName + suffix, T::kChoices, T::kDefaultI,
+                                                                attributes);
+        }
+
+        static std::unique_ptr<juce::AudioParameterChoice> get(const std::string& suffix, const bool meta,
+                                                               const bool automate = true) {
+            auto attributes = juce::AudioParameterChoiceAttributes().withAutomatable(automate).withLabel(T::kName).
+                withMeta(meta);
+            return std::make_unique<juce::AudioParameterChoice>(juce::ParameterID(T::kID + suffix, kVersionHint),
+                                                                T::kName + suffix, T::kChoices, T::kDefaultI,
+                                                                attributes);
+        }
+
+        inline static float convertTo01(const int x) {
+            return static_cast<float>(x) / static_cast<float>(T::kChoices.size() - 1);
+        }
+    };
+
+    inline juce::AudioProcessorValueTreeState::ParameterLayout getNAParameterLayout() {
+        juce::AudioProcessorValueTreeState::ParameterLayout layout;
+        return layout;
+    }
+
+    class PWindowW : public FloatParameters<PWindowW> {
+    public:
+        static constexpr auto kID = "window_w";
+        static constexpr auto kName = "";
+        static constexpr auto kMinV = 600.f;
+        static constexpr auto kMaxV = 6000.f;
+        static constexpr auto kDefaultV = 600.f;
+        inline static const auto kRange = juce::NormalisableRange<float>(kMinV, kMaxV, 1.f);
+    };
+
+    class PWindowH : public FloatParameters<PWindowH> {
+    public:
+        static constexpr auto kID = "window_h";
+        static constexpr auto kName = "";
+        static constexpr auto kMinV = 345.f;
+        static constexpr auto kMaxV = 6000.f;
+        static constexpr auto kDefaultV = 371.f;
+        inline static const auto kRange = juce::NormalisableRange<float>(kMinV, kMaxV, 1.f);
+    };
+
+    class PWindowSizeFix : public ChoiceParameters<PWindowSizeFix> {
+    public:
+        static constexpr auto kID = "window_size_fix";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = juce::StringArray{
+            "Off", "On"
+        };
+        static constexpr int kDefaultI = 0;
+    };
+
+    class PFontMode : public ChoiceParameters<PFontMode> {
+    public:
+        static constexpr auto kID = "font_mode";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = juce::StringArray{
+            "Scale", "Static"
+        };
+        static constexpr int kDefaultI = 0;
+    };
+
+    class PFontScale : public FloatParameters<PFontScale> {
+    public:
+        static constexpr auto kID = "font_scale";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(.5f, 1.f, .01f);
+        static constexpr auto kDefaultV = .9f;
+    };
+
+    class PStaticFontSize : public FloatParameters<PStaticFontSize> {
+    public:
+        static constexpr auto kID = "static_font_size";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(.1f, 600.f, .01f);
+        static constexpr auto kDefaultV = .9f;
+    };
+
+    class PWheelSensitivity : public FloatParameters<PWheelSensitivity> {
+    public:
+        static constexpr auto kID = "wheel_sensitivity";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(0.01f, 1.f, 0.01f);
+        static constexpr auto kDefaultV = 1.f;
+    };
+
+    class PWheelFineSensitivity : public FloatParameters<PWheelFineSensitivity> {
+    public:
+        static constexpr auto kID = "wheel_fine_sensitivity";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(0.01f, 1.f, 0.01f);
+        static constexpr auto kDefaultV = .12f;
+    };
+
+    class PWheelShiftReverse : public ChoiceParameters<PWheelShiftReverse> {
+    public:
+        static constexpr auto kID = "wheel_shift_reverse";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = juce::StringArray{
+            "No Change", "Reverse"
+        };
+        static constexpr int kDefaultI = 0;
+    };
+
+    class PSliderSensitivity : public FloatParameters<PSliderSensitivity> {
+    public:
+        static constexpr auto kID = "slider_sensitivity";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(0.01f, 1.f, 0.01f);
+        static constexpr auto kDefaultV = 1.f;
+    };
+
+    class PSliderFineSensitivity : public FloatParameters<PSliderFineSensitivity> {
+    public:
+        static constexpr auto kID = "slider_fine_sensitivity";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(0.01f, 1.f, 0.01f);
+        static constexpr auto kDefaultV = .25f;
+    };
+
+    class PDraggerSensitivity : public FloatParameters<PDraggerSensitivity> {
+    public:
+        static constexpr auto kID = "dragger_sensitivity";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(0.01f, 1.f, 0.01f);
+        static constexpr auto kDefaultV = 1.f;
+    };
+
+    class PDraggerFineSensitivity : public FloatParameters<PDraggerFineSensitivity> {
+    public:
+        static constexpr auto kID = "dragger_fine_sensitivity";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(0.01f, 1.f, 0.01f);
+        static constexpr auto kDefaultV = .25f;
+    };
+
+    class PWheelComboboxSensitivity : public FloatParameters<PWheelComboboxSensitivity> {
+    public:
+        static constexpr auto kID = "wheel_combobox_sensitivity";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(0.01f, 1.f, 0.01f);
+        static constexpr auto kDefaultV = .5f;
+    };
+
+    class PRotaryStyle : public ChoiceParameters<PRotaryStyle> {
+    public:
+        static constexpr auto kID = "rotary_style";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = juce::StringArray{
+            "Circular", "Horizontal", "Vertical", "Horiz + Vert"
+        };
+        static constexpr int kDefaultI = 3;
+        inline static std::array<juce::Slider::SliderStyle, 4> styles{
+            juce::Slider::Rotary,
+            juce::Slider::RotaryHorizontalDrag,
+            juce::Slider::RotaryVerticalDrag,
+            juce::Slider::RotaryHorizontalVerticalDrag
+        };
+    };
+
+    class PRotaryDragSensitivity : public FloatParameters<PRotaryDragSensitivity> {
+    public:
+        static constexpr auto kID = "rotary_drag_sensitivity";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(2.f, 32.f, 0.01f);
+        static constexpr auto kDefaultV = 10.f;
+    };
+
+    class PSliderDoubleClickFunc : public ChoiceParameters<PSliderDoubleClickFunc> {
+    public:
+        static constexpr auto kID = "slider_double_click_func";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = juce::StringArray{
+            "Return Default", "Open Editor"
+        };
+        static constexpr int kDefaultI = 1;
+    };
+
+    class PTargetRefreshSpeed : public ChoiceParameters<PTargetRefreshSpeed> {
+    public:
+        static constexpr auto kID = "target_refresh_speed_id";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = juce::StringArray{
+            "120 Hz", "90 Hz", "60 Hz", "30 Hz", "15 Hz"
+        };
+        static constexpr std::array<double, 5> kRates{120.0, 90.0, 60.0, 30.0, 15.0};
+        static constexpr int kDefaultI = 3;
+    };
+
+    class PFFTExtraTilt : public FloatParameters<PFFTExtraTilt> {
+    public:
+        static constexpr auto kID = "fft_extra_tilt";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(-4.5f, 4.5f, .01f);
+        static constexpr auto kDefaultV = 0.f;
+    };
+
+    class PFFTExtraSpeed : public FloatParameters<PFFTExtraSpeed> {
+    public:
+        static constexpr auto kID = "fft_extra_speed";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(0.f, 2.f, .01f);
+        static constexpr auto kDefaultV = 1.f;
+    };
+
+    class PSingleEQCurveThickness : public FloatParameters<PSingleEQCurveThickness> {
+    public:
+        static constexpr auto kID = "single_eq_curve_thickness";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(0.f, 2.f, .01f);
+        static constexpr auto kDefaultV = 1.f;
+    };
+
+    class PSumEQCurveThickness : public FloatParameters<PSumEQCurveThickness> {
+    public:
+        static constexpr auto kID = "sum_eq_curve_thickness";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(0.f, 2.f, .01f);
+        static constexpr auto kDefaultV = 1.f;
+    };
+
+    class PTooltipLang : public ChoiceParameters<PTooltipLang> {
+    public:
+        static constexpr auto kID = "tool_tip_lang";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = juce::StringArray{
+            "Off",
+            "System",
+            "English",
+            juce::String(juce::CharPointer_UTF8("简体中文")),
+            juce::String(juce::CharPointer_UTF8("繁體中文")),
+            juce::String(juce::CharPointer_UTF8("Italiano")),
+            juce::String(juce::CharPointer_UTF8("日本語")),
+            juce::String(juce::CharPointer_UTF8("Deutsch")),
+            juce::String(juce::CharPointer_UTF8("Español"))
+        };
+        static constexpr int kDefaultI = 1;
+    };
+
+    class PColourMapIdx : public ChoiceParameters<PColourMapIdx> {
+    public:
+        static constexpr auto kID = "colour_map_idx";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = juce::StringArray{
+            "Default Light", "Default Dark",
+            "Seaborn Normal Light", "Seaborn Normal Dark",
+            "Seaborn Bright Light", "Seaborn Bright Dark"
+        };
+
+        enum ColourMapName {
+            kDefaultLight,
+            kDefaultDark,
+            kSeabornNormalLight,
+            kSeabornNormalDark,
+            kSeabornBrightLight,
+            kSeabornBrightDark,
+            kColourMapNum
+        };
+
+        static constexpr int kDefaultI = 0;
+    };
+
+    class PColourMap1Idx : public ChoiceParameters<PColourMap1Idx> {
+    public:
+        static constexpr auto kID = "colour_map_1_idx";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = PColourMapIdx::kChoices;
+        static constexpr int kDefaultI = 1;
+    };
+
+    class PColourMap2Idx : public ChoiceParameters<PColourMap2Idx> {
+    public:
+        static constexpr auto kID = "colour_map_2_idx";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = PColourMapIdx::kChoices;
+        static constexpr int kDefaultI = 5;
+    };
+
+    class PCurveDBScale0: public FloatParameters<PCurveDBScale0> {
+    public:
+        static constexpr auto kID = "curve_db0";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(1.f, 30.f, 1.f);
+        static constexpr auto kDefaultV = 6.f;
+    };
+
+    class PCurveDBScale1 : public FloatParameters<PCurveDBScale1> {
+    public:
+        static constexpr auto kID = "curve_db1";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(1.f, 30.f, 1.f);
+        static constexpr auto kDefaultV = 12.f;
+    };
+
+    class PCurveDBScale2 : public FloatParameters<PCurveDBScale2> {
+    public:
+        static constexpr auto kID = "curve_db2";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(1.f, 30.f, 1.f);
+        static constexpr auto kDefaultV = 30.f;
+    };
+
+    class PMouseOption {
+    public:
+        inline static const auto kChoices = juce::StringArray{
+            "Left Click", "Right Click", "Left Double Click", "Right Double Click"
+        };
+    };
+
+    class PKeyOption {
+    public:
+        inline static const auto kChoices = juce::StringArray{
+#if JUCE_MAC
+            "None", "Command", "Shift", "Option"
+#else
+            "None", "Ctrl", "Shift", "Alt"
+#endif
+        };
+    };
+
+    class PEnterSoloMouse : public ChoiceParameters<PEnterSoloMouse> {
+    public:
+        static constexpr auto kID = "enter_solo_mouse";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = PMouseOption::kChoices;
+        static constexpr int kDefaultI = 1;
+    };
+
+    class PEnterSoloKey : public ChoiceParameters<PEnterSoloKey> {
+    public:
+        static constexpr auto kID = "enter_solo_key";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = PKeyOption::kChoices;
+        static constexpr int kDefaultI = 0;
+    };
+
+    class PExitSoloMouse : public ChoiceParameters<PExitSoloMouse> {
+    public:
+        static constexpr auto kID = "exit_solo_mouse";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = PMouseOption::kChoices;
+        static constexpr int kDefaultI = 1;
+    };
+
+    class PExitSoloKey : public ChoiceParameters<PExitSoloKey> {
+    public:
+        static constexpr auto kID = "exit_solo_key";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = PKeyOption::kChoices;
+        static constexpr int kDefaultI = 0;
+    };
+
+    class PRightClickMenuMouse : public ChoiceParameters<PRightClickMenuMouse> {
+    public:
+        static constexpr auto kID = "right_click_menu_mouse";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = PMouseOption::kChoices;
+        static constexpr int kDefaultI = 1;
+    };
+
+    class PRightClickMenuKey : public ChoiceParameters<PRightClickMenuKey> {
+    public:
+        static constexpr auto kID = "right_click_menu_key";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = PKeyOption::kChoices;
+        static constexpr int kDefaultI = 3;
+    };
+
+    class PToggleDynamicMouse : public ChoiceParameters<PToggleDynamicMouse> {
+    public:
+        static constexpr auto kID = "toggle_dynamic_mouse";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = PMouseOption::kChoices;
+        static constexpr int kDefaultI = 2;
+    };
+
+    class PToggleDynamicKey : public ChoiceParameters<PToggleDynamicKey> {
+    public:
+        static constexpr auto kID = "toggle_dynamic_key";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = PKeyOption::kChoices;
+        static constexpr int kDefaultI = 1;
+    };
+
+    class PToggleBypassMouse : public ChoiceParameters<PToggleBypassMouse> {
+    public:
+        static constexpr auto kID = "toggle_bypass_mouse";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = PMouseOption::kChoices;
+        static constexpr int kDefaultI = 0;
+    };
+
+    class PToggleBypassKey : public ChoiceParameters<PToggleBypassKey> {
+    public:
+        static constexpr auto kID = "toggle_bypass_key";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = PKeyOption::kChoices;
+        static constexpr int kDefaultI = 3;
+    };
+
+    class PDeleteBandMouse : public ChoiceParameters<PDeleteBandMouse> {
+    public:
+        static constexpr auto kID = "delete_band_mouse";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = PMouseOption::kChoices;
+        static constexpr int kDefaultI = 3;
+    };
+
+    class PDeleteBandKey : public ChoiceParameters<PDeleteBandKey> {
+    public:
+        static constexpr auto kID = "delete_band_key";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = PKeyOption::kChoices;
+        static constexpr int kDefaultI = 3;
+    };
+
+    inline void addOneColour(juce::AudioProcessorValueTreeState::ParameterLayout& layout,
+                             const std::string& suffix = "",
+                             const int red = 0, const int green = 0, const int blue = 0,
+                             const bool add_opacity = false, const float opacity = 1.f) {
+        layout.add(std::make_unique<juce::AudioParameterInt>(
+                       juce::ParameterID(suffix + "_r", kVersionHint), "",
+                       0, 255, red),
+                   std::make_unique<juce::AudioParameterInt>(
+                       juce::ParameterID(suffix + "_g", kVersionHint), "",
+                       0, 255, green),
+                   std::make_unique<juce::AudioParameterInt>(
+                       juce::ParameterID(suffix + "_b", kVersionHint), "",
+                       0, 255, blue));
+        if (add_opacity) {
+            layout.add(std::make_unique<juce::AudioParameterFloat>(
+                juce::ParameterID(suffix + "_o", kVersionHint), "",
+                juce::NormalisableRange<float>(0.f, 1.f, .01f), opacity));
+        }
+    }
+
+    inline constexpr std::array<std::string_view, 9> kColourNames{
+        "text", "background",
+        "shadow", "glow",
+        "grid",
+        "pre", "post", "side",
+        "collision"
+    };
+
+    struct ColourDefaultSetting {
+        int r, g, b;
+        bool has_opacity;
+        float opacity;
+    };
+
+    inline constexpr std::array<ColourDefaultSetting, 9> kColourDefaults{
+        ColourDefaultSetting{247, 246, 244, true, 1.f},
+        ColourDefaultSetting{20, 16, 9, true, 1.f},
+        ColourDefaultSetting{0, 0, 0, true, 1.f},
+        ColourDefaultSetting{70, 66, 62, true, 1.f},
+        ColourDefaultSetting{112, 112, 112, true, .25f},
+        ColourDefaultSetting{112, 112, 112, true, .2f},
+        ColourDefaultSetting{112, 112, 112, true, .2f},
+        ColourDefaultSetting{252, 18, 197, true, .1f},
+        ColourDefaultSetting{255, 0, 0, true, 1.f},
+    };
+
+    inline juce::AudioProcessorValueTreeState::ParameterLayout getStateParameterLayout() {
+        juce::AudioProcessorValueTreeState::ParameterLayout layout;
+        layout.add(PWindowW::get(), PWindowH::get(), PWindowSizeFix::get(),
+                   PFontMode::get(), PFontScale::get(), PStaticFontSize::get(),
+                   PWheelSensitivity::get(), PWheelFineSensitivity::get(), PWheelShiftReverse::get(),
+                   PSliderSensitivity::get(), PSliderFineSensitivity::get(),
+                   PDraggerSensitivity::get(), PDraggerFineSensitivity::get(),
+                   PWheelComboboxSensitivity::get(),
+                   PRotaryStyle::get(), PRotaryDragSensitivity::get(),
+                   PSliderDoubleClickFunc::get(),
+                   PTargetRefreshSpeed::get(),
+                   PFFTExtraTilt::get(), PFFTExtraSpeed::get(),
+                   PSingleEQCurveThickness::get(), PSumEQCurveThickness::get(),
+                   PTooltipLang::get(),
+                   PCurveDBScale0::get(), PCurveDBScale1::get(), PCurveDBScale2::get());
+
+        for (size_t i = 0; i < kColourNames.size(); ++i) {
+            const auto& name = kColourNames[i];
+            const auto& dv = kColourDefaults[i];
+            addOneColour(layout, std::string(name), dv.r, dv.g, dv.b, dv.has_opacity, dv.opacity);
+        }
+
+        layout.add(PColourMap1Idx::get(), PColourMap2Idx::get(),
+                   PEnterSoloMouse::get(), PEnterSoloKey::get(),
+                   PExitSoloMouse::get(), PExitSoloKey::get(),
+                   PRightClickMenuMouse::get(), PRightClickMenuKey::get(),
+                   PToggleDynamicMouse::get(), PToggleDynamicKey::get(),
+                   PToggleBypassMouse::get(), PToggleBypassKey::get(),
+                   PDeleteBandMouse::get(), PDeleteBandKey::get());
+        return layout;
+    }
+}
