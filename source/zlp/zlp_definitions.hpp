@@ -225,7 +225,7 @@ namespace zlp {
         static constexpr auto kID = "output_ceiling";
         static constexpr auto kName = "Output Ceiling";
         inline static const auto kRange = juce::NormalisableRange<float>(-12.f, 0.f, 0.01f);
-        static constexpr auto kDefaultV = -1.f;
+        static constexpr auto kDefaultV = -.1f;
     };
 
     class PTruePeak : public BoolParameters<PTruePeak> {
@@ -277,14 +277,9 @@ namespace zlp {
 
     inline juce::AudioProcessorValueTreeState::ParameterLayout getParameterLayout() {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;
-        layout.add(PInputGain::get(),
-                   POutputCeiling::get(),
-                   PTruePeak::get(),
-                   POversampling::get(),
-                   PLookahead::get(),
-                   PAttack::get(),
-                   PRelease::get(),
-                   PStereoDelta::get());
+        layout.add(PInputGain::get(), POutputCeiling::get(),
+                   PTruePeak::get(), POversampling::get(),
+                   PLookahead::get(), PAttack::get(), PRelease::get(), PStereoDelta::get());
         return layout;
     }
 
