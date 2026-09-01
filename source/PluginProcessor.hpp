@@ -74,6 +74,7 @@ public:
 
 private:
     zlp::Controller controller_;
+    zlp::LimiterAttach limiter_attach_;
 
     std::atomic<double> sample_rate_{48000.0};
 

@@ -18,14 +18,26 @@ namespace zldsp::vector {
     HWY_INLINE F max_abs_of(const F* __restrict in, const size_t size) {
         static constexpr hn::ScalableTag<F> d;
         static constexpr size_t lanes = hn::MaxLanes(d);
-        auto v_max_abs = hn::Zero(d);
+        static constexpr size_t block = lanes << 2;
+
+        auto maximum0 = hn::Zero(d);
+        auto maximum1 = hn::Zero(d);
+        auto maximum2 = hn::Zero(d);
+        auto maximum3 = hn::Zero(d);
         size_t i = 0;
+        for (; i + block <= size; i += block) {
+            maximum0 = hn::Max(maximum0, hn::Abs(hn::LoadU(d, in + i)));
+            maximum1 = hn::Max(maximum1, hn::Abs(hn::LoadU(d, in + i + lanes)));
+            maximum2 = hn::Max(maximum2, hn::Abs(hn::LoadU(d, in + i + lanes * 2)));
+            maximum3 = hn::Max(maximum3, hn::Abs(hn::LoadU(d, in + i + lanes * 3)));
+        }
+        auto vector_maximum = hn::Max(hn::Max(maximum0, maximum1), hn::Max(maximum2, maximum3));
         for (; i + lanes <= size; i += lanes) {
             auto v_in = hn::LoadU(d, in + i);
             auto v_abs = hn::Abs(v_in);
-            v_max_abs = hn::Max(v_max_abs, v_abs);
+            vector_maximum = hn::Max(vector_maximum, v_abs);
         }
-        F scalar_max_abs = hn::ReduceMax(d, v_max_abs);
+        F scalar_max_abs = hn::ReduceMax(d, vector_maximum);
         for (; i < size; ++i) {
             scalar_max_abs = std::max(scalar_max_abs, std::abs(in[i]));
         }

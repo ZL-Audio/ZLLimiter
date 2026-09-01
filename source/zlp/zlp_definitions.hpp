@@ -14,6 +14,15 @@
 namespace zlp {
     inline constexpr int kVersionHint = 1;
 
+    class PInputGain;
+    class POutputCeiling;
+    class PTruePeak;
+    class POversampling;
+    class PLookahead;
+    class PAttack;
+    class PRelease;
+    class PStereoDelta;
+
     template <typename FloatType>
     inline juce::NormalisableRange<FloatType> getLogMidRange(
         const FloatType x_min, const FloatType x_max, const FloatType x_mid, const FloatType x_interval) {
@@ -203,8 +212,79 @@ namespace zlp {
         }
     };
 
+    class PInputGain : public FloatParameters<PInputGain> {
+    public:
+        static constexpr auto kID = "input_gain";
+        static constexpr auto kName = "Input Gain";
+        inline static const auto kRange = juce::NormalisableRange<float>(0.f, 24.f, 0.01f);
+        static constexpr auto kDefaultV = 0.f;
+    };
+
+    class POutputCeiling : public FloatParameters<POutputCeiling> {
+    public:
+        static constexpr auto kID = "output_ceiling";
+        static constexpr auto kName = "Output Ceiling";
+        inline static const auto kRange = juce::NormalisableRange<float>(-12.f, 0.f, 0.01f);
+        static constexpr auto kDefaultV = -1.f;
+    };
+
+    class PTruePeak : public BoolParameters<PTruePeak> {
+    public:
+        static constexpr auto kID = "true_peak";
+        static constexpr auto kName = "True Peak";
+        static constexpr auto kDefaultV = true;
+    };
+
+    class POversampling : public ChoiceParameters<POversampling> {
+    public:
+        static constexpr auto kID = "oversampling";
+        static constexpr auto kName = "Oversampling";
+        inline static const auto kChoices = juce::StringArray{"Off", "2x", "4x", "8x", "16x", "32x"};
+        static constexpr auto kDefaultI = 2;
+    };
+
+    class PLookahead : public FloatParameters<PLookahead> {
+    public:
+        static constexpr auto kID = "lookahead";
+        static constexpr auto kName = "Lookahead";
+        inline static const auto kRange = juce::NormalisableRange<float>(0.f, 5.f, 0.01f);
+        static constexpr auto kDefaultV = 2.f;
+    };
+
+    class PAttack : public FloatParameters<PAttack> {
+    public:
+        static constexpr auto kID = "attack";
+        static constexpr auto kName = "Attack";
+        inline static const auto kRange = getLogMidRange(0.01f, 10000.f, 100.f, 0.01f);
+        static constexpr auto kDefaultV = 100.f;
+    };
+
+    class PRelease : public FloatParameters<PRelease> {
+    public:
+        static constexpr auto kID = "release";
+        static constexpr auto kName = "Release";
+        inline static const auto kRange = getLogMidRange(1.f, 10000.f, 500.f, 0.01f);
+        static constexpr auto kDefaultV = 500.f;
+    };
+
+    class PStereoDelta : public FloatParameters<PStereoDelta> {
+    public:
+        static constexpr auto kID = "stereo_delta";
+        static constexpr auto kName = "Stereo Delta";
+        inline static const auto kRange = juce::NormalisableRange<float>(0.f, 6.f, 0.01f);
+        static constexpr auto kDefaultV = 1.5f;
+    };
+
     inline juce::AudioProcessorValueTreeState::ParameterLayout getParameterLayout() {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;
+        layout.add(PInputGain::get(),
+                   POutputCeiling::get(),
+                   PTruePeak::get(),
+                   POversampling::get(),
+                   PLookahead::get(),
+                   PAttack::get(),
+                   PRelease::get(),
+                   PStereoDelta::get());
         return layout;
     }
 

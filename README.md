@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/License-AGPLv3-blue.svg)](https://opensource.org/license/agpl-v3)
 [![Downloads](https://img.shields.io/github/downloads/ZL-Audio/ZLLimiter/total)](https://somsubhra.github.io/github-release-stats/?username=ZL-Audio&repository=ZLLimiter&page=1&per_page=30)
 
-ZL Limiter is a limiter plugin (working in progress).
+ZL Limiter is a limiter plugin (work in progress).
 
 ## Build from Source
 

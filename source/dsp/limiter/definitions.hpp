@@ -9,6 +9,7 @@
 
 #pragma once
 
-#include "zlp_definitions.hpp"
-#include "controller.hpp"
-#include "limiter_attach.hpp"
+namespace zldsp::limiter {
+    inline constexpr double kMaximumLookaheadSeconds = 0.005;
+    inline constexpr double kDefaultGuardianLookaheadSeconds = 0.00025;
+}

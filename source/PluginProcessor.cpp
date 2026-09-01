@@ -9,7 +9,7 @@
 
 #include "PluginProcessor.hpp"
 
-#include <numbers>
+#include <array>
 
 #include "PluginEditor.hpp"
 
@@ -46,7 +46,8 @@ PluginProcessor::PluginProcessor() :
     parameters_NA_(dummy_processor_, nullptr,
                    juce::Identifier(zlstate::schema::kNonAutomatableState),
                    zlstate::getNAParameterLayout()),
-    controller_(*this) {
+    controller_(*this),
+    limiter_attach_(*this, parameters_, controller_) {
 }
 
 PluginProcessor::~PluginProcessor() = default;
@@ -194,8 +195,17 @@ void PluginProcessor::processBlockInternal(juce::AudioBuffer<float>& buffer, con
     if (update_channel_layout_per_call_) {
         updateChannelLayout();
     }
-    controller_.prepareBuffer();
-
+    const auto num_main_channels = channel_layout_ == kMain1 ? 1 : (channel_layout_ == kMain2 ? 2 : 0);
+    if (num_main_channels == 0) {
+        buffer.clear();
+        return;
+    }
+    std::array<float*, 2> main_pointers{};
+    for (int channel = 0; channel < num_main_channels; ++channel) {
+        main_pointers[static_cast<size_t>(channel)] = buffer.getWritePointer(channel);
+    }
+    controller_.process(std::span<float*>{main_pointers.data(), static_cast<size_t>(num_main_channels)},
+                        static_cast<size_t>(buffer.getNumSamples()), bypass);
 }
 
 juce::AudioProcessor*JUCE_CALLTYPE

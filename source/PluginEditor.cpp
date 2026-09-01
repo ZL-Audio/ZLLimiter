@@ -42,7 +42,7 @@ void PluginEditor::minimisationStateChanged(bool) {
     updateIsShowing();
 }
 
-void PluginEditor::valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier& property) {
+void PluginEditor::valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) {
 }
 
 void PluginEditor::handleAsyncUpdate() {
