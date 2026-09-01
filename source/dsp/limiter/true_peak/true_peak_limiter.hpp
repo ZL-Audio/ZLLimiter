@@ -269,7 +269,7 @@ namespace zldsp::limiter {
     };
 
     /**
-     * a fixed-latency two-pass BS.1770 true-peak limiter
+     * a fixed-latency three-pass BS.1770 true-peak limiter
      * @tparam FloatType the audio sample type
      */
     template <typename FloatType>
@@ -281,6 +281,7 @@ namespace zldsp::limiter {
         void prepare(const double sample_rate, const size_t maximum_block_size, const size_t maximum_channels) {
             first_.prepare(sample_rate, maximum_block_size, maximum_channels, kDefaultReleaseSeconds);
             second_.prepare(sample_rate, maximum_block_size, maximum_channels, kDefaultReleaseSeconds);
+            third_.prepare(sample_rate, maximum_block_size, maximum_channels, kDefaultReleaseSeconds);
             setCeilingDecibels(ceiling_db_, safety_margin_db_);
             setEnabled(enabled_);
             reset();
@@ -289,12 +290,14 @@ namespace zldsp::limiter {
         void reset() {
             first_.reset();
             second_.reset();
+            third_.reset();
         }
 
         void setEnabled(const bool enabled) {
             enabled_ = enabled;
             first_.setEnabled(enabled_);
             second_.setEnabled(enabled_);
+            third_.setEnabled(enabled_);
         }
 
         void setCeilingDecibels(const FloatType ceiling_db, const FloatType safety_margin_db = kDefaultSafetyMarginDb) {
@@ -303,6 +306,7 @@ namespace zldsp::limiter {
             const auto correction_ceiling_db = ceiling_db_ - safety_margin_db_;
             first_.setCeilingDecibels(correction_ceiling_db);
             second_.setCeilingDecibels(correction_ceiling_db);
+            third_.setCeilingDecibels(correction_ceiling_db);
         }
 
         void process(std::span<FloatType*> buffer, const size_t num_samples) {
@@ -311,10 +315,11 @@ namespace zldsp::limiter {
             }
             first_.process(buffer, num_samples);
             second_.process(buffer, num_samples);
+            third_.process(buffer, num_samples);
         }
 
         [[nodiscard]] size_t getLatencySamples() const {
-            return first_.getLatencySamples() + second_.getLatencySamples();
+            return first_.getLatencySamples() + second_.getLatencySamples() + third_.getLatencySamples();
         }
 
     private:
@@ -323,5 +328,6 @@ namespace zldsp::limiter {
         bool enabled_{true};
         TruePeakCorrectionStage<FloatType> first_{};
         TruePeakCorrectionStage<FloatType> second_{};
+        TruePeakCorrectionStage<FloatType> third_{};
     };
 }
