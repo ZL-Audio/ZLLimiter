@@ -10,7 +10,6 @@
 #include "controller.hpp"
 
 #include <algorithm>
-#include <array>
 
 namespace zlp {
     Controller::Controller(juce::AudioProcessor& processor) :
@@ -25,21 +24,19 @@ namespace zlp {
     void Controller::prepare(const double sample_rate, const size_t maximum_block_size) {
         cancelPendingUpdate();
         is_prepared_ = false;
-        maximum_block_size_ = std::max<size_t>(maximum_block_size, 1);
-        maximum_channels_ = std::clamp<size_t>(
-            static_cast<size_t>(std::max(p_ref_.getMainBusNumInputChannels(), 1)), 1, 2);
-        prepareLimiters(sample_rate, maximum_block_size_, maximum_channels_);
+        const auto maximum_channels = static_cast<size_t>(p_ref_.getMainBusNumInputChannels());
+        prepareLimiters(sample_rate, maximum_block_size, maximum_channels);
 
-        bypass_buffers_.resize(maximum_channels_);
-        bypass_pointers_.resize(maximum_channels_);
-        for (size_t channel = 0; channel < maximum_channels_; ++channel) {
-            bypass_buffers_[channel].resize(maximum_block_size_);
+        bypass_buffers_.resize(maximum_channels);
+        bypass_pointers_.resize(maximum_channels);
+        for (size_t channel = 0; channel < maximum_channels; ++channel) {
+            bypass_buffers_[channel].resize(maximum_block_size);
             bypass_pointers_[channel] = bypass_buffers_[channel].data();
         }
         const auto maximum_latency = getMaximumLatencySamples();
         const auto maximum_delay_seconds = static_cast<float>(
             static_cast<double>(maximum_latency) / std::max(sample_rate, 1.0));
-        bypass_delay_.prepare(sample_rate, maximum_block_size_, maximum_channels_, maximum_delay_seconds);
+        bypass_delay_.prepare(sample_rate, maximum_block_size, maximum_channels, maximum_delay_seconds);
 
         oversampling_index_ = kOversamplingModeCount;
         is_prepared_ = true;
@@ -115,25 +112,16 @@ namespace zlp {
             return;
         }
         prepareBuffer();
-        const auto num_channels = std::min(buffer.size(), maximum_channels_);
-        auto dry_buffer = std::span<float*>{bypass_pointers_.data(), num_channels};
-        std::array<float*, 2> wet_pointers{};
-        size_t position = 0;
-        while (position < num_samples) {
-            const auto block_size = std::min(maximum_block_size_, num_samples - position);
-            for (size_t channel = 0; channel < num_channels; ++channel) {
-                wet_pointers[channel] = buffer[channel] + position;
-                zldsp::vector::copy(dry_buffer[channel], wet_pointers[channel], block_size);
+        auto dry_buffer = std::span<float*>{bypass_pointers_.data(), buffer.size()};
+        for (size_t channel = 0; channel < buffer.size(); ++channel) {
+            zldsp::vector::copy(dry_buffer[channel], buffer[channel], num_samples);
+        }
+        bypass_delay_.process(dry_buffer, num_samples);
+        processActiveLimiter(buffer, num_samples);
+        if (is_bypass) {
+            for (size_t channel = 0; channel < buffer.size(); ++channel) {
+                zldsp::vector::copy(buffer[channel], dry_buffer[channel], num_samples);
             }
-            auto wet_buffer = std::span<float*>{wet_pointers.data(), num_channels};
-            bypass_delay_.process(dry_buffer, block_size);
-            processActiveLimiter(wet_buffer, block_size);
-            if (is_bypass) {
-                for (size_t channel = 0; channel < num_channels; ++channel) {
-                    zldsp::vector::copy(wet_buffer[channel], dry_buffer[channel], block_size);
-                }
-            }
-            position += block_size;
         }
     }
 

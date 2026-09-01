@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <cstring>
@@ -34,10 +33,9 @@ namespace zldsp::limiter {
         static constexpr size_t kHistorySamples = kTapsPerPhase - 1;
 
         void prepare(const size_t maximum_channels, const size_t maximum_block_size) {
-            maximum_block_size_ = std::max<size_t>(maximum_block_size, 1);
-            histories_.resize(std::max<size_t>(maximum_channels, 1));
+            histories_.resize(maximum_channels);
             for (auto& history : histories_) {
-                history.resize(kHistorySamples + maximum_block_size_);
+                history.resize(kHistorySamples + maximum_block_size);
             }
             reset();
         }
@@ -49,7 +47,6 @@ namespace zldsp::limiter {
         }
 
         FloatType processSample(const size_t channel, const FloatType sample) {
-            assert(channel < histories_.size());
             auto& history = histories_[channel];
             history[kHistorySamples] = sample;
             auto peak = std::abs(sample);
@@ -62,8 +59,6 @@ namespace zldsp::limiter {
 
         void processBlock(const size_t channel, const FloatType* HWY_RESTRICT input, FloatType* HWY_RESTRICT output,
                           const size_t num_samples) {
-            assert(channel < histories_.size());
-            assert(num_samples <= maximum_block_size_);
             if (num_samples == 0) {
                 return;
             }
@@ -122,7 +117,6 @@ namespace zldsp::limiter {
                FloatType(0.9721679687500), FloatType(-0.1022949218750), FloatType(0.0476074218750),
                FloatType(-0.0266113281250), FloatType(0.0148925781250), FloatType(-0.0083007812500)}}}};
 
-        size_t maximum_block_size_{0};
         std::vector<vector::aligned_vector<FloatType>> histories_{};
     };
 }

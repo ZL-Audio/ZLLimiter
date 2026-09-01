@@ -64,13 +64,12 @@ namespace zldsp::limiter {
                      const size_t maximum_channels,
                      const double maximum_lookahead_seconds = kMaximumLookaheadSeconds) {
             sample_rate_ = sample_rate;
-            maximum_channels_ = maximum_channels;
             const auto maximum_lookahead = std::max(maximum_lookahead_seconds, 0.0);
             maximum_lookahead_ms_ = maximum_lookahead * 1000.0;
-            lookahead_.resize(maximum_channels_);
-            fast_release_.resize(maximum_channels_);
-            fast_.resize(maximum_channels_);
-            for (size_t channel = 0; channel < maximum_channels_; ++channel) {
+            lookahead_.resize(maximum_channels);
+            fast_release_.resize(maximum_channels);
+            fast_.resize(maximum_channels);
+            for (size_t channel = 0; channel < maximum_channels; ++channel) {
                 lookahead_[channel].prepare(sample_rate_, maximum_lookahead);
                 fast_release_[channel].prepare(sample_rate_);
             }
@@ -130,7 +129,7 @@ namespace zldsp::limiter {
         void process(std::span<const FloatType* const> peak_buffers,
                      std::span<FloatType* const> attenuation_buffers,
                      const size_t num_samples) {
-            const auto num_channels = std::min({peak_buffers.size(), attenuation_buffers.size(), maximum_channels_});
+            const auto num_channels = peak_buffers.size();
             for (size_t channel = 0; channel < num_channels; ++channel) {
                 clean_detail::calculateRequired(
                     peak_buffers[channel], attenuation_buffers[channel], num_samples, ceiling_db_);
@@ -160,7 +159,6 @@ namespace zldsp::limiter {
     private:
         double sample_rate_{48000.0};
         double maximum_lookahead_ms_{kMaximumLookaheadSeconds * 1000.0};
-        size_t maximum_channels_{0};
         FloatType ceiling_db_{FloatType(-1)};
         FloatType lookahead_ms_{FloatType(2)};
         FloatType attack_ms_{FloatType(100)};

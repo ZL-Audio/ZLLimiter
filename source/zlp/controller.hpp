@@ -118,8 +118,6 @@ namespace zlp {
         std::atomic<float> stereo_delta_db_{PStereoDelta::kDefaultV};
 
         bool is_prepared_{false};
-        size_t maximum_block_size_{0};
-        size_t maximum_channels_{0};
         size_t oversampling_index_{kOversamplingModeCount};
         std::atomic<int> pending_latency_samples_{0};
 

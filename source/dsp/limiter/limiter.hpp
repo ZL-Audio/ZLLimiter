@@ -10,7 +10,6 @@
 #pragma once
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <limits>
 #include <span>
@@ -45,43 +44,41 @@ namespace zldsp::limiter {
 
         void prepare(const double sample_rate, const size_t maximum_block_size, const size_t maximum_channels) {
             sample_rate_ = std::max(sample_rate, 1.0);
-            maximum_block_size_ = std::max<size_t>(maximum_block_size, 1);
-            maximum_channels_ = std::max<size_t>(maximum_channels, 1);
 
             if constexpr (NumOversamplingStages > 0) {
-                oversampler_.prepare(maximum_channels_, maximum_block_size_);
+                oversampler_.prepare(maximum_channels, maximum_block_size);
             }
-            style_.prepare(sample_rate_, maximum_block_size_, maximum_channels_, kMaximumLookaheadSeconds);
+            style_.prepare(sample_rate_, maximum_block_size, maximum_channels, kMaximumLookaheadSeconds);
             input_gain_db_.prepare(sample_rate_, 0.02);
 
-            peak_buffers_.resize(maximum_channels_);
-            attenuation_buffers_.resize(maximum_channels_);
-            gain_buffers_.resize(maximum_channels_);
-            peak_pointers_.resize(maximum_channels_);
-            attenuation_pointers_.resize(maximum_channels_);
-            for (size_t channel = 0; channel < maximum_channels_; ++channel) {
-                peak_buffers_[channel].resize(maximum_block_size_);
-                attenuation_buffers_[channel].resize(maximum_block_size_);
-                gain_buffers_[channel].resize(maximum_block_size_ * kProcessingFactor);
+            peak_buffers_.resize(maximum_channels);
+            attenuation_buffers_.resize(maximum_channels);
+            gain_buffers_.resize(maximum_channels);
+            peak_pointers_.resize(maximum_channels);
+            attenuation_pointers_.resize(maximum_channels);
+            for (size_t channel = 0; channel < maximum_channels; ++channel) {
+                peak_buffers_[channel].resize(maximum_block_size);
+                attenuation_buffers_[channel].resize(maximum_block_size);
+                gain_buffers_[channel].resize(maximum_block_size * kProcessingFactor);
                 peak_pointers_[channel] = peak_buffers_[channel].data();
                 attenuation_pointers_[channel] = attenuation_buffers_[channel].data();
             }
-            attenuation_interpolators_.resize(maximum_channels_);
+            attenuation_interpolators_.resize(maximum_channels);
 
             main_delay_samples_ = style_.getMaximumDelaySamples() + 1;
             const auto processing_rate = sample_rate_ * static_cast<double>(kProcessingFactor);
-            const auto processing_block_size = maximum_block_size_ * kProcessingFactor;
+            const auto processing_block_size = maximum_block_size * kProcessingFactor;
             const auto main_delay_processing_samples = main_delay_samples_ * kProcessingFactor;
             const auto main_delay_seconds =
                 static_cast<FloatType>(static_cast<double>(main_delay_processing_samples) / processing_rate);
-            main_delay_.prepare(processing_rate, processing_block_size, maximum_channels_, main_delay_seconds);
+            main_delay_.prepare(processing_rate, processing_block_size, maximum_channels, main_delay_seconds);
             main_delay_.setDelayInSamples(static_cast<int>(main_delay_processing_samples));
 
             guardian_delay_base_samples_ =
                 static_cast<size_t>(std::ceil(kDefaultGuardianLookaheadSeconds * sample_rate_));
-            guardian_.prepare(processing_rate, processing_block_size, maximum_channels_,
+            guardian_.prepare(processing_rate, processing_block_size, maximum_channels,
                               guardian_delay_base_samples_ * kProcessingFactor);
-            true_peak_limiter_.prepare(sample_rate_, maximum_block_size_, maximum_channels_);
+            true_peak_limiter_.prepare(sample_rate_, maximum_block_size, maximum_channels);
 
             latency_samples_ =
                 main_delay_samples_ + guardian_delay_base_samples_ + true_peak_limiter_.getLatencySamples();
@@ -152,13 +149,11 @@ namespace zldsp::limiter {
             if (buffer.empty() || num_samples == 0) {
                 return;
             }
-            assert(buffer.size() <= maximum_channels_);
-            assert(num_samples <= maximum_block_size_);
-            const auto num_channels = std::min(buffer.size(), maximum_channels_);
+            const auto num_channels = buffer.size();
             const auto processing_samples = num_samples * kProcessingFactor;
 
-            applyInputGain(buffer.first(num_channels), num_samples);
-            auto processing_buffer = buffer.first(num_channels);
+            applyInputGain(buffer, num_samples);
+            auto processing_buffer = buffer;
             // up-sample
             if constexpr (NumOversamplingStages > 0) {
                 oversampler_.upsample(processing_buffer, num_samples);
@@ -185,10 +180,10 @@ namespace zldsp::limiter {
             guardian_.process(processing_buffer, processing_samples);
             // down-sample
             if constexpr (NumOversamplingStages > 0) {
-                oversampler_.downsample(buffer.first(num_channels), num_samples);
+                oversampler_.downsample(buffer, num_samples);
             }
-            true_peak_limiter_.process(buffer.first(num_channels), num_samples);
-            applyOutputClamp(buffer.first(num_channels), num_samples);
+            true_peak_limiter_.process(buffer, num_samples);
+            applyOutputClamp(buffer, num_samples);
         }
 
         [[nodiscard]] size_t getLatencySamples() const {
@@ -205,8 +200,6 @@ namespace zldsp::limiter {
 
     private:
         double sample_rate_{48000.0};
-        size_t maximum_block_size_{0};
-        size_t maximum_channels_{0};
         size_t main_delay_samples_{0};
         size_t guardian_delay_base_samples_{0};
         size_t latency_samples_{0};

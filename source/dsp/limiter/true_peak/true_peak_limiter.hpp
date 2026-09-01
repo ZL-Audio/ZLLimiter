@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <span>
@@ -101,20 +100,18 @@ namespace zldsp::limiter {
         void prepare(const double sample_rate, const size_t maximum_block_size, const size_t maximum_channels,
                      const double release_seconds) {
             sample_rate_ = std::max(sample_rate, 1.0);
-            maximum_block_size_ = std::max<size_t>(maximum_block_size, 1);
-            maximum_channels_ = std::max<size_t>(maximum_channels, 1);
-            estimator_.prepare(maximum_channels_, maximum_block_size_);
+            estimator_.prepare(maximum_channels, maximum_block_size);
             maximum_.setCapacity(kDetectorWindowSamples);
             maximum_.setSize(kDetectorWindowSamples);
             release_.prepare(sample_rate_);
             release_.setTimesSeconds(0.0, std::max(release_seconds, 0.0));
-            gains_.resize(maximum_block_size_);
-            reconstructed_peaks_.resize(maximum_block_size_);
-            channel_peaks_.resize(maximum_block_size_);
-            input_histories_.resize(maximum_channels_);
+            gains_.resize(maximum_block_size);
+            reconstructed_peaks_.resize(maximum_block_size);
+            channel_peaks_.resize(maximum_block_size);
+            input_histories_.resize(maximum_channels);
 
             const auto delay_seconds = static_cast<FloatType>(static_cast<double>(kLookaheadSamples) / sample_rate_);
-            delay_.prepare(sample_rate_, maximum_block_size_, maximum_channels_, delay_seconds);
+            delay_.prepare(sample_rate_, maximum_block_size, maximum_channels, delay_seconds);
             delay_.setDelayInSamples(static_cast<int>(kLookaheadSamples));
             reset();
         }
@@ -155,11 +152,9 @@ namespace zldsp::limiter {
         }
 
         void process(std::span<FloatType*> buffer, const size_t num_samples) {
-            assert(buffer.size() <= maximum_channels_);
-            assert(num_samples <= maximum_block_size_);
             if (enabled_) {
                 if (needs_prime_) {
-                    primeDetector(buffer.size());
+                    primeDetector();
                 }
                 processEnabled(buffer, num_samples);
             } else {
@@ -173,8 +168,6 @@ namespace zldsp::limiter {
 
     private:
         double sample_rate_{48000.0};
-        size_t maximum_block_size_{0};
-        size_t maximum_channels_{0};
         FloatType ceiling_db_{FloatType(-1.1)};
         bool enabled_{true};
         bool bypassed_{false};
@@ -243,13 +236,9 @@ namespace zldsp::limiter {
             while (input_position < num_samples) {
                 const auto copy_size =
                     std::min(num_samples - input_position, kPrimeHistorySamples - input_history_position_);
-                for (size_t channel = 0; channel < maximum_channels_; ++channel) {
+                for (size_t channel = 0; channel < buffer.size(); ++channel) {
                     auto* const destination = input_histories_[channel].data() + input_history_position_;
-                    if (channel < buffer.size()) {
-                        vector::copy(destination, buffer[channel] + input_position, copy_size);
-                    } else {
-                        std::fill_n(destination, copy_size, FloatType(0));
-                    }
+                    vector::copy(destination, buffer[channel] + input_position, copy_size);
                 }
                 input_position += copy_size;
                 input_history_position_ += copy_size;
@@ -260,7 +249,7 @@ namespace zldsp::limiter {
             input_history_size_ = std::min(input_history_size_ + num_samples, kPrimeHistorySamples);
         }
 
-        void primeDetector(const size_t num_channels) {
+        void primeDetector() {
             estimator_.reset();
             maximum_.clear();
             const auto first =
@@ -268,7 +257,7 @@ namespace zldsp::limiter {
             for (size_t i = 0; i < input_history_size_; ++i) {
                 const auto position = (first + i) % kPrimeHistorySamples;
                 FloatType reconstructed_peak{0};
-                for (size_t channel = 0; channel < num_channels; ++channel) {
+                for (size_t channel = 0; channel < input_histories_.size(); ++channel) {
                     reconstructed_peak = std::max(
                         reconstructed_peak, estimator_.processSample(channel, input_histories_[channel][position]));
                 }
@@ -290,10 +279,8 @@ namespace zldsp::limiter {
         static constexpr FloatType kDefaultSafetyMarginDb = FloatType(0.01);
 
         void prepare(const double sample_rate, const size_t maximum_block_size, const size_t maximum_channels) {
-            maximum_block_size_ = std::max<size_t>(maximum_block_size, 1);
-            maximum_channels_ = std::max<size_t>(maximum_channels, 1);
-            first_.prepare(sample_rate, maximum_block_size_, maximum_channels_, kDefaultReleaseSeconds);
-            second_.prepare(sample_rate, maximum_block_size_, maximum_channels_, kDefaultReleaseSeconds);
+            first_.prepare(sample_rate, maximum_block_size, maximum_channels, kDefaultReleaseSeconds);
+            second_.prepare(sample_rate, maximum_block_size, maximum_channels, kDefaultReleaseSeconds);
             setCeilingDecibels(ceiling_db_, safety_margin_db_);
             setEnabled(enabled_);
             reset();
@@ -322,8 +309,6 @@ namespace zldsp::limiter {
             if (buffer.empty() || num_samples == 0) {
                 return;
             }
-            assert(buffer.size() <= maximum_channels_);
-            assert(num_samples <= maximum_block_size_);
             first_.process(buffer, num_samples);
             second_.process(buffer, num_samples);
         }
@@ -333,8 +318,6 @@ namespace zldsp::limiter {
         }
 
     private:
-        size_t maximum_block_size_{0};
-        size_t maximum_channels_{0};
         FloatType ceiling_db_{FloatType(-1)};
         FloatType safety_margin_db_{kDefaultSafetyMarginDb};
         bool enabled_{true};
