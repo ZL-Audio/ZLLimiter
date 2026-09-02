@@ -32,7 +32,7 @@ namespace zlp {
 
         static constexpr std::array kIDs{PInputGain::kID, POutputCeiling::kID,
                                          PTruePeak::kID, POversampling::kID,
-                                         PLookahead::kID, PAttack::kID, PRelease::kID, PStereoDelta::kID,
+                                         PLookahead::kID, PAttack::kID, PRelease::kID, PChannelDelta::kID,
                                          PBypass::kID, PDelta::kID,
         };
 

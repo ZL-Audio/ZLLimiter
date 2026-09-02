@@ -78,7 +78,7 @@ namespace zldsp::limiter {
             setLookaheadMilliseconds(lookahead_ms_);
             setAttackMilliseconds(attack_ms_);
             setReleaseMilliseconds(release_ms_);
-            setStereoDeltaDecibels(stereo_delta_db_);
+            setChannelDeltaDecibels(channel_delta_db_);
             setMicroReleaseMilliseconds(micro_release_ms_);
         }
 
@@ -111,8 +111,8 @@ namespace zldsp::limiter {
             common_support_.setReleaseSeconds(static_cast<double>(release_ms_) * 0.001);
         }
 
-        void setStereoDeltaDecibels(const FloatType decibels) {
-            stereo_delta_db_ = std::max(decibels, FloatType(0));
+        void setChannelDeltaDecibels(const FloatType decibels) {
+            channel_delta_db_ = std::max(decibels, FloatType(0));
         }
 
         void setMicroReleaseMilliseconds(const FloatType milliseconds) {
@@ -144,7 +144,7 @@ namespace zldsp::limiter {
                 }
 
                 const auto common = common_support_.processSample(maximum_fast);
-                const auto minimum_fast = maximum_fast - stereo_delta_db_;
+                const auto minimum_fast = maximum_fast - channel_delta_db_;
                 for (size_t channel = 0; channel < num_channels; ++channel) {
                     const auto bounded_fast = std::max(fast_[channel], minimum_fast);
                     attenuation_buffers[channel][i] = std::max(bounded_fast, common);
@@ -163,7 +163,7 @@ namespace zldsp::limiter {
         FloatType lookahead_ms_{FloatType(2)};
         FloatType attack_ms_{FloatType(100)};
         FloatType release_ms_{FloatType(500)};
-        FloatType stereo_delta_db_{FloatType(1.5)};
+        FloatType channel_delta_db_{FloatType(1.5)};
         FloatType micro_release_ms_{FloatType(50)};
         std::vector<LookaheadEnvelope<FloatType>> lookahead_{};
         std::vector<AsymmetricFollower<FloatType>> fast_release_{};

@@ -97,10 +97,10 @@ namespace zlp {
                 (limiter.setReleaseMilliseconds(milliseconds), ...);
             }, limiters_);
         }
-        if (to_update_stereo_delta_.check()) {
-            const auto decibels = stereo_delta_db_.load(std::memory_order_relaxed);
+        if (to_update_channel_delta_.check()) {
+            const auto decibels = channel_delta_db_.load(std::memory_order_relaxed);
             std::apply([&](auto&... limiter) {
-                (limiter.setStereoDeltaDecibels(decibels), ...);
+                (limiter.setChannelDeltaDecibels(decibels), ...);
             }, limiters_);
         }
 
@@ -140,7 +140,7 @@ namespace zlp {
         to_update_lookahead_.signal();
         to_update_attack_.signal();
         to_update_release_.signal();
-        to_update_stereo_delta_.signal();
+        to_update_channel_delta_.signal();
         to_update_.signal();
     }
 

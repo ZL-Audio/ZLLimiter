@@ -46,8 +46,8 @@ namespace zlp {
             controller_ref_.setAttack(value);
         } else if (parameter_id == PRelease::kID) {
             controller_ref_.setRelease(value);
-        } else if (parameter_id == PStereoDelta::kID) {
-            controller_ref_.setStereoDelta(value);
+        } else if (parameter_id == PChannelDelta::kID) {
+            controller_ref_.setChannelDelta(value);
         } else if (parameter_id == PBypass::kID) {
             controller_ref_.setBypassEnabled(value > 0.5f);
         } else if (parameter_id == PDelta::kID) {

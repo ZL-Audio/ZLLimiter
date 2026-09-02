@@ -141,8 +141,8 @@ namespace zldsp::limiter {
             style_.setReleaseMilliseconds(milliseconds);
         }
 
-        void setStereoDeltaDecibels(const FloatType decibels) {
-            style_.setStereoDeltaDecibels(decibels);
+        void setChannelDeltaDecibels(const FloatType decibels) {
+            style_.setChannelDeltaDecibels(decibels);
         }
 
         void process(std::span<FloatType*> buffer, const size_t num_samples) {

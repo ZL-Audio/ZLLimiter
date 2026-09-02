@@ -23,7 +23,7 @@ namespace zlp {
     class PLookahead;
     class PAttack;
     class PRelease;
-    class PStereoDelta;
+    class PChannelDelta;
 
     template <typename FloatType>
     inline juce::NormalisableRange<FloatType> getLogMidRange(
@@ -283,10 +283,10 @@ namespace zlp {
         static constexpr auto kDefaultV = 500.f;
     };
 
-    class PStereoDelta : public FloatParameters<PStereoDelta> {
+    class PChannelDelta : public FloatParameters<PChannelDelta> {
     public:
-        static constexpr auto kID = "stereo_delta";
-        static constexpr auto kName = "Stereo Delta";
+        static constexpr auto kID = "channel_delta";
+        static constexpr auto kName = "Channel Delta";
         inline static const auto kRange = juce::NormalisableRange<float>(0.f, 6.f, 0.01f);
         static constexpr auto kDefaultV = 1.5f;
     };
@@ -295,7 +295,7 @@ namespace zlp {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;
         layout.add(PInputGain::get(), POutputCeiling::get(),
                    PTruePeak::get(), POversampling::get(),
-                   PLookahead::get(), PAttack::get(), PRelease::get(), PStereoDelta::get(),
+                   PLookahead::get(), PAttack::get(), PRelease::get(), PChannelDelta::get(),
                    PBypass::get(), PDelta::get());
         return layout;
     }

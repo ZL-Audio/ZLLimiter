@@ -87,9 +87,9 @@ namespace zlp {
             to_update_.signal();
         }
 
-        void setStereoDelta(const float db) {
-            stereo_delta_db_.store(db, std::memory_order_relaxed);
-            to_update_stereo_delta_.signal();
+        void setChannelDelta(const float db) {
+            channel_delta_db_.store(db, std::memory_order_relaxed);
+            to_update_channel_delta_.signal();
             to_update_.signal();
         }
 
@@ -119,7 +119,7 @@ namespace zlp {
         zlchore::thread::Notifier to_update_lookahead_{true};
         zlchore::thread::Notifier to_update_attack_{true};
         zlchore::thread::Notifier to_update_release_{true};
-        zlchore::thread::Notifier to_update_stereo_delta_{true};
+        zlchore::thread::Notifier to_update_channel_delta_{true};
 
         std::atomic<float> input_gain_db_{PInputGain::kDefaultV};
         std::atomic<float> output_ceiling_db_{POutputCeiling::kDefaultV};
@@ -130,7 +130,7 @@ namespace zlp {
         std::atomic<float> lookahead_ms_{PLookahead::kDefaultV};
         std::atomic<float> attack_ms_{PAttack::kDefaultV};
         std::atomic<float> release_ms_{PRelease::kDefaultV};
-        std::atomic<float> stereo_delta_db_{PStereoDelta::kDefaultV};
+        std::atomic<float> channel_delta_db_{PChannelDelta::kDefaultV};
 
         bool is_prepared_{false};
         bool bypass_enabled_{PBypass::kDefaultV};
