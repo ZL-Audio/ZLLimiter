@@ -30,15 +30,10 @@ namespace zlp {
         juce::AudioProcessorValueTreeState& parameters_ref_;
         Controller& controller_ref_;
 
-        static constexpr std::array kIDs{
-            PInputGain::kID,
-            POutputCeiling::kID,
-            PTruePeak::kID,
-            POversampling::kID,
-            PLookahead::kID,
-            PAttack::kID,
-            PRelease::kID,
-            PStereoDelta::kID,
+        static constexpr std::array kIDs{PInputGain::kID, POutputCeiling::kID,
+                                         PTruePeak::kID, POversampling::kID,
+                                         PLookahead::kID, PAttack::kID, PRelease::kID, PStereoDelta::kID,
+                                         PBypass::kID, PDelta::kID,
         };
 
         void parameterChanged(const juce::String& parameter_id, float value) override;

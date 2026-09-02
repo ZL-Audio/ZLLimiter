@@ -31,7 +31,7 @@ namespace zlp {
 
         void prepare(double sample_rate, size_t max_num_samples);
 
-        void process(std::span<float*> buffer, size_t num_samples, bool is_bypass);
+        void process(std::span<float*> buffer, size_t num_samples, bool host_bypassed);
 
         void setInputGain(const float db) {
             input_gain_db_.store(db, std::memory_order_relaxed);
@@ -42,6 +42,18 @@ namespace zlp {
         void setOutputCeiling(const float db) {
             output_ceiling_db_.store(db, std::memory_order_relaxed);
             to_update_output_ceiling_.signal();
+            to_update_.signal();
+        }
+
+        void setBypassEnabled(const bool enabled) {
+            bypass_parameter_.store(enabled, std::memory_order_relaxed);
+            to_update_output_mode_.signal();
+            to_update_.signal();
+        }
+
+        void setDeltaEnabled(const bool enabled) {
+            delta_parameter_.store(enabled, std::memory_order_relaxed);
+            to_update_output_mode_.signal();
             to_update_.signal();
         }
 
@@ -94,13 +106,14 @@ namespace zlp {
         static constexpr size_t kOversamplingModeCount = std::tuple_size_v<LimiterTuple>;
 
         LimiterTuple limiters_{};
-        zldsp::delay::IntegerDelay<float> bypass_delay_{};
-        std::vector<zldsp::vector::aligned_vector<float>> bypass_buffers_{};
-        std::vector<float*> bypass_pointers_{};
+        zldsp::delay::IntegerDelay<float> dry_delay_{};
+        std::vector<zldsp::vector::aligned_vector<float>> dry_buffers_{};
+        std::vector<float*> dry_pointers_{};
 
         zlchore::thread::Notifier to_update_{true};
         zlchore::thread::Notifier to_update_input_gain_{true};
         zlchore::thread::Notifier to_update_output_ceiling_{true};
+        zlchore::thread::Notifier to_update_output_mode_{true};
         zlchore::thread::Notifier to_update_true_peak_{true};
         zlchore::thread::Notifier to_update_oversampling_{true};
         zlchore::thread::Notifier to_update_lookahead_{true};
@@ -110,6 +123,8 @@ namespace zlp {
 
         std::atomic<float> input_gain_db_{PInputGain::kDefaultV};
         std::atomic<float> output_ceiling_db_{POutputCeiling::kDefaultV};
+        std::atomic<bool> bypass_parameter_{PBypass::kDefaultV};
+        std::atomic<bool> delta_parameter_{PDelta::kDefaultV};
         std::atomic<bool> true_peak_enabled_{PTruePeak::kDefaultV};
         std::atomic<int> oversampling_index_parameter_{POversampling::kDefaultI};
         std::atomic<float> lookahead_ms_{PLookahead::kDefaultV};
@@ -118,6 +133,8 @@ namespace zlp {
         std::atomic<float> stereo_delta_db_{PStereoDelta::kDefaultV};
 
         bool is_prepared_{false};
+        bool bypass_enabled_{PBypass::kDefaultV};
+        bool delta_enabled_{PDelta::kDefaultV};
         size_t oversampling_index_{kOversamplingModeCount};
         std::atomic<int> pending_latency_samples_{0};
 

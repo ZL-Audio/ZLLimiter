@@ -43,6 +43,10 @@ namespace zldsp::delay {
         }
 
         void process(std::span<FloatType*> input, size_t num_samples) {
+            process(input, input, num_samples);
+        }
+
+        void process(std::span<FloatType* const> input, std::span<FloatType*> output, size_t num_samples) {
             // write input samples to states
             const auto next_tail = (tail_ + static_cast<int>(num_samples)) % capacity_;
             if (next_tail > tail_) {
@@ -57,17 +61,17 @@ namespace zldsp::delay {
                 }
             }
             tail_ = next_tail;
-            // write states to input samples
+            // write states to output samples
             const auto next_head = (head_ + static_cast<int>(num_samples)) % capacity_;
             if (next_head > head_) {
-                for (size_t chan = 0; chan < input.size(); ++chan) {
-                    vector::copy(input[chan], states_[chan].data() + static_cast<size_t>(head_), num_samples);
+                for (size_t chan = 0; chan < output.size(); ++chan) {
+                    vector::copy(output[chan], states_[chan].data() + static_cast<size_t>(head_), num_samples);
                 }
             } else {
                 const auto block1_size = static_cast<size_t>(capacity_ - head_);
-                for (size_t chan = 0; chan < input.size(); ++chan) {
-                    vector::copy(input[chan], states_[chan].data() + static_cast<size_t>(head_), block1_size);
-                    vector::copy(input[chan] + block1_size, states_[chan].data(), static_cast<size_t>(next_head));
+                for (size_t chan = 0; chan < output.size(); ++chan) {
+                    vector::copy(output[chan], states_[chan].data() + static_cast<size_t>(head_), block1_size);
+                    vector::copy(output[chan] + block1_size, states_[chan].data(), static_cast<size_t>(next_head));
                 }
             }
             head_ = next_head;

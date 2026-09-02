@@ -16,6 +16,8 @@ namespace zlp {
 
     class PInputGain;
     class POutputCeiling;
+    class PBypass;
+    class PDelta;
     class PTruePeak;
     class POversampling;
     class PLookahead;
@@ -228,6 +230,20 @@ namespace zlp {
         static constexpr auto kDefaultV = -.1f;
     };
 
+    class PBypass : public BoolParameters<PBypass> {
+    public:
+        static constexpr auto kID = "bypass";
+        static constexpr auto kName = "Bypass";
+        static constexpr auto kDefaultV = false;
+    };
+
+    class PDelta : public BoolParameters<PDelta> {
+    public:
+        static constexpr auto kID = "delta";
+        static constexpr auto kName = "Delta";
+        static constexpr auto kDefaultV = false;
+    };
+
     class PTruePeak : public BoolParameters<PTruePeak> {
     public:
         static constexpr auto kID = "true_peak";
@@ -279,7 +295,8 @@ namespace zlp {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;
         layout.add(PInputGain::get(), POutputCeiling::get(),
                    PTruePeak::get(), POversampling::get(),
-                   PLookahead::get(), PAttack::get(), PRelease::get(), PStereoDelta::get());
+                   PLookahead::get(), PAttack::get(), PRelease::get(), PStereoDelta::get(),
+                   PBypass::get(), PDelta::get());
         return layout;
     }
 

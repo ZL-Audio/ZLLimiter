@@ -27,16 +27,16 @@ namespace zlp {
         const auto maximum_channels = static_cast<size_t>(p_ref_.getMainBusNumInputChannels());
         prepareLimiters(sample_rate, maximum_block_size, maximum_channels);
 
-        bypass_buffers_.resize(maximum_channels);
-        bypass_pointers_.resize(maximum_channels);
+        dry_buffers_.resize(maximum_channels);
+        dry_pointers_.resize(maximum_channels);
         for (size_t channel = 0; channel < maximum_channels; ++channel) {
-            bypass_buffers_[channel].resize(maximum_block_size);
-            bypass_pointers_[channel] = bypass_buffers_[channel].data();
+            dry_buffers_[channel].resize(maximum_block_size);
+            dry_pointers_[channel] = dry_buffers_[channel].data();
         }
         const auto maximum_latency = getMaximumLatencySamples();
         const auto maximum_delay_seconds = static_cast<float>(
             static_cast<double>(maximum_latency) / std::max(sample_rate, 1.0));
-        bypass_delay_.prepare(sample_rate, maximum_block_size, maximum_channels, maximum_delay_seconds);
+        dry_delay_.prepare(sample_rate, maximum_block_size, maximum_channels, maximum_delay_seconds);
 
         oversampling_index_ = kOversamplingModeCount;
         is_prepared_ = true;
@@ -65,6 +65,11 @@ namespace zlp {
             std::apply([&](auto&... limiter) {
                 (limiter.setOutputCeilingDecibels(db), ...);
             }, limiters_);
+        }
+
+        if (to_update_output_mode_.check()) {
+            bypass_enabled_ = bypass_parameter_.load(std::memory_order_relaxed);
+            delta_enabled_ = delta_parameter_.load(std::memory_order_relaxed);
         }
 
         if (to_update_true_peak_.check()) {
@@ -107,20 +112,21 @@ namespace zlp {
         }
     }
 
-    void Controller::process(std::span<float*> buffer, const size_t num_samples, const bool is_bypass) {
+    void Controller::process(std::span<float*> buffer, const size_t num_samples, const bool host_bypassed) {
         if (!is_prepared_ || buffer.empty() || num_samples == 0) {
             return;
         }
         prepareBuffer();
-        auto dry_buffer = std::span<float*>{bypass_pointers_.data(), buffer.size()};
-        for (size_t channel = 0; channel < buffer.size(); ++channel) {
-            zldsp::vector::copy(dry_buffer[channel], buffer[channel], num_samples);
-        }
-        bypass_delay_.process(dry_buffer, num_samples);
+        auto dry_buffer = std::span<float*>{dry_pointers_.data(), buffer.size()};
+        dry_delay_.process(buffer, dry_buffer, num_samples);
         processActiveLimiter(buffer, num_samples);
-        if (is_bypass) {
+        if (host_bypassed || bypass_enabled_) {
             for (size_t channel = 0; channel < buffer.size(); ++channel) {
                 zldsp::vector::copy(buffer[channel], dry_buffer[channel], num_samples);
+            }
+        } else if (delta_enabled_) {
+            for (size_t channel = 0; channel < buffer.size(); ++channel) {
+                zldsp::vector::sub(buffer[channel], dry_buffer[channel], buffer[channel], num_samples);
             }
         }
     }
@@ -128,6 +134,7 @@ namespace zlp {
     void Controller::signalParameterUpdates() {
         to_update_input_gain_.signal();
         to_update_output_ceiling_.signal();
+        to_update_output_mode_.signal();
         to_update_true_peak_.signal();
         to_update_oversampling_.signal();
         to_update_lookahead_.signal();
@@ -154,8 +161,8 @@ namespace zlp {
         resetActiveLimiter();
 
         const auto latency = getActiveLatencySamples();
-        bypass_delay_.setDelayInSamples(static_cast<int>(latency));
-        bypass_delay_.reset();
+        dry_delay_.setDelayInSamples(static_cast<int>(latency));
+        dry_delay_.reset();
         pending_latency_samples_.store(static_cast<int>(latency), std::memory_order_release);
         triggerAsyncUpdate();
     }
