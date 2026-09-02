@@ -275,22 +275,6 @@ namespace zlstate {
         static constexpr int kDefaultI = 3;
     };
 
-    class PFFTExtraTilt : public FloatParameters<PFFTExtraTilt> {
-    public:
-        static constexpr auto kID = "fft_extra_tilt";
-        static constexpr auto kName = "";
-        inline static const auto kRange = juce::NormalisableRange<float>(-4.5f, 4.5f, .01f);
-        static constexpr auto kDefaultV = 0.f;
-    };
-
-    class PFFTExtraSpeed : public FloatParameters<PFFTExtraSpeed> {
-    public:
-        static constexpr auto kID = "fft_extra_speed";
-        static constexpr auto kName = "";
-        inline static const auto kRange = juce::NormalisableRange<float>(0.f, 2.f, .01f);
-        static constexpr auto kDefaultV = 1.f;
-    };
-
     class PSingleEQCurveThickness : public FloatParameters<PSingleEQCurveThickness> {
     public:
         static constexpr auto kID = "single_eq_curve_thickness";
@@ -559,7 +543,6 @@ namespace zlstate {
                    PRotaryStyle::get(), PRotaryDragSensitivity::get(),
                    PSliderDoubleClickFunc::get(),
                    PTargetRefreshSpeed::get(),
-                   PFFTExtraTilt::get(), PFFTExtraSpeed::get(),
                    PSingleEQCurveThickness::get(), PSumEQCurveThickness::get(),
                    PTooltipLang::get(),
                    PCurveDBScale0::get(), PCurveDBScale1::get(), PCurveDBScale2::get());

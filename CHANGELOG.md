@@ -12,7 +12,6 @@ Bug fixes
 - fix incorrect static gain compensation when stereo mode changes
 - fix external side-chain button may not get updated display
 - fix dynamic curve display beyond Nyquist
-- fix potential race condition for FFT collision colour
 - fix potential redundant value notification of sliders/buttons/comboboxes
 - fix potential lagging caused by UI resizing
 
