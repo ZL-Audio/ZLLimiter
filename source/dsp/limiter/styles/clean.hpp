@@ -50,6 +50,23 @@ namespace zldsp::limiter {
                 required[i] = std::max(FloatType(0), peak_db - ceiling_db);
             }
         }
+
+        template <typename FloatType>
+        HWY_INLINE FloatType smoothMaximum(const FloatType x, const FloatType y) {
+            static constexpr FloatType kCrossingWidthDb{FloatType(0.1)};
+            static constexpr FloatType kTwiceCrossingWidthDb{FloatType(2) * kCrossingWidthDb};
+            static constexpr FloatType kInverseFourCrossingWidthDb{FloatType(0.25) / kCrossingWidthDb};
+
+            const auto maximum = std::max(x, y);
+            const auto limited_sum = std::min(x + y, kTwiceCrossingWidthDb);
+            const auto transition_width = limited_sum -
+                                          limited_sum * limited_sum * kInverseFourCrossingWidthDb;
+            const auto transition = transition_width - std::abs(x - y);
+            if (transition <= FloatType(0)) {
+                return maximum;
+            }
+            return maximum + transition * transition / (FloatType(4) * transition_width);
+        }
     }
 
     /**
@@ -147,7 +164,7 @@ namespace zldsp::limiter {
                 const auto minimum_fast = maximum_fast - channel_delta_db_;
                 for (size_t channel = 0; channel < num_channels; ++channel) {
                     const auto bounded_fast = std::max(fast_[channel], minimum_fast);
-                    attenuation_buffers[channel][i] = std::max(bounded_fast, common);
+                    attenuation_buffers[channel][i] = clean_detail::smoothMaximum(bounded_fast, common);
                 }
             }
         }
