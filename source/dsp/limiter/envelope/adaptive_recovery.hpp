@@ -23,9 +23,11 @@ namespace zldsp::limiter {
             sample_rate_ = std::max(sample_rate, 1.0);
             ramp_samples_ = std::max(static_cast<size_t>(1), static_cast<size_t>(sample_rate_ * 0.02));
             persistence_.prepare(sample_rate_);
-            persistence_.setTimesSeconds(0.1, 0.2);
+            persistence_.setAttackSeconds(0.1);
+            persistence_.setReleaseSeconds(0.2);
             depth_.prepare(sample_rate_);
-            depth_.setTimesSeconds(0.005, 0.1);
+            depth_.setAttackSeconds(0.005);
+            depth_.setReleaseSeconds(0.1);
             updateTargets();
             reset();
         }

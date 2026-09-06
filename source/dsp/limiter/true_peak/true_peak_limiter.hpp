@@ -106,7 +106,8 @@ namespace zldsp::limiter {
             maximum_.setCapacity(kDetectorWindowSamples);
             maximum_.setSize(kDetectorWindowSamples);
             release_.prepare(sample_rate_);
-            release_.setTimesSeconds(0.0, std::max(release_seconds, 0.0));
+            release_.setAttackSeconds(0.0);
+            release_.setReleaseSeconds(std::max(release_seconds, 0.0));
             gains_.resize(maximum_block_size);
             reconstructed_peaks_.resize(maximum_block_size);
             channel_peaks_.resize(maximum_block_size);

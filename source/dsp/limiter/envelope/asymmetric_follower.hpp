@@ -22,11 +22,12 @@ namespace zldsp::limiter {
     public:
         void prepare(const double sample_rate) {
             sample_rate_ = std::max(sample_rate, 1.0);
-            updateCoefficients();
+            attack_step_ = stepForSeconds(attack_seconds_);
+            release_step_ = stepForSeconds(release_seconds_);
         }
 
         void reset(const FloatType value = FloatType(0)) {
-            state_ = value;
+            state_ = static_cast<double>(value);
         }
 
         void setAttackSeconds(const double seconds) {
@@ -39,41 +40,30 @@ namespace zldsp::limiter {
             release_step_ = stepForSeconds(release_seconds_);
         }
 
-        void setTimesSeconds(const double attack_seconds, const double release_seconds) {
-            attack_seconds_ = std::max(attack_seconds, 0.0);
-            release_seconds_ = std::max(release_seconds, 0.0);
-            updateCoefficients();
-        }
-
         FloatType processSample(const FloatType target) {
-            const auto step = target >= state_ ? attack_step_ : release_step_;
-            state_ += step * (target - state_);
-            return state_;
+            const auto step = static_cast<double>(target) >= state_ ? attack_step_ : release_step_;
+            state_ += step * (static_cast<double>(target) - state_);
+            return static_cast<FloatType>(state_);
         }
 
         [[nodiscard]] FloatType getCurrent() const {
-            return state_;
+            return static_cast<FloatType>(state_);
         }
 
     private:
         double sample_rate_{48000.0};
         double attack_seconds_{0.0};
         double release_seconds_{0.1};
-        FloatType attack_step_{FloatType(1)};
-        FloatType release_step_{FloatType(1)};
-        FloatType state_{FloatType(0)};
+        double attack_step_{1.0};
+        double release_step_{1.0};
+        double state_{0.0};
 
-        FloatType stepForSeconds(const double seconds) const {
+        [[nodiscard]] double stepForSeconds(const double seconds) const {
             if (seconds <= 0.0) {
-                return FloatType(1);
+                return 1.0;
             }
             const auto exponent = std::log(0.1) / (seconds * sample_rate_);
-            return static_cast<FloatType>(-std::expm1(exponent));
-        }
-
-        void updateCoefficients() {
-            attack_step_ = stepForSeconds(attack_seconds_);
-            release_step_ = stepForSeconds(release_seconds_);
+            return -std::expm1(exponent);
         }
     };
 }
