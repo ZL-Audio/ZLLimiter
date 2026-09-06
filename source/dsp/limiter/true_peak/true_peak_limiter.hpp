@@ -21,7 +21,7 @@
 #include "../../delay/integer_delay.hpp"
 #include "../../vector/vector.hpp"
 #include "../envelope/asymmetric_follower.hpp"
-#include "bs1770_estimator.hpp"
+#include "true_peak_estimator.hpp"
 
 namespace zldsp::limiter {
     namespace true_peak_detail {
@@ -86,13 +86,15 @@ namespace zldsp::limiter {
     }
 
     /**
-     * one causal BS.1770 true-peak correction pass
+     * one causal 16x true-peak correction pass
      * @tparam FloatType the audio sample type
      */
     template <typename FloatType>
     class TruePeakCorrectionStage {
     public:
-        static constexpr size_t kLookaheadSamples = BS1770TruePeakEstimator<FloatType>::kTapsPerPhase - 1;
+        // Cover every detector window containing the delayed sample. These are
+        // support lengths in base-rate samples, not the interpolation phase count.
+        static constexpr size_t kLookaheadSamples = TruePeakEstimator<FloatType>::kTapsPerPhase - 1;
         static constexpr size_t kDetectorWindowSamples = kLookaheadSamples + 1;
         static constexpr size_t kPrimeHistorySamples = kDetectorWindowSamples * 2 - 1;
         static constexpr FloatType kUnityAttenuationDb = FloatType(1e-5);
@@ -172,7 +174,7 @@ namespace zldsp::limiter {
         bool enabled_{true};
         bool bypassed_{false};
         bool needs_prime_{false};
-        BS1770TruePeakEstimator<FloatType> estimator_{};
+        TruePeakEstimator<FloatType> estimator_{};
         container::CircularMinMaxBuffer<FloatType, container::MinMaxBufferType::kFindMax> maximum_{1};
         AsymmetricFollower<FloatType> release_{};
         delay::IntegerDelay<FloatType> delay_{};
@@ -269,14 +271,16 @@ namespace zldsp::limiter {
     };
 
     /**
-     * a fixed-latency three-pass BS.1770 true-peak limiter
+     * a fixed-latency three-pass 16x true-peak limiter
      * @tparam FloatType the audio sample type
      */
     template <typename FloatType>
     class TruePeakLimiter {
     public:
         static constexpr double kDefaultReleaseSeconds = 0.01;
-        static constexpr FloatType kDefaultSafetyMarginDb = FloatType(0.01);
+        // Engineering margin for the finite detector and gain-induced residuals;
+        // validated tolerance, not a mathematical continuous-waveform bound.
+        static constexpr FloatType kDefaultSafetyMarginDb = FloatType(0.1);
 
         void prepare(const double sample_rate, const size_t maximum_block_size, const size_t maximum_channels) {
             first_.prepare(sample_rate, maximum_block_size, maximum_channels, kDefaultReleaseSeconds);
