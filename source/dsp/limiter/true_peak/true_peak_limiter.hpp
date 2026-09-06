@@ -234,6 +234,23 @@ namespace zldsp::limiter {
         }
 
         void cacheInputBlock(const std::span<FloatType*> buffer, const size_t num_samples) {
+            if (num_samples >= kPrimeHistorySamples) {
+                const auto next_position =
+                    (input_history_position_ + num_samples % kPrimeHistorySamples) % kPrimeHistorySamples;
+                const auto first_size = kPrimeHistorySamples - next_position;
+                for (size_t channel = 0; channel < buffer.size(); ++channel) {
+                    const auto* const suffix = buffer[channel] + num_samples - kPrimeHistorySamples;
+                    auto* const history = input_histories_[channel].data();
+                    vector::copy(history + next_position, suffix, first_size);
+                    if (next_position != 0) {
+                        vector::copy(history, suffix + first_size, next_position);
+                    }
+                }
+                input_history_position_ = next_position;
+                input_history_size_ = kPrimeHistorySamples;
+                return;
+            }
+
             size_t input_position = 0;
             while (input_position < num_samples) {
                 const auto copy_size =
@@ -278,8 +295,6 @@ namespace zldsp::limiter {
     class TruePeakLimiter {
     public:
         static constexpr double kDefaultReleaseSeconds = 0.01;
-        // Engineering margin for the finite detector and gain-induced residuals;
-        // validated tolerance, not a mathematical continuous-waveform bound.
         static constexpr FloatType kDefaultSafetyMarginDb = FloatType(0.1);
 
         void prepare(const double sample_rate, const size_t maximum_block_size, const size_t maximum_channels) {
