@@ -9,12 +9,13 @@
 
 #pragma once
 
-#include <vector>
 #include <array>
+#include <vector>
 #include <span>
+#include <algorithm>
 
 #include "../../container/fifo/abstract_fifo.hpp"
-#include "../../lock/spin_lock.hpp"
+#include "../../../chore/thread/spin_lock.hpp"
 #include "../../vector/vector.hpp"
 
 namespace zldsp::analyzer {
@@ -104,7 +105,7 @@ namespace zldsp::analyzer {
         }
 
     protected:
-        zldsp::lock::SpinLock lock_;
+        zlchore::lock::SpinLock lock_;
 
         double sample_rate_{48000};
         std::array<size_t, kNum> num_channels_;

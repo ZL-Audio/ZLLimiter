@@ -18,6 +18,6 @@ namespace zldsp::analyzer {
         kStereo, kLeft, kRight, kMid, kSide
     };
 
-    inline constexpr float kSqrt2Over2 = static_cast<float>(
-            0.7071067811865475244008443621048490392848359376884740365883398690);
+    constexpr float kSqrt2Over2 = static_cast<float>(
+        0.7071067811865475244008443621048490392848359376884740365883398690);
 }

@@ -16,7 +16,7 @@
 #include <intrin.h>
 #endif
 
-namespace zldsp::lock {
+namespace zlchore::lock {
     /**
      * a spin lock which has non-blocking try_lock and unlock methods
      */
