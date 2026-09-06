@@ -68,9 +68,8 @@ namespace zldsp::limiter {
                 for (const auto* channel : buffer) {
                     magnitude = std::max(magnitude, std::abs(channel[i]));
                 }
-                const auto aimed = std::max(
-                    magnitude,
-                    (magnitude - beta_ * envelope_) * inverse_one_minus_beta_);
+                const auto aimed = std::max(magnitude,
+                                            (magnitude - beta_ * envelope_) * inverse_one_minus_beta_);
                 const auto running_maximum = maximum_.push(aimed);
                 envelope_ += attack_step_ * (running_maximum - envelope_);
                 gains_[i] = envelope_ > ceiling_ ? ceiling_ / envelope_ : FloatType(1);
@@ -82,7 +81,9 @@ namespace zldsp::limiter {
             }
         }
 
-        [[nodiscard]] size_t getLatencySamples() const { return lookahead_samples_; }
+        [[nodiscard]] size_t getLatencySamples() const {
+            return lookahead_samples_;
+        }
 
     private:
         double sample_rate_{48000.0};

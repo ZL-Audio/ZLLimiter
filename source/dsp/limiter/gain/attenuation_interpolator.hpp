@@ -27,6 +27,7 @@ namespace zldsp::limiter {
     public:
         void reset(const FloatType attenuation_db = FloatType(0)) {
             previous_attenuation_db_ = attenuation_db;
+            previous_endpoint_db_ = attenuation_db;
         }
 
         template <size_t Factor>
@@ -42,6 +43,8 @@ namespace zldsp::limiter {
             } else {
                 processInterpolated<Factor>(attenuation_db, output_gain, num_samples);
             }
+            const auto previous = num_samples == 1 ? previous_attenuation_db_ : attenuation_db[num_samples - 2];
+            previous_endpoint_db_ = std::max(previous, attenuation_db[num_samples - 1]);
             previous_attenuation_db_ = attenuation_db[num_samples - 1];
         }
 
@@ -75,17 +78,20 @@ namespace zldsp::limiter {
             static constexpr auto step_db_to_log_gain = kDbToLogGain / static_cast<double>(Factor);
             const auto scale = hn::Set(d, static_cast<FloatType>(kDbToLogGain));
             const auto step_scale = hn::Set(d, static_cast<FloatType>(step_db_to_log_gain));
-            const auto zero = hn::Zero(d);
             HWY_ALIGN FloatType gains[lanes];
             HWY_ALIGN FloatType ratios[lanes];
+            auto previous_endpoint = previous_endpoint_db_;
 
             size_t i = 0;
             for (; i + lanes <= num_samples; i += lanes) {
                 const auto current = hn::LoadU(d, attenuation_db + i);
                 const auto previous = i == 0 ? hn::InsertLane(hn::Slide1Up(d, current), 0, previous_attenuation_db_)
                                              : hn::LoadU(d, attenuation_db + i - 1);
-                const auto delta = hn::Max(hn::Sub(current, previous), zero);
-                hn::StoreU(hn::Exp(d, hn::Mul(previous, scale)), d, gains);
+                const auto end = hn::Max(previous, current);
+                const auto start = hn::InsertLane(hn::Slide1Up(d, end), 0, previous_endpoint);
+                previous_endpoint = hn::ExtractLane(end, lanes - 1);
+                const auto delta = hn::Sub(end, start);
+                hn::StoreU(hn::Exp(d, hn::Mul(start, scale)), d, gains);
                 hn::StoreU(hn::Exp(d, hn::Mul(delta, step_scale)), d, ratios);
 
                 for (size_t lane = 0; lane < lanes; ++lane) {
@@ -99,17 +105,18 @@ namespace zldsp::limiter {
             }
             for (; i < num_samples; ++i) {
                 const auto previous = i == 0 ? previous_attenuation_db_ : attenuation_db[i - 1];
-                processScalar<Factor>(previous, attenuation_db[i], output_gain + i * Factor);
+                const auto end = std::max(previous, attenuation_db[i]);
+                processScalar<Factor>(previous_endpoint, end, output_gain + i * Factor);
+                previous_endpoint = end;
             }
         }
 
         template <size_t Factor>
-        static void processScalar(const FloatType previous_attenuation_db, const FloatType current_attenuation_db,
+        static void processScalar(const FloatType start_attenuation_db, const FloatType end_attenuation_db,
                                   FloatType* output_gain) {
             static constexpr auto step_db_to_log_gain = kDbToLogGain / static_cast<double>(Factor);
-            auto gain = static_cast<FloatType>(std::exp(static_cast<double>(previous_attenuation_db) * kDbToLogGain));
-            const auto delta = static_cast<double>(
-                std::max(current_attenuation_db - previous_attenuation_db, FloatType(0)));
+            auto gain = static_cast<FloatType>(std::exp(static_cast<double>(start_attenuation_db) * kDbToLogGain));
+            const auto delta = static_cast<double>(end_attenuation_db - start_attenuation_db);
             const auto ratio = static_cast<FloatType>(std::exp(delta * step_db_to_log_gain));
             for (size_t phase = 0; phase < Factor; ++phase) {
                 output_gain[phase] = gain;
@@ -118,5 +125,6 @@ namespace zldsp::limiter {
         }
 
         FloatType previous_attenuation_db_{FloatType(0)};
+        FloatType previous_endpoint_db_{FloatType(0)};
     };
 }
