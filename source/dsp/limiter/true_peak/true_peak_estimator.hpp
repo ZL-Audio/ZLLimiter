@@ -11,8 +11,10 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <vector>
 
@@ -67,22 +69,23 @@ namespace zldsp::limiter {
             size_t i = 0;
             for (; i + lanes <= num_samples; i += lanes) {
                 auto peak = hn::Abs(hn::LoadU(d, input + i));
-                // Four phase accumulators share each history load without keeping
-                // all sixteen accumulators live on SSE2/NEON.
-                for (size_t phase = 0; phase < kNumPhases; phase += 4) {
-                    auto p0 = hn::Zero(d);
-                    auto p1 = hn::Zero(d);
-                    auto p2 = hn::Zero(d);
-                    auto p3 = hn::Zero(d);
-                    for (size_t tap = 0; tap < kTapsPerPhase; ++tap) {
-                        const auto samples = hn::LoadU(d, history.data() + i + tap);
-                        p0 = hn::MulAdd(samples, hn::Set(d, kCoefficients[phase][tap]), p0);
-                        p1 = hn::MulAdd(samples, hn::Set(d, kCoefficients[phase + 1][tap]), p1);
-                        p2 = hn::MulAdd(samples, hn::Set(d, kCoefficients[phase + 2][tap]), p2);
-                        p3 = hn::MulAdd(samples, hn::Set(d, kCoefficients[phase + 3][tap]), p3);
+                for (size_t pair = 0; pair < kNumPairs; pair += 2) {
+                    auto e0 = hn::Zero(d);
+                    auto o0 = hn::Zero(d);
+                    auto e1 = hn::Zero(d);
+                    auto o1 = hn::Zero(d);
+                    for (size_t tap = 0; tap < kHalfTaps; ++tap) {
+                        const auto left = hn::LoadU(d, history.data() + i + tap);
+                        const auto right = hn::LoadU(d, history.data() + i + kHistorySamples - tap);
+                        const auto sum = hn::Add(left, right);
+                        const auto difference = hn::Sub(left, right);
+                        e0 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[pair].even[tap]), e0);
+                        o0 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[pair].odd[tap]), o0);
+                        e1 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[pair + 1].even[tap]), e1);
+                        o1 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[pair + 1].odd[tap]), o1);
                     }
-                    peak = hn::Max(peak, hn::Max(hn::Max(hn::Abs(p0), hn::Abs(p1)),
-                                                hn::Max(hn::Abs(p2), hn::Abs(p3))));
+                    peak = hn::Max(peak, hn::Max(hn::Add(hn::Abs(e0), hn::Abs(o0)),
+                                                hn::Add(hn::Abs(e1), hn::Abs(o1))));
                 }
                 hn::StoreU(peak, d, output + i);
             }
@@ -93,20 +96,50 @@ namespace zldsp::limiter {
         }
 
     private:
-        inline static constexpr auto kCoefficients = [] {
-            std::array<std::array<FloatType, kTapsPerPhase>, kNumPhases> result{};
-            for (size_t phase = 0; phase < kNumPhases; ++phase) {
+        static constexpr size_t kNumPairs = kNumPhases / 2;
+        static constexpr size_t kHalfTaps = kTapsPerPhase / 2;
+        static_assert(kNumPhases % 4 == 0 && kTapsPerPhase % 2 == 0);
+        static_assert([] {
+            for (size_t phase = 0; phase < kNumPairs; ++phase) {
                 for (size_t tap = 0; tap < kTapsPerPhase; ++tap) {
-                    result[phase][tap] = static_cast<FloatType>(true_peak_coefficients::kTable[phase][tap]);
+                    if (std::bit_cast<uint64_t>(true_peak_coefficients::kTable[phase][tap]) !=
+                        std::bit_cast<uint64_t>(true_peak_coefficients::kTable[kNumPhases - 1 - phase][kHistorySamples - tap])) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }(), "Paired FIR evaluation requires exactly reversed phase coefficients");
+
+        struct PairedCoefficients {
+            std::array<FloatType, kHalfTaps> even{};
+            std::array<FloatType, kHalfTaps> odd{};
+        };
+
+        inline static constexpr auto kPairedCoefficients = [] {
+            std::array<PairedCoefficients, kNumPairs> result{};
+            for (size_t pair = 0; pair < kNumPairs; ++pair) {
+                for (size_t tap = 0; tap < kHalfTaps; ++tap) {
+                    const auto left = true_peak_coefficients::kTable[pair][tap];
+                    const auto right = true_peak_coefficients::kTable[pair][kHistorySamples - tap];
+                    result[pair].even[tap] = static_cast<FloatType>((left + right) * 0.5);
+                    result[pair].odd[tap] = static_cast<FloatType>((left - right) * 0.5);
                 }
             }
             return result;
         }();
 
         static FloatType evaluateSample(const FloatType* history, const FloatType sample) {
+            std::array<FloatType, kHalfTaps> sums{}, differences{};
+            for (size_t tap = 0; tap < kHalfTaps; ++tap) {
+                sums[tap] = history[tap] + history[kHistorySamples - tap];
+                differences[tap] = history[tap] - history[kHistorySamples - tap];
+            }
             auto peak = std::abs(sample);
-            for (const auto& phase : kCoefficients) {
-                peak = std::max(peak, std::abs(vector::dot_product(history, phase.data(), kTapsPerPhase)));
+            for (const auto& pair : kPairedCoefficients) {
+                const auto even = vector::dot_product(sums.data(), pair.even.data(), kHalfTaps);
+                const auto odd = vector::dot_product(differences.data(), pair.odd.data(), kHalfTaps);
+                peak = std::max(peak, std::abs(even) + std::abs(odd));
             }
             return peak;
         }
