@@ -18,11 +18,12 @@
 #include <vector>
 
 #include "../chore/decibels.hpp"
-#include "../chore/smoothed_value.hpp"
 #include "../delay/integer_delay.hpp"
 #include "../over_sample/over_sample.hpp"
 #include "../vector/vector.hpp"
-#include "definitions.hpp"
+#include "../gain/gain.hpp"
+
+#include "limiter_definitions.hpp"
 #include "detector/peak_detector.hpp"
 #include "envelope/safety_guardian.hpp"
 #include "gain/attenuation_interpolator.hpp"
@@ -49,7 +50,7 @@ namespace zldsp::limiter {
                 oversampler_.prepare(maximum_channels, maximum_block_size);
             }
             style_.prepare(sample_rate_, maximum_block_size, maximum_channels, kMaximumLookaheadSeconds);
-            input_gain_db_.prepare(sample_rate_, 0.02);
+            input_gain_.prepare(sample_rate, maximum_block_size, 0.5);
 
             peak_buffers_.resize(maximum_channels);
             attenuation_buffers_.resize(maximum_channels);
@@ -86,7 +87,6 @@ namespace zldsp::limiter {
                 latency_samples_ += oversampler_.getLatency();
             }
             reset();
-            setInputGainDecibels(input_gain_target_db_);
             setOutputCeilingDecibels(output_ceiling_db_, safety_margin_db_);
             setTruePeakEnabled(true_peak_enabled_);
         }
@@ -100,18 +100,14 @@ namespace zldsp::limiter {
             main_delay_.setDelayInSamples(static_cast<int>(main_delay_samples_ * kProcessingFactor));
             guardian_.reset();
             true_peak_limiter_.reset();
-            input_gain_db_.setCurrentAndTarget(input_gain_target_db_);
+            input_gain_.reset();
             for (auto& interpolator : attenuation_interpolators_) {
                 interpolator.reset();
             }
         }
 
         void setInputGainDecibels(const FloatType gain_db) {
-            if (std::abs(gain_db - input_gain_target_db_) <= std::numeric_limits<FloatType>::epsilon()) {
-                return;
-            }
-            input_gain_target_db_ = gain_db;
-            input_gain_db_.setTarget(gain_db);
+            input_gain_.setGainDecibels(gain_db);
         }
 
         void setOutputCeilingDecibels(const FloatType ceiling_db, const FloatType safety_margin_db = FloatType(0.05)) {
@@ -156,7 +152,7 @@ namespace zldsp::limiter {
             const auto num_channels = buffer.size();
             const auto processing_samples = num_samples * kProcessingFactor;
 
-            applyInputGain(buffer, num_samples);
+            input_gain_.process(buffer, num_samples);
             auto processing_buffer = buffer;
             // up-sample
             if constexpr (NumOversamplingStages > 0) {
@@ -208,12 +204,11 @@ namespace zldsp::limiter {
         size_t guardian_delay_base_samples_{0};
         size_t latency_samples_{0};
 
-        FloatType input_gain_target_db_{FloatType(0)};
         FloatType output_ceiling_db_{FloatType(-1)};
         FloatType safety_margin_db_{FloatType(0.05)};
         FloatType final_ceiling_linear_{chore::decibelsToGain(FloatType(-1))};
         bool true_peak_enabled_{true};
-        chore::SmoothedValue<FloatType, chore::kLin> input_gain_db_{FloatType(0)};
+        zldsp::gain::Gain<FloatType> input_gain_{};
 
         using OverSamplerType = std::conditional_t<NumOversamplingStages == 0, std::monostate,
                                                    oversample::OverSampler<FloatType, NumOversamplingStages>>;
@@ -229,22 +224,6 @@ namespace zldsp::limiter {
         std::vector<vector::aligned_vector<FloatType>> gain_buffers_{};
         std::vector<const FloatType*> peak_pointers_{};
         std::vector<FloatType*> attenuation_pointers_{};
-
-        void applyInputGain(std::span<FloatType*> buffer, const size_t num_samples) {
-            if (!input_gain_db_.isSmoothing()) {
-                const auto gain = chore::decibelsToGain(input_gain_db_.getCurrent());
-                for (auto* channel : buffer) {
-                    vector::multiply(channel, gain, num_samples);
-                }
-                return;
-            }
-            for (size_t i = 0; i < num_samples; ++i) {
-                const auto gain = chore::decibelsToGain(input_gain_db_.getNext());
-                for (auto* channel : buffer) {
-                    channel[i] *= gain;
-                }
-            }
-        }
 
         void applyOutputClamp(std::span<FloatType*> buffer, const size_t num_samples) {
             for (auto* channel : buffer) {

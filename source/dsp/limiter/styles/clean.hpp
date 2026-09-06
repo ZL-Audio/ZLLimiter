@@ -14,7 +14,7 @@
 #include <span>
 #include <vector>
 
-#include "../definitions.hpp"
+#include "../limiter_definitions.hpp"
 #include "../envelope/adaptive_recovery.hpp"
 #include "../envelope/asymmetric_follower.hpp"
 #include "../envelope/lookahead_envelope.hpp"
