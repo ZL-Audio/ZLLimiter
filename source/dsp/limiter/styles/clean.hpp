@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "../definitions.hpp"
+#include "../envelope/adaptive_recovery.hpp"
 #include "../envelope/asymmetric_follower.hpp"
 #include "../envelope/lookahead_envelope.hpp"
 #include "../../vector/highway_import.hpp"
@@ -84,28 +85,26 @@ namespace zldsp::limiter {
             const auto maximum_lookahead = std::max(maximum_lookahead_seconds, 0.0);
             maximum_lookahead_ms_ = maximum_lookahead * 1000.0;
             lookahead_.resize(maximum_channels);
-            fast_release_.resize(maximum_channels);
+            fast_state_.resize(maximum_channels);
             fast_.resize(maximum_channels);
             for (size_t channel = 0; channel < maximum_channels; ++channel) {
                 lookahead_[channel].prepare(sample_rate_, maximum_lookahead);
-                fast_release_[channel].prepare(sample_rate_);
             }
+            recovery_.prepare(sample_rate_);
             common_support_.prepare(sample_rate_);
             reset();
             setLookaheadMilliseconds(lookahead_ms_);
             setAttackMilliseconds(attack_ms_);
             setReleaseMilliseconds(release_ms_);
             setChannelDeltaDecibels(channel_delta_db_);
-            setMicroReleaseMilliseconds(micro_release_ms_);
         }
 
         void reset() {
             for (auto& envelope : lookahead_) {
                 envelope.reset();
             }
-            for (auto& follower : fast_release_) {
-                follower.reset();
-            }
+            std::fill(fast_state_.begin(), fast_state_.end(), FloatType(0));
+            recovery_.reset();
             common_support_.reset();
             std::fill(fast_.begin(), fast_.end(), FloatType(0));
         }
@@ -132,11 +131,8 @@ namespace zldsp::limiter {
             channel_delta_db_ = std::max(decibels, FloatType(0));
         }
 
-        void setMicroReleaseMilliseconds(const FloatType milliseconds) {
-            micro_release_ms_ = std::max(milliseconds, FloatType(0));
-            for (auto& follower : fast_release_) {
-                follower.setReleaseSeconds(static_cast<double>(micro_release_ms_) * 0.001);
-            }
+        void setRecoverPercent(const FloatType percent) {
+            recovery_.setRecoverPercent(percent);
         }
 
         void setCeilingDecibels(const FloatType ceiling_db) {
@@ -153,10 +149,20 @@ namespace zldsp::limiter {
             }
 
             for (size_t i = 0; i < num_samples; ++i) {
+                FloatType maximum_planned{0};
+                for (size_t channel = 0; channel < num_channels; ++channel) {
+                    fast_[channel] = lookahead_[channel].processSample(attenuation_buffers[channel][i]);
+                    maximum_planned = std::max(maximum_planned, fast_[channel]);
+                }
+                const auto release_step = recovery_.processSample(maximum_planned);
                 FloatType maximum_fast{0};
                 for (size_t channel = 0; channel < num_channels; ++channel) {
-                    const auto planned = lookahead_[channel].processSample(attenuation_buffers[channel][i]);
-                    fast_[channel] = fast_release_[channel].processSample(planned);
+                    const auto planned = fast_[channel];
+                    auto& state = fast_state_[channel];
+                    // Direct assignment on attack preserves the planner floor even with rounding.
+                    state = planned >= state ? planned :
+                            std::max(planned, state + release_step * (planned - state));
+                    fast_[channel] = state;
                     maximum_fast = std::max(maximum_fast, fast_[channel]);
                 }
 
@@ -181,9 +187,9 @@ namespace zldsp::limiter {
         FloatType attack_ms_{FloatType(100)};
         FloatType release_ms_{FloatType(500)};
         FloatType channel_delta_db_{FloatType(1.5)};
-        FloatType micro_release_ms_{FloatType(50)};
         std::vector<LookaheadEnvelope<FloatType>> lookahead_{};
-        std::vector<AsymmetricFollower<FloatType>> fast_release_{};
+        std::vector<FloatType> fast_state_{};
+        AdaptiveRecovery<FloatType> recovery_{};
         AsymmetricFollower<FloatType> common_support_{};
         std::vector<FloatType> fast_{};
     };
