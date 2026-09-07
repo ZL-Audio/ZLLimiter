@@ -25,15 +25,21 @@ namespace zldsp::limiter {
     template <typename FloatType>
     class LookaheadEnvelope {
     public:
-        void prepare(const double sample_rate, const double maximum_lookahead_seconds) {
+        void prepareSamples(const size_t maximum_delay_samples, const double sample_rate = 48000.0) {
             sample_rate_ = std::max(sample_rate, 1.0);
-            maximum_delay_ = static_cast<size_t>(std::ceil(maximum_lookahead_seconds * sample_rate_));
+            maximum_delay_ = maximum_delay_samples;
             capacity_ = maximum_delay_ + 1;
             history_.resize(capacity_ * 2);
             weights_.resize(capacity_);
             weights_ready_ = false;
             reset();
-            setLookaheadSeconds(std::min(current_lookahead_seconds_, maximum_lookahead_seconds));
+            setLookaheadSeconds(std::min(current_lookahead_seconds_, static_cast<double>(maximum_delay_) / sample_rate_));
+        }
+
+        void prepare(const double sample_rate, const double maximum_lookahead_seconds) {
+            const auto max_delay = static_cast<size_t>(
+                std::round(maximum_lookahead_seconds * std::max(sample_rate, 1.0)));
+            prepareSamples(max_delay, sample_rate);
         }
 
         void reset() {
@@ -90,7 +96,7 @@ namespace zldsp::limiter {
             if (non_zero_count_ == 0) {
                 return FloatType(0);
             }
-            const auto window_start = write_position_ + (capacity_ - 1 - lookahead_);
+            const auto window_start = write_position_;
             return weightedMaximum(history_.data() + window_start, weights_.data(), lookahead_ + 1);
         }
 

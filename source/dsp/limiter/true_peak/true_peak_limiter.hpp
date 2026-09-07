@@ -139,7 +139,7 @@ namespace zldsp::limiter {
                      const double release_seconds) {
             sample_rate_ = std::max(sample_rate, 1.0);
             estimator_.prepare(maximum_channels, maximum_block_size);
-            lookahead_envelope_.prepare(sample_rate_, static_cast<double>(kLookaheadSamples) / sample_rate_);
+            lookahead_envelope_.prepareSamples(kLookaheadSamples, sample_rate_);
             release_.prepare(sample_rate_);
             release_.setAttackSeconds(0.0);
             release_.setReleaseSeconds(std::max(release_seconds, 0.0));
