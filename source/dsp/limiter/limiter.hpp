@@ -79,7 +79,8 @@ namespace zldsp::limiter {
                 static_cast<size_t>(std::ceil(kDefaultGuardianLookaheadSeconds * sample_rate_));
             guardian_.prepare(processing_rate, processing_block_size, maximum_channels,
                               guardian_delay_base_samples_ * kProcessingFactor);
-            true_peak_limiter_.prepare(sample_rate_, maximum_block_size, maximum_channels);
+            true_peak_limiter_.prepare(sample_rate_, maximum_block_size, maximum_channels,
+                                       NumOversamplingStages > 0);
 
             latency_samples_ =
                 main_delay_samples_ + guardian_delay_base_samples_ + true_peak_limiter_.getLatencySamples();
