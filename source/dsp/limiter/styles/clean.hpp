@@ -159,14 +159,13 @@ namespace zldsp::limiter {
                 for (size_t channel = 0; channel < num_channels; ++channel) {
                     const auto planned = fast_[channel];
                     auto& state = fast_state_[channel];
-                    // Direct assignment on attack preserves the planner floor even with rounding.
                     state = planned >= state ? planned :
                             std::max(planned, state + release_step * (planned - state));
                     fast_[channel] = state;
                     maximum_fast = std::max(maximum_fast, fast_[channel]);
                 }
 
-                const auto common = common_support_.processSample(maximum_planned);
+                const auto common = common_support_.processSample(maximum_fast);
                 const auto minimum_fast = maximum_fast - channel_delta_db_;
                 for (size_t channel = 0; channel < num_channels; ++channel) {
                     const auto bounded_fast = std::max(fast_[channel], minimum_fast);
