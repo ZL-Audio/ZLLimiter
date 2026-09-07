@@ -26,27 +26,27 @@ namespace zldsp::gain {
         }
 
         void setGainLinear(FloatType new_gain) noexcept {
-            gain_.setTarget(new_gain);
+            gain_.setTarget(std::max(1e-20, static_cast<double>(new_gain)));
         }
 
         void setGainDecibels(FloatType new_gain_decibels) noexcept {
-            setGainLinear(chore::decibelsToGain<FloatType>(new_gain_decibels));
+            gain_.setTarget(chore::decibelsToGain(static_cast<double>(new_gain_decibels)));
         }
 
         FloatType getTargetGainLinear() const noexcept {
-            return gain_.getTarget();
+            return static_cast<FloatType>(gain_.getTarget());
         }
 
         FloatType getTargetGainDecibels() const noexcept {
-            return chore::gainToDecibels<FloatType>(getTargetGainLinear());
+            return static_cast<FloatType>(chore::gainToDecibels(getTargetGainLinear()));
         }
 
         FloatType getCurrentGainLinear() const noexcept {
-            return gain_.getCurrent();
+            return static_cast<FloatType>(gain_.getCurrent());
         }
 
         FloatType getCurrentGainDecibels() const noexcept {
-            return chore::gainToDecibels<FloatType>(getCurrentGainLinear());
+            return static_cast<FloatType>(chore::gainToDecibels(getCurrentGainLinear()));
         }
 
         [[nodiscard]] bool isSmoothing() const noexcept {
@@ -64,18 +64,18 @@ namespace zldsp::gain {
                 if constexpr (bypass) {
                     return;
                 }
-                if (std::abs(static_cast<double>(gain_.getCurrent()) - 1.0 ) < 1e-6) {
+                if (std::abs(gain_.getCurrent() - 1.0) < 1e-6) {
                     return;
                 }
                 for (size_t chan = 0; chan < buffer.size(); ++chan) {
-                    vector::multiply(buffer[chan], gain_.getCurrent(), num_samples);
+                    vector::multiply(buffer[chan], static_cast<FloatType>(gain_.getCurrent()), num_samples);
                 }
             } else {
                 for (size_t idx = 0; idx < num_samples; ++idx) {
                     const auto gain = gain_.getNext();
                     if constexpr (!bypass) {
                         for (size_t chan = 0; chan < buffer.size(); ++chan) {
-                            buffer[chan][idx] *= gain;
+                            buffer[chan][idx] *= static_cast<FloatType>(gain);
                         }
                     }
                 }
@@ -83,6 +83,6 @@ namespace zldsp::gain {
         }
 
     private:
-        zldsp::chore::SmoothedValue<FloatType, zldsp::chore::SmoothedTypes::kFixMul> gain_{FloatType(1)};
+        zldsp::chore::SmoothedValue<double, zldsp::chore::SmoothedTypes::kFixMul> gain_{1.0};
     };
 }
