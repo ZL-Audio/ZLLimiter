@@ -50,7 +50,7 @@ namespace zldsp::limiter {
                 oversampler_.prepare(maximum_channels, maximum_block_size);
             }
             style_.prepare(sample_rate_, maximum_block_size, maximum_channels, kMaximumLookaheadSeconds);
-            input_gain_.prepare(sample_rate, maximum_block_size, 0.5);
+            input_gain_.prepare(sample_rate, maximum_block_size, 0.25);
 
             peak_buffers_.resize(maximum_channels);
             attenuation_buffers_.resize(maximum_channels);

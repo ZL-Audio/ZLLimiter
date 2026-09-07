@@ -80,6 +80,6 @@ namespace zldsp::gain {
         }
 
     private:
-        zldsp::chore::SmoothedValue<FloatType, zldsp::chore::SmoothedTypes::kFixLin> gain_{FloatType(1)};
+        zldsp::chore::SmoothedValue<FloatType, zldsp::chore::SmoothedTypes::kFixMul> gain_{FloatType(1)};
     };
 }
