@@ -128,18 +128,18 @@ namespace zldsp::limiter {
             size_t i = 0;
             for (; i + block <= size; i += block) {
                 maximum0 = hn::Max(maximum0, hn::Mul(hn::LoadU(d, values + i),
-                                                     hn::LoadU(d, weights + i)));
+                                                     hn::Load(d, weights + i)));
                 maximum1 = hn::Max(maximum1, hn::Mul(hn::LoadU(d, values + i + lanes),
-                                                     hn::LoadU(d, weights + i + lanes)));
+                                                     hn::Load(d, weights + i + lanes)));
                 maximum2 = hn::Max(maximum2, hn::Mul(hn::LoadU(d, values + i + lanes * 2),
-                                                     hn::LoadU(d, weights + i + lanes * 2)));
+                                                     hn::Load(d, weights + i + lanes * 2)));
                 maximum3 = hn::Max(maximum3, hn::Mul(hn::LoadU(d, values + i + lanes * 3),
-                                                     hn::LoadU(d, weights + i + lanes * 3)));
+                                                     hn::Load(d, weights + i + lanes * 3)));
             }
             auto vector_maximum = hn::Max(hn::Max(maximum0, maximum1), hn::Max(maximum2, maximum3));
             for (; i + lanes <= size; i += lanes) {
                 const auto value = hn::LoadU(d, values + i);
-                const auto weight = hn::LoadU(d, weights + i);
+                const auto weight = hn::Load(d, weights + i);
                 vector_maximum = hn::Max(vector_maximum, hn::Mul(value, weight));
             }
             auto result = hn::ReduceMax(d, vector_maximum);
