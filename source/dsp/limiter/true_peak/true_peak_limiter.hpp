@@ -137,7 +137,7 @@ namespace zldsp::limiter {
         static constexpr size_t kLookaheadSamples = TruePeakEstimator<FloatType>::kTapsPerPhase - 1;
         static constexpr size_t kDetectorWindowSamples = kLookaheadSamples + 1;
         static constexpr size_t kPrimeHistorySamples = kDetectorWindowSamples * 2 - 1;
-        static constexpr FloatType kUnityAttenuationDb = FloatType(1e-5);
+        static constexpr FloatType kUnityAttenuationDb = FloatType(1e-6);
         static constexpr size_t kTruePeakHoldSamples = 32;
         static constexpr size_t kTruePeakAttackSamples = kLookaheadSamples - kTruePeakHoldSamples;
 
