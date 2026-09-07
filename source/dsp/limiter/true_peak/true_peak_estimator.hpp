@@ -69,23 +69,16 @@ namespace zldsp::limiter {
             size_t i = 0;
             for (; i + lanes <= num_samples; i += lanes) {
                 auto peak = hn::Abs(hn::LoadU(d, input + i));
-                for (size_t pair = 0; pair < kNumPairs; pair += 2) {
-                    auto e0 = hn::Zero(d);
-                    auto o0 = hn::Zero(d);
-                    auto e1 = hn::Zero(d);
-                    auto o1 = hn::Zero(d);
-                    for (size_t tap = 0; tap < kHalfTaps; ++tap) {
-                        const auto left = hn::LoadU(d, history.data() + i + tap);
-                        const auto right = hn::LoadU(d, history.data() + i + kHistorySamples - tap);
-                        const auto sum = hn::Add(left, right);
-                        const auto difference = hn::Sub(left, right);
-                        e0 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[pair].even[tap]), e0);
-                        o0 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[pair].odd[tap]), o0);
-                        e1 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[pair + 1].even[tap]), e1);
-                        o1 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[pair + 1].odd[tap]), o1);
-                    }
-                    peak = hn::Max(peak, hn::Max(hn::Add(hn::Abs(e0), hn::Abs(o0)),
-                                                hn::Add(hn::Abs(e1), hn::Abs(o1))));
+                if constexpr (kPairsPerPass == 8) {
+                    peak = processPass8(d, history.data() + i, peak);
+                } else if constexpr (kPairsPerPass == 4) {
+                    peak = processPass4<0>(d, history.data() + i, peak);
+                    peak = processPass4<4>(d, history.data() + i, peak);
+                } else {
+                    peak = processPass2<0>(d, history.data() + i, peak);
+                    peak = processPass2<2>(d, history.data() + i, peak);
+                    peak = processPass2<4>(d, history.data() + i, peak);
+                    peak = processPass2<6>(d, history.data() + i, peak);
                 }
                 hn::StoreU(peak, d, output + i);
             }
@@ -128,6 +121,116 @@ namespace zldsp::limiter {
             }
             return result;
         }();
+
+#if defined(HWY_REGISTERS) && (HWY_REGISTERS >= 32)
+        static constexpr size_t kPairsPerPass = 8;
+#elif defined(HWY_REGISTERS) && (HWY_REGISTERS >= 16) && (HWY_ARCH_X86_64 || !HWY_ARCH_X86)
+        static constexpr size_t kPairsPerPass = 4;
+#else
+        static constexpr size_t kPairsPerPass = 2;
+#endif
+        static_assert(kNumPairs % kPairsPerPass == 0);
+
+        template <typename D, typename Vec>
+        HWY_INLINE static Vec processPass8(const D d, const FloatType* HWY_RESTRICT history, Vec peak) {
+            auto e0 = hn::Zero(d), o0 = hn::Zero(d);
+            auto e1 = hn::Zero(d), o1 = hn::Zero(d);
+            auto e2 = hn::Zero(d), o2 = hn::Zero(d);
+            auto e3 = hn::Zero(d), o3 = hn::Zero(d);
+            auto e4 = hn::Zero(d), o4 = hn::Zero(d);
+            auto e5 = hn::Zero(d), o5 = hn::Zero(d);
+            auto e6 = hn::Zero(d), o6 = hn::Zero(d);
+            auto e7 = hn::Zero(d), o7 = hn::Zero(d);
+
+            for (size_t tap = 0; tap < kHalfTaps; ++tap) {
+                const auto left = hn::LoadU(d, history + tap);
+                const auto right = hn::LoadU(d, history + kHistorySamples - tap);
+                const auto sum = hn::Add(left, right);
+                const auto difference = hn::Sub(left, right);
+
+                e0 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[0].even[tap]), e0);
+                o0 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[0].odd[tap]), o0);
+                e1 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[1].even[tap]), e1);
+                o1 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[1].odd[tap]), o1);
+                e2 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[2].even[tap]), e2);
+                o2 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[2].odd[tap]), o2);
+                e3 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[3].even[tap]), e3);
+                o3 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[3].odd[tap]), o3);
+                e4 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[4].even[tap]), e4);
+                o4 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[4].odd[tap]), o4);
+                e5 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[5].even[tap]), e5);
+                o5 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[5].odd[tap]), o5);
+                e6 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[6].even[tap]), e6);
+                o6 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[6].odd[tap]), o6);
+                e7 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[7].even[tap]), e7);
+                o7 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[7].odd[tap]), o7);
+            }
+
+            const auto p01 = hn::Max(hn::Add(hn::Abs(e0), hn::Abs(o0)),
+                                     hn::Add(hn::Abs(e1), hn::Abs(o1)));
+            const auto p23 = hn::Max(hn::Add(hn::Abs(e2), hn::Abs(o2)),
+                                     hn::Add(hn::Abs(e3), hn::Abs(o3)));
+            const auto p45 = hn::Max(hn::Add(hn::Abs(e4), hn::Abs(o4)),
+                                     hn::Add(hn::Abs(e5), hn::Abs(o5)));
+            const auto p67 = hn::Max(hn::Add(hn::Abs(e6), hn::Abs(o6)),
+                                     hn::Add(hn::Abs(e7), hn::Abs(o7)));
+
+            return hn::Max(peak, hn::Max(hn::Max(p01, p23), hn::Max(p45, p67)));
+        }
+
+        template <size_t BasePair, typename D, typename Vec>
+        HWY_INLINE static Vec processPass4(const D d, const FloatType* HWY_RESTRICT history, Vec peak) {
+            auto e0 = hn::Zero(d), o0 = hn::Zero(d);
+            auto e1 = hn::Zero(d), o1 = hn::Zero(d);
+            auto e2 = hn::Zero(d), o2 = hn::Zero(d);
+            auto e3 = hn::Zero(d), o3 = hn::Zero(d);
+
+            for (size_t tap = 0; tap < kHalfTaps; ++tap) {
+                const auto left = hn::LoadU(d, history + tap);
+                const auto right = hn::LoadU(d, history + kHistorySamples - tap);
+                const auto sum = hn::Add(left, right);
+                const auto difference = hn::Sub(left, right);
+
+                e0 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[BasePair + 0].even[tap]), e0);
+                o0 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[BasePair + 0].odd[tap]), o0);
+                e1 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[BasePair + 1].even[tap]), e1);
+                o1 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[BasePair + 1].odd[tap]), o1);
+                e2 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[BasePair + 2].even[tap]), e2);
+                o2 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[BasePair + 2].odd[tap]), o2);
+                e3 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[BasePair + 3].even[tap]), e3);
+                o3 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[BasePair + 3].odd[tap]), o3);
+            }
+
+            const auto p01 = hn::Max(hn::Add(hn::Abs(e0), hn::Abs(o0)),
+                                     hn::Add(hn::Abs(e1), hn::Abs(o1)));
+            const auto p23 = hn::Max(hn::Add(hn::Abs(e2), hn::Abs(o2)),
+                                     hn::Add(hn::Abs(e3), hn::Abs(o3)));
+
+            return hn::Max(peak, hn::Max(p01, p23));
+        }
+
+        template <size_t BasePair, typename D, typename Vec>
+        HWY_INLINE static Vec processPass2(const D d, const FloatType* HWY_RESTRICT history, Vec peak) {
+            auto e0 = hn::Zero(d), o0 = hn::Zero(d);
+            auto e1 = hn::Zero(d), o1 = hn::Zero(d);
+
+            for (size_t tap = 0; tap < kHalfTaps; ++tap) {
+                const auto left = hn::LoadU(d, history + tap);
+                const auto right = hn::LoadU(d, history + kHistorySamples - tap);
+                const auto sum = hn::Add(left, right);
+                const auto difference = hn::Sub(left, right);
+
+                e0 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[BasePair + 0].even[tap]), e0);
+                o0 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[BasePair + 0].odd[tap]), o0);
+                e1 = hn::MulAdd(sum, hn::Set(d, kPairedCoefficients[BasePair + 1].even[tap]), e1);
+                o1 = hn::MulAdd(difference, hn::Set(d, kPairedCoefficients[BasePair + 1].odd[tap]), o1);
+            }
+
+            const auto p01 = hn::Max(hn::Add(hn::Abs(e0), hn::Abs(o0)),
+                                     hn::Add(hn::Abs(e1), hn::Abs(o1)));
+
+            return hn::Max(peak, p01);
+        }
 
         static FloatType evaluateSample(const FloatType* history, const FloatType sample) {
             std::array<FloatType, kHalfTaps> sums{}, differences{};
