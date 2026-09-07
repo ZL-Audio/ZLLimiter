@@ -108,6 +108,23 @@ namespace zldsp::limiter {
             return lookahead_;
         }
 
+        [[nodiscard]] bool hasDemand() const noexcept {
+            return non_zero_count_ > 0;
+        }
+
+        void advanceZeros(const size_t num_samples) noexcept {
+            if (num_samples == 0) {
+                return;
+            }
+            if (non_zero_count_ == 0) {
+                write_position_ = (write_position_ + num_samples) % capacity_;
+                return;
+            }
+            for (size_t i = 0; i < num_samples; ++i) {
+                processSample(FloatType(0));
+            }
+        }
+
     private:
         double sample_rate_{48000.0};
         double current_lookahead_seconds_{0.002};

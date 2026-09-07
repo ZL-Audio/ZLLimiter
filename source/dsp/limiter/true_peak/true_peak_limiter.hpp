@@ -73,7 +73,7 @@ namespace zldsp::limiter {
         }
 
         template <typename FloatType>
-        HWY_INLINE void peaksToDemand(FloatType* HWY_RESTRICT peaks, const size_t num_samples,
+        HWY_INLINE bool peaksToDemand(FloatType* HWY_RESTRICT peaks, const size_t num_samples,
                                       const FloatType ceiling_db) {
             static constexpr hn::ScalableTag<FloatType> d;
             static constexpr size_t lanes = hn::MaxLanes(d);
@@ -83,17 +83,23 @@ namespace zldsp::limiter {
             const auto log_multiplier = hn::Set(d, kLogMultiplier);
             const auto ceiling = hn::Set(d, ceiling_db);
             const auto zero = hn::Zero(d);
+            auto max_demand_vec = hn::Zero(d);
 
             size_t i = 0;
             for (; i + lanes <= num_samples; i += lanes) {
                 const auto peak = hn::Max(hn::LoadU(d, peaks + i), log_minimum);
                 const auto peak_db = hn::Mul(hn::Log(d, peak), log_multiplier);
-                hn::StoreU(hn::Max(hn::Sub(peak_db, ceiling), zero), d, peaks + i);
+                const auto demand = hn::Max(hn::Sub(peak_db, ceiling), zero);
+                max_demand_vec = hn::Max(max_demand_vec, demand);
+                hn::StoreU(demand, d, peaks + i);
             }
+            auto max_demand = hn::ReduceMax(d, max_demand_vec);
             for (; i < num_samples; ++i) {
                 const auto peak_db = kLogMultiplier * std::log(std::max(peaks[i], kLogMinimum));
                 peaks[i] = std::max(FloatType(0), peak_db - ceiling_db);
+                max_demand = std::max(max_demand, peaks[i]);
             }
+            return max_demand > FloatType(0);
         }
 
         template <typename FloatType>
@@ -198,24 +204,42 @@ namespace zldsp::limiter {
             sample_ceiling_db_ = sample_peak_ceiling_db;
         }
 
-        void process(std::span<FloatType*> buffer, const size_t num_samples) {
+        [[nodiscard]] bool isIdle() const noexcept {
+            return !needs_prime_ && !lookahead_envelope_.hasDemand() && release_.getCurrent() <= kUnityAttenuationDb;
+        }
+
+        bool process(std::span<FloatType*> buffer, const size_t num_samples) {
             if (buffer.empty() || num_samples == 0) {
-                return;
+                return false;
             }
             switch (mode_) {
                 case StageMode::kTruePeak:
                     if (needs_prime_) {
                         primeDetector();
                     }
-                    processTruePeak(buffer, num_samples);
-                    break;
+                    return processTruePeak(buffer, num_samples);
                 case StageMode::kSamplePeak:
-                    processSamplePeak(buffer, num_samples);
-                    break;
+                    return processSamplePeak(buffer, num_samples);
                 case StageMode::kBypassed:
-                    processBypassed(buffer, num_samples);
-                    break;
+                    return processBypassed(buffer, num_samples);
             }
+            return false;
+        }
+
+        void processPassThrough(std::span<FloatType*> buffer, const size_t num_samples) {
+            if (buffer.empty() || num_samples == 0) {
+                return;
+            }
+            bypassed_ = (mode_ == StageMode::kBypassed);
+            cacheInputBlock(buffer, num_samples);
+            if (mode_ == StageMode::kTruePeak) {
+                for (size_t channel = 0; channel < buffer.size(); ++channel) {
+                    estimator_.updateHistoryOnly(channel, buffer[channel], num_samples);
+                }
+            }
+            lookahead_envelope_.advanceZeros(num_samples);
+            release_.reset();
+            delay_.process(buffer, num_samples);
         }
 
         [[nodiscard]] size_t getLatencySamples() const {
@@ -248,7 +272,7 @@ namespace zldsp::limiter {
             }
         }
 
-        void processTruePeak(std::span<FloatType*> buffer, const size_t num_samples) {
+        bool processTruePeak(std::span<FloatType*> buffer, const size_t num_samples) {
             bypassed_ = false;
             cacheInputBlock(buffer, num_samples);
             estimator_.processBlock(0, buffer[0], reconstructed_peaks_.data(), num_samples);
@@ -256,10 +280,22 @@ namespace zldsp::limiter {
                 estimator_.processBlock(channel, buffer[channel], channel_peaks_.data(), num_samples);
                 true_peak_detail::maximumInPlace(reconstructed_peaks_.data(), channel_peaks_.data(), num_samples);
             }
-            true_peak_detail::peaksToDemand(reconstructed_peaks_.data(), num_samples, ceiling_db_);
+            const bool has_demand =
+                true_peak_detail::peaksToDemand(reconstructed_peaks_.data(), num_samples, ceiling_db_);
+            const bool was_idle = !lookahead_envelope_.hasDemand() && release_.getCurrent() <= kUnityAttenuationDb;
+            if (!has_demand && was_idle) {
+                lookahead_envelope_.advanceZeros(num_samples);
+                release_.reset();
+                delay_.process(buffer, num_samples);
+                return false;
+            }
+
             for (size_t i = 0; i < num_samples; ++i) {
                 const auto future_maximum_db = lookahead_envelope_.processSample(reconstructed_peaks_[i]);
                 gains_[i] = release_.processSample(future_maximum_db);
+            }
+            if (release_.getCurrent() <= kUnityAttenuationDb) {
+                release_.reset();
             }
             true_peak_detail::attenuationToGain(gains_.data(), num_samples);
 
@@ -267,9 +303,10 @@ namespace zldsp::limiter {
             for (auto* channel : buffer) {
                 vector::multiply(channel, gains_.data(), num_samples);
             }
+            return true;
         }
 
-        void processSamplePeak(std::span<FloatType*> buffer, const size_t num_samples) {
+        bool processSamplePeak(std::span<FloatType*> buffer, const size_t num_samples) {
             bypassed_ = false;
             cacheInputBlock(buffer, num_samples);
 
@@ -277,11 +314,22 @@ namespace zldsp::limiter {
             for (size_t channel = 1; channel < buffer.size(); ++channel) {
                 true_peak_detail::absoluteMaximumInPlace(reconstructed_peaks_.data(), buffer[channel], num_samples);
             }
-            true_peak_detail::peaksToDemand(reconstructed_peaks_.data(), num_samples, sample_ceiling_db_);
+            const bool has_demand =
+                true_peak_detail::peaksToDemand(reconstructed_peaks_.data(), num_samples, sample_ceiling_db_);
+            const bool was_idle = !lookahead_envelope_.hasDemand() && release_.getCurrent() <= kUnityAttenuationDb;
+            if (!has_demand && was_idle) {
+                lookahead_envelope_.advanceZeros(num_samples);
+                release_.reset();
+                delay_.process(buffer, num_samples);
+                return false;
+            }
 
             for (size_t i = 0; i < num_samples; ++i) {
                 const auto future_maximum_db = lookahead_envelope_.processSample(reconstructed_peaks_[i]);
                 gains_[i] = release_.processSample(future_maximum_db);
+            }
+            if (release_.getCurrent() <= kUnityAttenuationDb) {
+                release_.reset();
             }
             true_peak_detail::attenuationToGain(gains_.data(), num_samples);
 
@@ -289,15 +337,16 @@ namespace zldsp::limiter {
             for (auto* channel : buffer) {
                 vector::multiply(channel, gains_.data(), num_samples);
             }
+            return true;
         }
 
-        void processBypassed(std::span<FloatType*> buffer, const size_t num_samples) {
+        bool processBypassed(std::span<FloatType*> buffer, const size_t num_samples) {
             cacheInputBlock(buffer, num_samples);
             if (bypassed_ || release_.getCurrent() <= kUnityAttenuationDb) {
                 release_.reset();
                 bypassed_ = true;
                 delay_.process(buffer, num_samples);
-                return;
+                return false;
             }
 
             for (size_t i = 0; i < num_samples; ++i) {
@@ -315,6 +364,7 @@ namespace zldsp::limiter {
             for (auto* channel : buffer) {
                 vector::multiply(channel, gains_.data(), num_samples);
             }
+            return true;
         }
 
         void cacheInputBlock(const std::span<FloatType*> buffer, const size_t num_samples) {
@@ -430,9 +480,22 @@ namespace zldsp::limiter {
             if (buffer.empty() || num_samples == 0) {
                 return;
             }
-            first_.process(buffer, num_samples);
-            second_.process(buffer, num_samples);
-            third_.process(buffer, num_samples);
+            const bool first_reducing = first_.process(buffer, num_samples);
+            if (!first_reducing && second_.isIdle()) {
+                second_.processPassThrough(buffer, num_samples);
+                if (third_.isIdle()) {
+                    third_.processPassThrough(buffer, num_samples);
+                } else {
+                    third_.process(buffer, num_samples);
+                }
+            } else {
+                const bool second_reducing = second_.process(buffer, num_samples);
+                if (!second_reducing && third_.isIdle()) {
+                    third_.processPassThrough(buffer, num_samples);
+                } else {
+                    third_.process(buffer, num_samples);
+                }
+            }
         }
 
         [[nodiscard]] size_t getLatencySamples() const {

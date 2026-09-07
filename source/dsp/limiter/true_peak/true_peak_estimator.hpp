@@ -56,6 +56,20 @@ namespace zldsp::limiter {
             return peak;
         }
 
+        void updateHistoryOnly(const size_t channel, const FloatType* HWY_RESTRICT input,
+                               const size_t num_samples) {
+            if (num_samples == 0) {
+                return;
+            }
+            auto& history = histories_[channel];
+            if (num_samples >= kHistorySamples) {
+                vector::copy(history.data(), input + num_samples - kHistorySamples, kHistorySamples);
+            } else {
+                std::memmove(history.data(), history.data() + num_samples, (kHistorySamples - num_samples) * sizeof(FloatType));
+                vector::copy(history.data() + (kHistorySamples - num_samples), input, num_samples);
+            }
+        }
+
         void processBlock(const size_t channel, const FloatType* HWY_RESTRICT input,
                           FloatType* HWY_RESTRICT output, const size_t num_samples) {
             if (num_samples == 0) {
