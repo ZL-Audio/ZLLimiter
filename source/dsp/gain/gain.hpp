@@ -22,7 +22,7 @@ namespace zldsp::gain {
         Gain() noexcept = default;
 
         void reset() {
-            gain_.setCurrentAndTarget(FloatType(1));
+            gain_.setCurrentAndTarget(gain_.getTarget());
         }
 
         void setGainLinear(FloatType new_gain) noexcept {
@@ -62,6 +62,9 @@ namespace zldsp::gain {
         void process(std::span<FloatType*> buffer, const size_t num_samples) {
             if (!gain_.isSmoothing()) {
                 if constexpr (bypass) {
+                    return;
+                }
+                if (std::abs(static_cast<double>(gain_.getCurrent()) - 1.0 ) < 1e-6) {
                     return;
                 }
                 for (size_t chan = 0; chan < buffer.size(); ++chan) {
