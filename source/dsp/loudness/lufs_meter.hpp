@@ -9,6 +9,11 @@
 
 #pragma once
 
+#include <array>
+#include <bit>
+#include <cmath>
+#include <limits>
+
 #include "../vector/vector.hpp"
 #include "k_weighting_filter.hpp"
 
@@ -35,6 +40,7 @@ namespace zldsp::loudness {
 
             max_idx_ = static_cast<int>(sample_rate * 0.1);
             mean_mul_ = static_cast<FloatType>(2.5 / sample_rate);
+            short_term_mean_mul_ = 1.0 / (static_cast<double>(max_idx_) * kShortTermBlockCount);
 
             small_buffer_.resize(num_channels);
             small_buffer_ptrs_.resize(num_channels);
@@ -49,6 +55,10 @@ namespace zldsp::loudness {
             k_weighting_filter_.reset();
             current_idx_ = 0;
             ready_count_ = 0;
+            short_term_energy_tree_.fill(0.0);
+            short_term_write_idx_ = 0;
+            short_term_ready_count_ = 0;
+            short_term_loudness_ = -std::numeric_limits<FloatType>::infinity();
             std::fill(histogram_.begin(), histogram_.end(), FloatType(0));
             std::fill(histogram_sums_.begin(), histogram_sums_.end(), FloatType(0));
             for (auto& buffer : small_buffer_) {
@@ -82,9 +92,19 @@ namespace zldsp::loudness {
             }
         }
 
+        [[nodiscard]] FloatType getShortTermLoudness() const noexcept {
+            return short_term_loudness_;
+        }
+
+        [[nodiscard]] bool isShortTermReady() const noexcept {
+            return short_term_ready_count_ == kShortTermBlockCount;
+        }
+
         FloatType getIntegratedLoudness() const {
             const auto total_count = vector::sum(histogram_.data(), histogram_.size());
-            if (total_count < FloatType(0.5)) { return FloatType(0); }
+            if (total_count < FloatType(0.5)) {
+                return FloatType(0);
+            }
             const auto total_sum = vector::sum(histogram_sums_.data(), histogram_sums_.size());
             const auto total_mean_square = total_sum / total_count;
             const auto total_lufs = FloatType(-0.691) + FloatType(10) * std::log10(total_mean_square);
@@ -113,9 +133,34 @@ namespace zldsp::loudness {
         FloatType mean_mul_{1};
         std::array<FloatType, 4> sum_squares_{};
 
+        static constexpr size_t kShortTermBlockCount = 30;
+        static constexpr size_t kShortTermTreeLeaves = std::bit_ceil(kShortTermBlockCount);
+        std::array<double, kShortTermTreeLeaves * 2> short_term_energy_tree_{};
+        size_t short_term_write_idx_{0}, short_term_ready_count_{0};
+        double short_term_mean_mul_{1};
+        FloatType short_term_loudness_{-std::numeric_limits<FloatType>::infinity()};
+
         vector::aligned_vector<FloatType> histogram_{};
         vector::aligned_vector<FloatType> histogram_sums_{};
         std::vector<FloatType> weights_;
+
+        void updateShortTerm(const FloatType sum_square) {
+            auto index = kShortTermTreeLeaves + short_term_write_idx_;
+            short_term_energy_tree_[index] = static_cast<double>(sum_square);
+            while (index > 1) {
+                index /= 2;
+                short_term_energy_tree_[index] = short_term_energy_tree_[index * 2]
+                    + short_term_energy_tree_[index * 2 + 1];
+            }
+            short_term_write_idx_ = (short_term_write_idx_ + 1) % kShortTermBlockCount;
+            short_term_ready_count_ = std::min(short_term_ready_count_ + 1, kShortTermBlockCount);
+            if (isShortTermReady()) {
+                const auto mean_square = short_term_energy_tree_[1] * short_term_mean_mul_;
+                short_term_loudness_ = mean_square > 0.0
+                    ? static_cast<FloatType>(-0.691 + 10.0 * std::log10(mean_square))
+                    : -std::numeric_limits<FloatType>::infinity();
+            }
+        }
 
         void update() {
             // perform K-weighting filtering
@@ -127,6 +172,7 @@ namespace zldsp::loudness {
                                                                 small_buffer_[channel].size());
                 sum_square += channel_sum_square * weights_[channel];
             }
+            updateShortTerm(sum_square);
             // shift circular sumSquares
             sum_squares_[0] = sum_squares_[1];
             sum_squares_[1] = sum_squares_[2];

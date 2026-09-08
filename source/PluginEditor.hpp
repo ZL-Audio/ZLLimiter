@@ -10,16 +10,19 @@
 #pragma once
 
 #include "PluginProcessor.hpp"
+#include "BinaryData.h"
 
+#include "panel/main_panel.hpp"
+#include "gui/gui.hpp"
 #include "state/state.hpp"
 
 //==============================================================================
 class PluginEditor final : public juce::AudioProcessorEditor,
-                           private juce::MultiTimer,
-                           private juce::ValueTree::Listener,
-                           private juce::AsyncUpdater {
+                     private juce::MultiTimer,
+                     private juce::ValueTree::Listener,
+                     private juce::AsyncUpdater {
 public:
-    explicit PluginEditor(PluginProcessor& p);
+    explicit PluginEditor(PluginProcessor&);
 
     ~PluginEditor() override;
 
@@ -40,16 +43,16 @@ public:
 
 private:
     PluginProcessor& p_ref_;
-    zlstate::DummyProcessor dummy_processor_;
-    juce::AudioProcessorValueTreeState state_;
-    zlstate::Property property_;
+    zlstate::Property& property_;
     juce::Value last_ui_width_, last_ui_height_;
+
+    zlgui::UIBase base_;
+    zlpanel::MainPanel main_panel_;
 
     std::unique_ptr<juce::VBlankAttachment> vblank_;
 
     static constexpr int kVisibilityTimer = 0;
     static constexpr int kPropertySaveTimer = 1;
-
     static constexpr int kPropertySaveDelayMS = 1000;
 
     void timerCallback(int timer_id) override;

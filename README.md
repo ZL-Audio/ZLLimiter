@@ -62,3 +62,5 @@ JUCE template from [pamplejuce](https://github.com/sudara/pamplejuce)
 [Material Symbols](https://github.com/google/material-design-icons) by [Google](https://github.com/google)
 
 [inter](https://github.com/rsms/inter) by [The Inter Project Authors](https://github.com/rsms/inter)
+
+Yuriy Ivantsov. *On the Ideal Bilinear and Biquadratic Digital Filter*. (2025).

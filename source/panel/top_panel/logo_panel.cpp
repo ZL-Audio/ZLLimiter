@@ -1,0 +1,54 @@
+// Copyright (C) 2026 - zsliu98
+// This file is part of ZLLimiter
+//
+// ZLLimiter is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License Version 3 as published by the Free Software Foundation.
+//
+// ZLLimiter is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License along with ZLLimiter. If not, see <https://www.gnu.org/licenses/>.
+
+#include "logo_panel.hpp"
+#include "BinaryData.h"
+
+namespace zlpanel {
+    LogoPanel::LogoPanel(PluginProcessor&, zlgui::UIBase& base, multilingual::TooltipHelper&) :
+        base_(base),
+        brand_drawable_(juce::Drawable::createFromImageData(BinaryData::zlaudio_svg, BinaryData::zlaudio_svgSize)),
+        logo_drawable_(juce::Drawable::createFromImageData(BinaryData::logo_svg, BinaryData::logo_svgSize)) {
+        setAlpha(.5f);
+    }
+
+    void LogoPanel::paint(juce::Graphics& g) {
+        const auto temp_brand = brand_drawable_->createCopy();
+        const auto temp_logo = logo_drawable_->createCopy();
+        temp_brand->replaceColour(juce::Colours::black, base_.getTextColour());
+        temp_logo->replaceColour(juce::Colours::black, base_.getTextColour());
+        temp_logo->replaceColour(juce::Colour::fromRGBA(0, 0, 0, 127), base_.getTextColour().withMultipliedAlpha(.5f));
+        temp_logo->replaceColour(juce::Colour::fromRGBA(0, 0, 0, 63), base_.getTextColour().withMultipliedAlpha(.25f));
+        temp_logo->replaceColour(juce::Colour::fromRGBA(0, 0, 0, 191), base_.getTextColour().withMultipliedAlpha(.75f));
+
+        const auto padding = getPaddingSize(base_.getFontSize());
+
+        auto bound = getLocalBounds();
+
+        const auto bound1 = bound.removeFromLeft(bound.getHeight()).toFloat();
+        temp_brand->drawWithin(g, bound1, juce::RectanglePlacement::centred, 1.f);
+
+        bound.removeFromLeft(padding);
+        const auto bound2 = bound.removeFromLeft(bound.getHeight()).toFloat();
+        temp_logo->drawWithin(g, bound2, juce::RectanglePlacement::centred, 1.f);
+    }
+
+    void LogoPanel::mouseEnter(const juce::MouseEvent&) {
+        setAlpha(.75f);
+    }
+
+    void LogoPanel::mouseExit(const juce::MouseEvent&) {
+        setAlpha(.5f);
+    }
+
+    void LogoPanel::mouseDown(const juce::MouseEvent&) {
+        const auto panel_open = static_cast<float>(base_.getPanelProperty(zlgui::kUISettingPanel));
+        base_.setPanelProperty(zlgui::kUISettingPanel, panel_open < .5f ? 1.f : 0.f);
+    }
+}

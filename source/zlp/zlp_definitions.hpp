@@ -228,7 +228,7 @@ namespace zlp {
         static constexpr auto kID = "output_ceiling";
         static constexpr auto kName = "Output Ceiling";
         inline static const auto kRange = juce::NormalisableRange<float>(-12.f, 0.f, 0.01f);
-        static constexpr auto kDefaultV = -.1f;
+        static constexpr auto kDefaultV = 0.f;
     };
 
     class PBypass : public BoolParameters<PBypass> {

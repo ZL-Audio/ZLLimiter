@@ -19,6 +19,8 @@ public:
     zlstate::DummyProcessor dummy_processor_;
     juce::AudioProcessorValueTreeState parameters_;
     juce::AudioProcessorValueTreeState parameters_NA_;
+    juce::AudioProcessorValueTreeState state_;
+    zlstate::Property property_;
 
     PluginProcessor();
 

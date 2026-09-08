@@ -13,6 +13,8 @@
 #include <vector>
 #include <span>
 #include <algorithm>
+#include <cmath>
+#include <mutex>
 
 #include "../../container/fifo/abstract_fifo.hpp"
 #include "../../../chore/thread/spin_lock.hpp"
@@ -33,15 +35,14 @@ namespace zldsp::analyzer {
                      const size_t max_num_samples,
                      const std::array<size_t, kNum> num_channels,
                      const double fifo_size_second) {
-            lock_.lock();
+            const std::lock_guard guard(lock_);
             sample_rate_ = sample_rate;
             max_num_samples_ = max_num_samples;
             num_channels_ = num_channels;
 
             setFIFOSize(std::max(max_num_samples,
-                                 static_cast<size_t>(std::round(sample_rate * fifo_size_second))),
+                                 static_cast<size_t>(std::ceil(sample_rate * fifo_size_second))) + 1,
                         num_channels);
-            lock_.unlock();
         }
 
         /**
@@ -52,11 +53,15 @@ namespace zldsp::analyzer {
         void process(std::array<std::span<FloatType*>, kNum> buffers, const size_t num_samples) {
             // calculate free space
             const int free_space = std::min(static_cast<int>(num_samples), abstract_fifo_.getNumFree());
-            if (free_space == 0) { return; }
+            if (free_space == 0) {
+                return;
+            }
             // push samples
             const auto range = abstract_fifo_.prepareToWrite(free_space);
             for (size_t i = 0; i < kNum; ++i) {
-                if (!is_on_[i]) { continue; }
+                if (!is_on_[i]) {
+                    continue;
+                }
                 const auto buffer = buffers[i];
                 if (range.block_size1 > 0) {
                     for (size_t chan = 0; chan < buffer.size(); ++chan) {
@@ -88,7 +93,7 @@ namespace zldsp::analyzer {
             return sample_fifos_;
         }
 
-        zldsp::lock::SpinLock& getLock() {
+        zlchore::lock::SpinLock& getLock() {
             return lock_;
         }
 
@@ -107,9 +112,9 @@ namespace zldsp::analyzer {
     protected:
         zlchore::lock::SpinLock lock_;
 
-        double sample_rate_{48000};
-        std::array<size_t, kNum> num_channels_;
-        size_t max_num_samples_{1};
+        double sample_rate_{0};
+        std::array<size_t, kNum> num_channels_{};
+        size_t max_num_samples_{0};
 
         std::array<std::vector<std::vector<float>>, kNum> sample_fifos_;
         zldsp::container::AbstractFIFO abstract_fifo_{0};

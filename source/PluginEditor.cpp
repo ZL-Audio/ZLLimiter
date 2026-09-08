@@ -12,15 +12,54 @@
 PluginEditor::PluginEditor(PluginProcessor& p) :
     AudioProcessorEditor(&p),
     p_ref_(p),
-    state_(dummy_processor_, nullptr,
-           juce::Identifier(zlstate::schema::kUISettings),
-           zlstate::getStateParameterLayout()),
-    property_(state_) {
+    property_(initProperty(p)),
+    base_(p.state_),
+    main_panel_(p, base_) {
     // set font
-    sendLookAndFeelChange();
+#if defined(JUCE_WINDOWS)
+    base_.font_ = juce::Typeface::createSystemTypefaceFor(
+        BinaryData::InterSubsetMediumNoHinting_ttf, BinaryData::InterSubsetMediumNoHinting_ttfSize);
+#else
+    base_.font_ = juce::Typeface::createSystemTypefaceFor(
+        BinaryData::InterSubsetMedium_ttf, BinaryData::InterSubsetMedium_ttfSize);
+#endif
+    juce::LookAndFeel::getDefaultLookAndFeel().setDefaultSansSerifTypeface(base_.font_);
+
+    // add the main panel
+    addAndMakeVisible(main_panel_);
+    main_panel_.addMouseListener(this, true);
+
+    // set size & size listener
+    setResizeLimits(static_cast<int>(zlstate::PWindowW::kMinV),
+                    static_cast<int>(zlstate::PWindowH::kMinV),
+                    static_cast<int>(zlstate::PWindowW::kMaxV),
+                    static_cast<int>(zlstate::PWindowH::kMaxV));
+    setResizable(true, p.wrapperType != PluginProcessor::wrapperType_AudioUnitv3);
+
+    this->resizableCorner = std::make_unique<zlgui::ResizeCorner>(base_, this, getConstrainer(),
+                                                                  zlgui::ResizeCorner::kScaleWithWidth, 0.025f);
+    addChildComponent(this->resizableCorner.get());
+    this->resizableCorner->setAlwaysOnTop(true);
+    this->resizableCorner->resized();
+
+    last_ui_width_.referTo(p.state_.getParameterAsValue(zlstate::PWindowW::kID));
+    last_ui_height_.referTo(p.state_.getParameterAsValue(zlstate::PWindowH::kID));
+    setSize(last_ui_width_.getValue(), last_ui_height_.getValue());
+
+    startTimer(kVisibilityTimer, 500);
+    updateIsShowing();
+
+    base_.setPanelProperty(zlgui::kUISettingChanged, true);
+    base_.getPanelValueTree().addListener(this);
 }
 
 PluginEditor::~PluginEditor() {
+    main_panel_.removeMouseListener(this);
+    base_.getPanelValueTree().removeListener(this);
+    flushPendingPropertySave();
+    vblank_.reset();
+    stopTimer(kVisibilityTimer);
+    p_ref_.getController().setAnalyzerEnabled(false);
 }
 
 void PluginEditor::paint(juce::Graphics& g) {
@@ -28,6 +67,19 @@ void PluginEditor::paint(juce::Graphics& g) {
 }
 
 void PluginEditor::resized() {
+    main_panel_.setBounds(getLocalBounds());
+    if (!base_.getWindowSizeFix()) {
+        const auto width = getWidth();
+        const auto height = getHeight();
+        const auto size_changed = width != static_cast<int>(last_ui_width_.getValue()) ||
+            height != static_cast<int>(last_ui_height_.getValue());
+        last_ui_width_ = width;
+        last_ui_height_ = height;
+        triggerAsyncUpdate();
+        if (size_changed) {
+            schedulePropertySave();
+        }
+    }
 }
 
 void PluginEditor::visibilityChanged() {
@@ -42,10 +94,15 @@ void PluginEditor::minimisationStateChanged(bool) {
     updateIsShowing();
 }
 
-void PluginEditor::valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) {
+void PluginEditor::valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier& property) {
+    if (base_.isPanelIdentifier(zlgui::kUISettingChanged, property)) {
+        triggerAsyncUpdate();
+        schedulePropertySave();
+    }
 }
 
 void PluginEditor::handleAsyncUpdate() {
+    main_panel_.resized();
     sendLookAndFeelChange();
 }
 
@@ -64,11 +121,21 @@ void PluginEditor::schedulePropertySave() {
 void PluginEditor::flushPendingPropertySave() {
     if (isTimerRunning(kPropertySaveTimer)) {
         stopTimer(kPropertySaveTimer);
-        property_.saveAPVTS(state_);
+        property_.saveAPVTS(p_ref_.state_);
     }
 }
 
 void PluginEditor::updateIsShowing() {
+    if (isShowing() != base_.getIsEditorShowing()) {
+        base_.setIsEditorShowing(isShowing());
+        p_ref_.getController().setAnalyzerEnabled(base_.getIsEditorShowing());
+        if (base_.getIsEditorShowing()) {
+            vblank_ = std::make_unique<juce::VBlankAttachment>(
+                &main_panel_, [this](const double x) { main_panel_.repaintCallBack(x); });
+        } else {
+            vblank_.reset();
+        }
+    }
 }
 
 int PluginEditor::getControlParameterIndex(Component& c) {
@@ -89,7 +156,7 @@ void PluginEditor::mouseDown(const juce::MouseEvent& event) {
             if (const auto id = event.originalComponent->getComponentID(); !id.isEmpty()) {
                 if (const auto para = p_ref_.parameters_.getParameter(id); para != nullptr) {
                     if (const auto* context = getHostContext(); context != nullptr) {
-                        if (auto menu = context->getContextMenuForParameter(para)) {
+                        if (const auto menu = context->getContextMenuForParameter(para)) {
                             menu->showNativeMenu(juce::Component::getMouseXYRelative());
                         }
                     }
@@ -97,4 +164,9 @@ void PluginEditor::mouseDown(const juce::MouseEvent& event) {
             }
         }
     }
+}
+
+zlstate::Property& PluginEditor::initProperty(PluginProcessor& p) {
+    p.property_.loadAPVTS(p.state_);
+    return p.property_;
 }

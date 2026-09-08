@@ -21,7 +21,6 @@
 #include "../delay/integer_delay.hpp"
 #include "../over_sample/over_sample.hpp"
 #include "../vector/vector.hpp"
-#include "../gain/gain.hpp"
 
 #include "limiter_definitions.hpp"
 #include "detector/peak_detector.hpp"
@@ -50,7 +49,6 @@ namespace zldsp::limiter {
                 oversampler_.prepare(maximum_channels, maximum_block_size);
             }
             style_.prepare(sample_rate_, maximum_block_size, maximum_channels, kMaximumLookaheadSeconds);
-            input_gain_.prepare(sample_rate, maximum_block_size, 0.25);
 
             peak_buffers_.resize(maximum_channels);
             attenuation_buffers_.resize(maximum_channels);
@@ -101,14 +99,9 @@ namespace zldsp::limiter {
             main_delay_.setDelayInSamples(static_cast<int>(main_delay_samples_ * kProcessingFactor));
             guardian_.reset();
             true_peak_limiter_.reset();
-            input_gain_.reset();
             for (auto& interpolator : attenuation_interpolators_) {
                 interpolator.reset();
             }
-        }
-
-        void setInputGainDecibels(const FloatType gain_db) {
-            input_gain_.setGainDecibels(gain_db);
         }
 
         void setOutputCeilingDecibels(const FloatType ceiling_db, const FloatType safety_margin_db = FloatType(0.05)) {
@@ -153,7 +146,6 @@ namespace zldsp::limiter {
             const auto num_channels = buffer.size();
             const auto processing_samples = num_samples * kProcessingFactor;
 
-            input_gain_.process(buffer, num_samples);
             auto processing_buffer = buffer;
             // up-sample
             if constexpr (NumOversamplingStages > 0) {
@@ -209,7 +201,6 @@ namespace zldsp::limiter {
         FloatType safety_margin_db_{FloatType(0.05)};
         FloatType final_ceiling_linear_{chore::decibelsToGain(FloatType(-1))};
         bool true_peak_enabled_{true};
-        zldsp::gain::Gain<FloatType> input_gain_{};
 
         using OverSamplerType = std::conditional_t<NumOversamplingStages == 0, std::monostate,
                                                    oversample::OverSampler<FloatType, NumOversamplingStages>>;

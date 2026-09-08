@@ -11,6 +11,8 @@
 
 #include <algorithm>
 #include <numbers>
+#include <span>
+
 #include "../filter/iir_filter/tdf/tdf.hpp"
 
 namespace zldsp::loudness {

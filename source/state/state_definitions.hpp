@@ -12,7 +12,9 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 
 namespace zlstate {
-    inline constexpr int kVersionHint = 1;
+    inline static constexpr int kVersionHint = 1;
+
+    inline static constexpr size_t kBandNUM = 8;
 
     // float
     template <class T>
@@ -33,7 +35,7 @@ namespace zlstate {
         static std::unique_ptr<juce::AudioParameterFloat> get(const std::string& suffix, const bool meta,
                                                               const bool automate = true) {
             auto attributes = juce::AudioParameterFloatAttributes().withAutomatable(automate).withLabel(T::kName).
-                withMeta(meta);
+                                                                    withMeta(meta);
             return std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(T::kID + suffix, kVersionHint),
                                                                T::kName + suffix, T::kRange, T::kDefaultV, attributes);
         }
@@ -62,7 +64,7 @@ namespace zlstate {
         static std::unique_ptr<juce::AudioParameterBool> get(const std::string& suffix, const bool meta,
                                                              const bool automate = true) {
             auto attributes = juce::AudioParameterBoolAttributes().withAutomatable(automate).withLabel(T::kName).
-                withMeta(meta);
+                                                                   withMeta(meta);
             return std::make_unique<juce::AudioParameterBool>(juce::ParameterID(T::kID + suffix, kVersionHint),
                                                               T::kName + suffix, T::kDefaultV, attributes);
         }
@@ -91,8 +93,8 @@ namespace zlstate {
 
         static std::unique_ptr<juce::AudioParameterChoice> get(const std::string& suffix, const bool meta,
                                                                const bool automate = true) {
-            auto attributes = juce::AudioParameterChoiceAttributes().withAutomatable(automate).withLabel(T::kName).
-                withMeta(meta);
+            auto attributes = juce::AudioParameterChoiceAttributes().withAutomatable(
+                automate).withLabel(T::kName).withMeta(meta);
             return std::make_unique<juce::AudioParameterChoice>(juce::ParameterID(T::kID + suffix, kVersionHint),
                                                                 T::kName + suffix, T::kChoices, T::kDefaultI,
                                                                 attributes);
@@ -103,8 +105,78 @@ namespace zlstate {
         }
     };
 
+    class PAnalyzerMagType : public ChoiceParameters<PAnalyzerMagType> {
+    public:
+        static constexpr auto kID = "analyzer_mag_type";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = juce::StringArray{
+            "Peak", "True Peak"
+        };
+        static constexpr int kDefaultI = 0;
+    };
+
+    class PAnalyzerMoveType : public ChoiceParameters<PAnalyzerMoveType> {
+    public:
+        static constexpr auto kID = "analyzer_move_type";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = juce::StringArray{
+            "Sync", "Slow", "Roll"
+        };
+        static constexpr int kDefaultI = 0;
+    };
+
+    class PAnalyzerMinDB : public ChoiceParameters<PAnalyzerMinDB> {
+    public:
+        static constexpr auto kID = "analyzer_min_db";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = juce::StringArray{
+            "-6", "-9", "-18", "-36", "-54"
+        };
+        static constexpr std::array kDBs = {-6.f, -9.f, -18.f, -36.f, -54.f};
+        static constexpr int kDefaultI = 3;
+
+        static constexpr float getDBFromIndex(const float x) {
+            return kDBs[static_cast<size_t>(std::round(x))];
+        }
+    };
+
+    class PAnalyzerTimeLength : public ChoiceParameters<PAnalyzerTimeLength> {
+    public:
+        static constexpr auto kID = "analyzer_time_length";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = juce::StringArray{
+            "6 s", "9 s", "12 s", "18 s"
+        };
+        static constexpr std::array kLength = {6.f, 9.f, 12.f, 18.f};
+        static constexpr int kDefaultI = 1;
+    };
+
+    class PPreCurveDisplay : public BoolParameters<PPreCurveDisplay> {
+    public:
+        static constexpr auto kID = "pre_curve_display";
+        static constexpr auto kName = "";
+        static constexpr auto kDefaultV = true;
+    };
+
+    class PPostCurveDisplay : public BoolParameters<PPostCurveDisplay> {
+    public:
+        static constexpr auto kID = "post_curve_display";
+        static constexpr auto kName = "";
+        static constexpr auto kDefaultV = true;
+    };
+
+    class PDeltaCurveDisplay : public BoolParameters<PDeltaCurveDisplay> {
+    public:
+        static constexpr auto kID = "delta_curve_display";
+        static constexpr auto kName = "";
+        static constexpr auto kDefaultV = true;
+    };
+
     inline juce::AudioProcessorValueTreeState::ParameterLayout getNAParameterLayout() {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;
+        layout.add(PAnalyzerMagType::get(false), PAnalyzerMoveType::get(false),
+                   PAnalyzerMinDB::get(false), PAnalyzerTimeLength::get(false),
+                   PPreCurveDisplay::get(false), PPostCurveDisplay::get(false), PDeltaCurveDisplay::get(false));
         return layout;
     }
 
@@ -112,9 +184,9 @@ namespace zlstate {
     public:
         static constexpr auto kID = "window_w";
         static constexpr auto kName = "";
-        static constexpr auto kMinV = 600.f;
-        static constexpr auto kMaxV = 6000.f;
-        static constexpr auto kDefaultV = 600.f;
+        inline static constexpr float kMinV = 600.f;
+        inline static constexpr float kMaxV = 6000.f;
+        inline static constexpr float kDefaultV = 600.f;
         inline static const auto kRange = juce::NormalisableRange<float>(kMinV, kMaxV, 1.f);
     };
 
@@ -122,9 +194,9 @@ namespace zlstate {
     public:
         static constexpr auto kID = "window_h";
         static constexpr auto kName = "";
-        static constexpr auto kMinV = 345.f;
-        static constexpr auto kMaxV = 6000.f;
-        static constexpr auto kDefaultV = 371.f;
+        inline static constexpr float kMinV = 345.f;
+        inline static constexpr float kMaxV = 6000.f;
+        inline static constexpr float kDefaultV = 371.f;
         inline static const auto kRange = juce::NormalisableRange<float>(kMinV, kMaxV, 1.f);
     };
 
@@ -206,22 +278,6 @@ namespace zlstate {
         static constexpr auto kDefaultV = .25f;
     };
 
-    class PDraggerSensitivity : public FloatParameters<PDraggerSensitivity> {
-    public:
-        static constexpr auto kID = "dragger_sensitivity";
-        static constexpr auto kName = "";
-        inline static const auto kRange = juce::NormalisableRange<float>(0.01f, 1.f, 0.01f);
-        static constexpr auto kDefaultV = 1.f;
-    };
-
-    class PDraggerFineSensitivity : public FloatParameters<PDraggerFineSensitivity> {
-    public:
-        static constexpr auto kID = "dragger_fine_sensitivity";
-        static constexpr auto kName = "";
-        inline static const auto kRange = juce::NormalisableRange<float>(0.01f, 1.f, 0.01f);
-        static constexpr auto kDefaultV = .25f;
-    };
-
     class PWheelComboboxSensitivity : public FloatParameters<PWheelComboboxSensitivity> {
     public:
         static constexpr auto kID = "wheel_combobox_sensitivity";
@@ -264,6 +320,24 @@ namespace zlstate {
         static constexpr int kDefaultI = 1;
     };
 
+    class PMouseOption {
+    public:
+        inline static const auto kChoices = juce::StringArray{
+            "Left Click", "Right Click", "Left Double Click", "Right Double Click"
+        };
+    };
+
+    class PKeyOption {
+    public:
+        inline static const auto kChoices = juce::StringArray{
+#if JUCE_MAC
+            "None", "Command", "Shift", "Option"
+#else
+            "None", "Ctrl", "Shift", "Alt"
+#endif
+        };
+    };
+
     class PTargetRefreshSpeed : public ChoiceParameters<PTargetRefreshSpeed> {
     public:
         static constexpr auto kID = "target_refresh_speed_id";
@@ -275,19 +349,11 @@ namespace zlstate {
         static constexpr int kDefaultI = 3;
     };
 
-    class PSingleEQCurveThickness : public FloatParameters<PSingleEQCurveThickness> {
+    class PMagCurveThickness : public FloatParameters<PMagCurveThickness> {
     public:
-        static constexpr auto kID = "single_eq_curve_thickness";
+        static constexpr auto kID = "mag_curve_thickness";
         static constexpr auto kName = "";
-        inline static const auto kRange = juce::NormalisableRange<float>(0.f, 2.f, .01f);
-        static constexpr auto kDefaultV = 1.f;
-    };
-
-    class PSumEQCurveThickness : public FloatParameters<PSumEQCurveThickness> {
-    public:
-        static constexpr auto kID = "sum_eq_curve_thickness";
-        static constexpr auto kName = "";
-        inline static const auto kRange = juce::NormalisableRange<float>(0.f, 2.f, .01f);
+        inline static const auto kRange = juce::NormalisableRange<float>(0.f, 4.f, .01f);
         static constexpr auto kDefaultV = 1.f;
     };
 
@@ -348,144 +414,6 @@ namespace zlstate {
         static constexpr int kDefaultI = 5;
     };
 
-    class PCurveDBScale0: public FloatParameters<PCurveDBScale0> {
-    public:
-        static constexpr auto kID = "curve_db0";
-        static constexpr auto kName = "";
-        inline static const auto kRange = juce::NormalisableRange<float>(1.f, 30.f, 1.f);
-        static constexpr auto kDefaultV = 6.f;
-    };
-
-    class PCurveDBScale1 : public FloatParameters<PCurveDBScale1> {
-    public:
-        static constexpr auto kID = "curve_db1";
-        static constexpr auto kName = "";
-        inline static const auto kRange = juce::NormalisableRange<float>(1.f, 30.f, 1.f);
-        static constexpr auto kDefaultV = 12.f;
-    };
-
-    class PCurveDBScale2 : public FloatParameters<PCurveDBScale2> {
-    public:
-        static constexpr auto kID = "curve_db2";
-        static constexpr auto kName = "";
-        inline static const auto kRange = juce::NormalisableRange<float>(1.f, 30.f, 1.f);
-        static constexpr auto kDefaultV = 30.f;
-    };
-
-    class PMouseOption {
-    public:
-        inline static const auto kChoices = juce::StringArray{
-            "Left Click", "Right Click", "Left Double Click", "Right Double Click"
-        };
-    };
-
-    class PKeyOption {
-    public:
-        inline static const auto kChoices = juce::StringArray{
-#if JUCE_MAC
-            "None", "Command", "Shift", "Option"
-#else
-            "None", "Ctrl", "Shift", "Alt"
-#endif
-        };
-    };
-
-    class PEnterSoloMouse : public ChoiceParameters<PEnterSoloMouse> {
-    public:
-        static constexpr auto kID = "enter_solo_mouse";
-        static constexpr auto kName = "";
-        inline static const auto kChoices = PMouseOption::kChoices;
-        static constexpr int kDefaultI = 1;
-    };
-
-    class PEnterSoloKey : public ChoiceParameters<PEnterSoloKey> {
-    public:
-        static constexpr auto kID = "enter_solo_key";
-        static constexpr auto kName = "";
-        inline static const auto kChoices = PKeyOption::kChoices;
-        static constexpr int kDefaultI = 0;
-    };
-
-    class PExitSoloMouse : public ChoiceParameters<PExitSoloMouse> {
-    public:
-        static constexpr auto kID = "exit_solo_mouse";
-        static constexpr auto kName = "";
-        inline static const auto kChoices = PMouseOption::kChoices;
-        static constexpr int kDefaultI = 1;
-    };
-
-    class PExitSoloKey : public ChoiceParameters<PExitSoloKey> {
-    public:
-        static constexpr auto kID = "exit_solo_key";
-        static constexpr auto kName = "";
-        inline static const auto kChoices = PKeyOption::kChoices;
-        static constexpr int kDefaultI = 0;
-    };
-
-    class PRightClickMenuMouse : public ChoiceParameters<PRightClickMenuMouse> {
-    public:
-        static constexpr auto kID = "right_click_menu_mouse";
-        static constexpr auto kName = "";
-        inline static const auto kChoices = PMouseOption::kChoices;
-        static constexpr int kDefaultI = 1;
-    };
-
-    class PRightClickMenuKey : public ChoiceParameters<PRightClickMenuKey> {
-    public:
-        static constexpr auto kID = "right_click_menu_key";
-        static constexpr auto kName = "";
-        inline static const auto kChoices = PKeyOption::kChoices;
-        static constexpr int kDefaultI = 3;
-    };
-
-    class PToggleDynamicMouse : public ChoiceParameters<PToggleDynamicMouse> {
-    public:
-        static constexpr auto kID = "toggle_dynamic_mouse";
-        static constexpr auto kName = "";
-        inline static const auto kChoices = PMouseOption::kChoices;
-        static constexpr int kDefaultI = 2;
-    };
-
-    class PToggleDynamicKey : public ChoiceParameters<PToggleDynamicKey> {
-    public:
-        static constexpr auto kID = "toggle_dynamic_key";
-        static constexpr auto kName = "";
-        inline static const auto kChoices = PKeyOption::kChoices;
-        static constexpr int kDefaultI = 1;
-    };
-
-    class PToggleBypassMouse : public ChoiceParameters<PToggleBypassMouse> {
-    public:
-        static constexpr auto kID = "toggle_bypass_mouse";
-        static constexpr auto kName = "";
-        inline static const auto kChoices = PMouseOption::kChoices;
-        static constexpr int kDefaultI = 0;
-    };
-
-    class PToggleBypassKey : public ChoiceParameters<PToggleBypassKey> {
-    public:
-        static constexpr auto kID = "toggle_bypass_key";
-        static constexpr auto kName = "";
-        inline static const auto kChoices = PKeyOption::kChoices;
-        static constexpr int kDefaultI = 3;
-    };
-
-    class PDeleteBandMouse : public ChoiceParameters<PDeleteBandMouse> {
-    public:
-        static constexpr auto kID = "delete_band_mouse";
-        static constexpr auto kName = "";
-        inline static const auto kChoices = PMouseOption::kChoices;
-        static constexpr int kDefaultI = 3;
-    };
-
-    class PDeleteBandKey : public ChoiceParameters<PDeleteBandKey> {
-    public:
-        static constexpr auto kID = "delete_band_key";
-        static constexpr auto kName = "";
-        inline static const auto kChoices = PKeyOption::kChoices;
-        static constexpr int kDefaultI = 3;
-    };
-
     inline void addOneColour(juce::AudioProcessorValueTreeState::ParameterLayout& layout,
                              const std::string& suffix = "",
                              const int red = 0, const int green = 0, const int blue = 0,
@@ -506,12 +434,10 @@ namespace zlstate {
         }
     }
 
-    inline constexpr std::array<std::string_view, 9> kColourNames{
+    static constexpr std::array<std::string_view, 8> kColourNames{
         "text", "background",
         "shadow", "glow",
-        "grid",
-        "pre", "post", "side",
-        "collision"
+        "pre", "post", "reduction", "grid"
     };
 
     struct ColourDefaultSetting {
@@ -520,16 +446,15 @@ namespace zlstate {
         float opacity;
     };
 
-    inline constexpr std::array<ColourDefaultSetting, 9> kColourDefaults{
-        ColourDefaultSetting{247, 246, 244, true, 1.f},
-        ColourDefaultSetting{20, 16, 9, true, 1.f},
+    static constexpr std::array<ColourDefaultSetting, 8> kColourDefaults{
+        ColourDefaultSetting{255 - 8, 255 - 9, 255 - 11, true, 1.f},
+        ColourDefaultSetting{(255 - 214) / 2, (255 - 223) / 2, (255 - 236) / 2, true, 1.f},
         ColourDefaultSetting{0, 0, 0, true, 1.f},
         ColourDefaultSetting{70, 66, 62, true, 1.f},
-        ColourDefaultSetting{112, 112, 112, true, .25f},
-        ColourDefaultSetting{112, 112, 112, true, .2f},
-        ColourDefaultSetting{112, 112, 112, true, .2f},
-        ColourDefaultSetting{252, 18, 197, true, .1f},
-        ColourDefaultSetting{255, 0, 0, true, 1.f},
+        ColourDefaultSetting{255 - 8, 255 - 9, 255 - 11, true, .25f},
+        ColourDefaultSetting{255 - 8, 255 - 9, 255 - 11, true, 1.f},
+        ColourDefaultSetting{252, 18, 197, true, 1.f},
+        ColourDefaultSetting{255 - 8, 255 - 9, 255 - 11, true, .1f}
     };
 
     inline juce::AudioProcessorValueTreeState::ParameterLayout getStateParameterLayout() {
@@ -538,28 +463,19 @@ namespace zlstate {
                    PFontMode::get(), PFontScale::get(), PStaticFontSize::get(),
                    PWheelSensitivity::get(), PWheelFineSensitivity::get(), PWheelShiftReverse::get(),
                    PSliderSensitivity::get(), PSliderFineSensitivity::get(),
-                   PDraggerSensitivity::get(), PDraggerFineSensitivity::get(),
                    PWheelComboboxSensitivity::get(),
                    PRotaryStyle::get(), PRotaryDragSensitivity::get(),
                    PSliderDoubleClickFunc::get(),
                    PTargetRefreshSpeed::get(),
-                   PSingleEQCurveThickness::get(), PSumEQCurveThickness::get(),
-                   PTooltipLang::get(),
-                   PCurveDBScale0::get(), PCurveDBScale1::get(), PCurveDBScale2::get());
+                   PMagCurveThickness::get(), PTooltipLang::get());
 
         for (size_t i = 0; i < kColourNames.size(); ++i) {
-            const auto& name = kColourNames[i];
+            const auto name = std::string(kColourNames[i]);
             const auto& dv = kColourDefaults[i];
-            addOneColour(layout, std::string(name), dv.r, dv.g, dv.b, dv.has_opacity, dv.opacity);
+            addOneColour(layout, name, dv.r, dv.g, dv.b, dv.has_opacity, dv.opacity);
         }
 
-        layout.add(PColourMap1Idx::get(), PColourMap2Idx::get(),
-                   PEnterSoloMouse::get(), PEnterSoloKey::get(),
-                   PExitSoloMouse::get(), PExitSoloKey::get(),
-                   PRightClickMenuMouse::get(), PRightClickMenuKey::get(),
-                   PToggleDynamicMouse::get(), PToggleDynamicKey::get(),
-                   PToggleBypassMouse::get(), PToggleBypassKey::get(),
-                   PDeleteBandMouse::get(), PDeleteBandKey::get());
+        layout.add(PColourMap1Idx::get(), PColourMap2Idx::get());
         return layout;
     }
 }

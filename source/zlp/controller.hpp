@@ -10,6 +10,7 @@
 #pragma once
 
 #include <atomic>
+#include <cstdint>
 #include <span>
 #include <tuple>
 #include <vector>
@@ -17,7 +18,9 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include "../chore/thread/notifier.hpp"
+#include "../dsp/analyzer/analyzer_base/analyzer_sender_base.hpp"
 #include "../dsp/delay/integer_delay.hpp"
+#include "../dsp/gain/gain.hpp"
 #include "../dsp/limiter/limiter.hpp"
 #include "../dsp/vector/vector.hpp"
 #include "zlp_definitions.hpp"
@@ -25,6 +28,11 @@
 namespace zlp {
     class Controller final : private juce::AsyncUpdater {
     public:
+        static constexpr size_t kAnalyzerPreStream = 0;
+        static constexpr size_t kAnalyzerGainedPreStream = 1;
+        static constexpr size_t kAnalyzerPostStream = 2;
+        static constexpr size_t kAnalyzerStreamNum = 3;
+
         explicit Controller(juce::AudioProcessor& processor);
 
         ~Controller() override;
@@ -32,6 +40,18 @@ namespace zlp {
         void prepare(double sample_rate, size_t max_num_samples);
 
         void process(std::span<float*> buffer, size_t num_samples, bool host_bypassed);
+
+        auto& getMagAnalyzerSender() { return mag_analyzer_sender_; }
+
+        void setAnalyzerEnabled(const bool enabled) {
+            if (analyzer_enabled_.exchange(enabled, std::memory_order_acq_rel) != enabled) {
+                analyzer_generation_.fetch_add(1, std::memory_order_release);
+            }
+        }
+
+        [[nodiscard]] uint64_t getAnalyzerGeneration() const {
+            return analyzer_generation_.load(std::memory_order_acquire);
+        }
 
         void setInputGain(const float db) {
             input_gain_db_.store(db, std::memory_order_relaxed);
@@ -101,6 +121,9 @@ namespace zlp {
 
     private:
         juce::AudioProcessor& p_ref_;
+        zldsp::analyzer::AnalyzerSenderBase<float, kAnalyzerStreamNum> mag_analyzer_sender_;
+        std::atomic<bool> analyzer_enabled_{false};
+        std::atomic<uint64_t> analyzer_generation_{0};
 
         using Limiter1x = zldsp::limiter::Limiter<float, 0>;
         using Limiter2x = zldsp::limiter::Limiter<float, 1>;
@@ -112,9 +135,16 @@ namespace zlp {
         static constexpr size_t kOversamplingModeCount = std::tuple_size_v<LimiterTuple>;
 
         LimiterTuple limiters_{};
+        zldsp::gain::Gain<float> input_gain_{};
         zldsp::delay::IntegerDelay<float> dry_delay_{};
         std::vector<zldsp::vector::aligned_vector<float>> dry_buffers_{};
         std::vector<float*> dry_pointers_{};
+        zldsp::delay::IntegerDelay<float> gained_delay_{};
+        std::vector<zldsp::vector::aligned_vector<float>> gained_buffers_{};
+        std::vector<float*> gained_pointers_{};
+        bool gained_delay_needs_reset_{true};
+        bool gained_delay_needs_warmup_{false};
+        size_t gained_delay_fill_remaining_{0};
 
         zlchore::thread::Notifier to_update_{true};
         zlchore::thread::Notifier to_update_input_gain_{true};

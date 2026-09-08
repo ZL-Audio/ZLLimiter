@@ -1,0 +1,83 @@
+// Copyright (C) 2026 - zsliu98
+// This file is part of ZLLimiter
+//
+// ZLLimiter is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License Version 3 as published by the Free Software Foundation.
+//
+// ZLLimiter is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License along with ZLLimiter. If not, see <https://www.gnu.org/licenses/>.
+
+#pragma once
+
+#include <juce_gui_basics/juce_gui_basics.h>
+#include <cmath>
+#include <limits>
+#include <span>
+
+namespace zlpanel {
+    template <int kIntTol = 10>
+    class PathMinimizer {
+    public:
+        static_assert(kIntTol >= 0, "PathMinimizer tolerance must not be negative");
+        static constexpr float kTol = 0.01f * static_cast<float>(kIntTol);
+
+        explicit PathMinimizer(juce::Path& path) : path_ref_(path) {
+        }
+
+        template <bool start = true>
+        void startNewSubPath(const float x, const float y) {
+            if constexpr (start) {
+                path_ref_.startNewSubPath(x, y);
+            } else {
+                path_ref_.lineTo(x, y);
+            }
+            start_x_ = x;
+            start_y_ = y;
+            current_x_ = x;
+            current_y_ = y;
+        }
+
+        void lineTo(const float x, const float y) {
+            if (std::abs(x - start_x_) > std::numeric_limits<float>::epsilon()) {
+                const auto w = (current_x_ - start_x_) / (x - start_x_);
+                if (std::abs((1.f - w) * start_y_ + w * y - current_y_) > kTol) {
+                    path_ref_.lineTo(current_x_, current_y_);
+                    start_x_ = current_x_;
+                    start_y_ = current_y_;
+                }
+            }
+            current_x_ = x;
+            current_y_ = y;
+        }
+
+        void finish() const {
+            path_ref_.lineTo(current_x_, current_y_);
+        }
+
+        template <bool start = true, bool reverse = false>
+        void drawPath(const std::span<const float> xs, const std::span<const float> ys) {
+            if (xs.empty() || xs.size() != ys.size()) {
+                return;
+            }
+            if constexpr (!reverse) {
+                startNewSubPath<start>(xs[0], ys[0]);
+                for (size_t i = 1; i < xs.size(); ++i) {
+                    lineTo(xs[i], ys[i]);
+                }
+                finish();
+            } else {
+                startNewSubPath<start>(xs.back(), ys.back());
+                const auto shift = xs.size() - 1;
+                for (size_t i = 1; i < xs.size(); ++i) {
+                    lineTo(xs[shift - i], ys[shift - i]);
+                }
+                finish();
+            }
+        }
+
+    private:
+        juce::Path& path_ref_;
+        float start_x_{0.}, start_y_{0.};
+        float current_x_{0.}, current_y_{0.};
+    };
+}

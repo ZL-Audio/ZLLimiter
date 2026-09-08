@@ -46,6 +46,8 @@ PluginProcessor::PluginProcessor() :
     parameters_NA_(dummy_processor_, nullptr,
                    juce::Identifier(zlstate::schema::kNonAutomatableState),
                    zlstate::getNAParameterLayout()),
+    state_(dummy_processor_, nullptr, juce::Identifier(zlstate::schema::kUISettings),
+           zlstate::getStateParameterLayout()),
     controller_(*this),
     limiter_attach_(*this, parameters_, controller_) {
 }
@@ -135,8 +137,7 @@ bool PluginProcessor::hasEditor() const {
 }
 
 juce::AudioProcessorEditor* PluginProcessor::createEditor() {
-    return new juce::GenericAudioProcessorEditor(*this);
-    // return new PluginEditor(*this);
+    return new PluginEditor(*this);
 }
 
 void PluginProcessor::getStateInformation(juce::MemoryBlock& dest_data) {
