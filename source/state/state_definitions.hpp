@@ -346,7 +346,11 @@ namespace zlstate {
             "120 Hz", "90 Hz", "60 Hz", "30 Hz", "15 Hz"
         };
         static constexpr std::array<double, 5> kRates{120.0, 90.0, 60.0, 30.0, 15.0};
+#if JUCE_LINUX
         static constexpr int kDefaultI = 3;
+#else
+        static constexpr int kDefaultI = 2;
+#endif
     };
 
     class PMagCurveThickness : public FloatParameters<PMagCurveThickness> {
@@ -452,8 +456,8 @@ namespace zlstate {
         ColourDefaultSetting{0, 0, 0, true, 1.f},
         ColourDefaultSetting{70, 66, 62, true, 1.f},
         ColourDefaultSetting{255 - 8, 255 - 9, 255 - 11, true, .25f},
-        ColourDefaultSetting{255 - 8, 255 - 9, 255 - 11, true, 1.f},
-        ColourDefaultSetting{252, 18, 197, true, 1.f},
+        ColourDefaultSetting{255 - 8, 255 - 9, 255 - 11, true, .75f},
+        ColourDefaultSetting{255, 0, 0, true, 1.f},
         ColourDefaultSetting{255 - 8, 255 - 9, 255 - 11, true, .1f}
     };
 
