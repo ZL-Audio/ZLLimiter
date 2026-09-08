@@ -39,6 +39,8 @@ namespace zlpanel {
         previous_reduction_.fill(0.f);
         pre_decay_mul_.fill(1.f);
         out_decay_mul_.fill(1.f);
+        target_gap_db_.fill(0.0);
+        gap_remaining_seconds_.fill(0.0);
         circular_min_max_.clear();
         reset_peaks_.store(true, std::memory_order::relaxed);
     }
@@ -70,7 +72,9 @@ namespace zlpanel {
         for (auto& a_bound : out_rect_) {
             g.fillRect(a_bound.load());
         }
-
+        for (auto& a_bound : out_arrow_) {
+            g.fillRect(a_bound.load());
+        }
     }
 
     void MeterDisplayPanel::resized() {
@@ -106,6 +110,11 @@ namespace zlpanel {
 
         out_rect_[0].store({x3, 0.f, meter_width, thickness});
         out_rect_[1].store({x4, 0.f, meter_width, thickness});
+
+        out_arrow_[0].store({x3 + meter_width * .5f - thickness * .5f,
+                             0.f, thickness, 0.f});
+        out_arrow_[1].store({x4 + meter_width * .5f - thickness * .5f,
+                             0.f, thickness, 0.f});
 
         reduction_max_rect_.store({x1, 0.f, x2 + meter_width, thickness});
     }
@@ -189,47 +198,68 @@ namespace zlpanel {
         float reduction_max_value = std::max(0.f, std::max(-reduction_dbs[0], -reduction_dbs[1]));
         reduction_max_value = circular_min_max_.push(reduction_max_value);
         float reduction_max_pos = -db_range.getReductionYProportion(reduction_max_value) * bound.getHeight();
-
         reduction_max_rect_.setY(reduction_max_pos + bound.getY() - thickness * .5f);
         reduction_max_value_.store(reduction_max_value, std::memory_order::relaxed);
-        // update pre meter
-        for (size_t chan = 0; chan < 2; ++chan) {
-            const auto current_pre = pre_dbs[chan];
-            const auto previous_pre = previous_pre_[chan];
-            if (current_pre > previous_pre) {
-                previous_pre_[chan] = current_pre;
-                pre_decay_mul_[chan] = 1.f;
-            } else {
-                previous_pre_[chan] = std::max(
-                    previous_pre - pre_decay_mul_[chan] * static_cast<float>(delta_time) * kMeterDecayPerSecond,
-                    current_pre);
-                pre_decay_mul_[chan] = std::min(pre_decay_mul_[chan] * (1.f + 3.f * static_cast<float>(delta_time)),
-                                                10.f);
-            }
-            const auto pre_y = db_range.getYProportion(previous_pre_[chan]) * bound.getHeight();
-            pre_rect_[chan].setY(pre_y + bound.getY());
-            pre_rect_[chan].setHeight(bound.getHeight() - pre_y);
-        }
         // update out peak
         const auto out_peak = std::max(out_dbs[0], out_dbs[1]);
         out_peak_.store(std::max(out_peak, out_peak_.load(std::memory_order::relaxed)),
                         std::memory_order::relaxed);
-        // update out meter
+        // update independent meter decays, then constrain their displayed gap
+        const auto meter_delta_time = static_cast<float>(delta_time);
+        const auto meter_decay = meter_delta_time * kMeterDecayPerSecond;
+        const auto decay_acceleration = 1.f + 3.f * meter_delta_time;
         for (size_t chan = 0; chan < 2; ++chan) {
+            const auto current_pre = pre_dbs[chan];
             const auto current_out = out_dbs[chan];
-            const auto previous_out = previous_out_[chan];
-            if (current_out > previous_out) {
-                previous_out_[chan] = current_out;
-                out_decay_mul_[chan] = 1.f;
-            } else {
-                previous_out_[chan] = std::max(
-                    previous_out - out_decay_mul_[chan] * static_cast<float>(delta_time) * kMeterDecayPerSecond,
-                    current_out);
-                out_decay_mul_[chan] = std::min(out_decay_mul_[chan] * (1.f + 3.f * static_cast<float>(delta_time)),
-                                                10.f);
+            // advance from the last displayed gap
+            const auto previous_gap = static_cast<double>(previous_out_[chan]) - previous_pre_[chan];
+            const auto target_gap = static_cast<double>(current_out) - current_pre;
+            if (std::abs(target_gap - target_gap_db_[chan]) < 1e-5) {
+                target_gap_db_[chan] = target_gap;
+                gap_remaining_seconds_[chan] = kMeterGapConvergenceSeconds;
             }
-            const auto out_y = db_range.getYProportion(previous_out_[chan]) * bound.getHeight();
-            out_rect_[chan].setY(out_y + bound.getY() - thickness * .5f);
+            const auto remaining_seconds = gap_remaining_seconds_[chan];
+            auto gap = remaining_seconds > delta_time
+                ? std::lerp(previous_gap, target_gap, delta_time / remaining_seconds)
+                : target_gap;
+            gap_remaining_seconds_[chan] = std::max(0.0, remaining_seconds - delta_time);
+
+            const auto pre_attack = current_pre > previous_pre_[chan];
+            const auto out_attack = current_out > previous_out_[chan];
+            previous_pre_[chan] = std::max(previous_pre_[chan] - pre_decay_mul_[chan] * meter_decay, current_pre);
+            previous_out_[chan] = std::max(previous_out_[chan] - out_decay_mul_[chan] * meter_decay, current_out);
+            pre_decay_mul_[chan] = pre_attack
+                ? 1.f
+                : std::min(pre_decay_mul_[chan] * decay_acceleration, 10.f);
+            out_decay_mul_[chan] = out_attack
+                ? 1.f
+                : std::min(out_decay_mul_[chan] * decay_acceleration, 10.f);
+
+            gap = std::clamp(gap, static_cast<double>(current_out) - previous_pre_[chan],
+                             static_cast<double>(previous_out_[chan]) - current_pre);
+            if (target_gap > 0.0) {
+                gap = std::max(gap, 0.0);
+            } else if (target_gap < 0.0) {
+                gap = std::min(gap, 0.0);
+            }
+            // keep the corrected positions as the next frame's decay state
+            if (static_cast<double>(previous_out_[chan]) - previous_pre_[chan] > gap) {
+                previous_out_[chan] = std::clamp(static_cast<float>(previous_pre_[chan] + gap),
+                                                 current_out, previous_out_[chan]);
+            } else {
+                previous_pre_[chan] = std::clamp(static_cast<float>(previous_out_[chan] - gap),
+                                                 current_pre, previous_pre_[chan]);
+            }
+
+            const auto pre_y = db_range.getYProportion(previous_pre_[chan]) * bound.getHeight() + bound.getY();
+            pre_rect_[chan].setY(pre_y);
+            pre_rect_[chan].setHeight(bound.getBottom() - pre_y);
+
+            const auto out_y = db_range.getYProportion(previous_out_[chan]) * bound.getHeight() + bound.getY();
+            out_rect_[chan].setY(out_y - thickness * .5f);
+
+            out_arrow_[chan].setY(std::min(pre_y, out_y));
+            out_arrow_[chan].setHeight(std::abs(out_y - pre_y));
         }
     }
 

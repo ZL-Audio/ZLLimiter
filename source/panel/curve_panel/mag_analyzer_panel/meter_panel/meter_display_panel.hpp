@@ -41,6 +41,7 @@ namespace zlpanel {
     private:
         static constexpr float kReductionDecayPerSecond = 16.f;
         static constexpr float kMeterDecayPerSecond = 2.f;
+        static constexpr double kMeterGapConvergenceSeconds = 1.0;
         zlgui::UIBase& base_;
         MeterTopPanel meter_top_panel_;
 
@@ -55,9 +56,12 @@ namespace zlpanel {
         std::array<float, 2> pre_decay_mul_{1.f, 1.f};
         std::array<float, 2> previous_out_{-240.f, -240.f};
         std::array<float, 2> out_decay_mul_{1.f, 1.f};
+        std::array<double, 2> target_gap_db_{0.0, 0.0};
+        std::array<double, 2> gap_remaining_seconds_{0.0, 0.0};
         std::array<AtomicBound<float>, 2> reduction_rect_{};
         std::array<AtomicBound<float>, 2> pre_rect_{};
         std::array<AtomicBound<float>, 2> out_rect_{};
+        std::array<AtomicBound<float>, 2> out_arrow_{};
 
         double start_time_{0.0};
         double missing_seconds_{0.0};
