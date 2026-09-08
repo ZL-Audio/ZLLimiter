@@ -18,7 +18,6 @@ namespace zlpanel {
             ),
         curve_panel_(processor, base_, tooltip_helper_),
         control_panel_(processor, base_, tooltip_helper_),
-        top_panel_(processor, base_, tooltip_helper_),
         preset_browser_(processor, base_),
         ui_setting_panel_(processor, base_),
         tooltipLAF(base_), tooltipWindow(base_, this),
@@ -26,7 +25,6 @@ namespace zlpanel {
         juce::ignoreUnused(base_);
         addAndMakeVisible(curve_panel_);
         addAndMakeVisible(control_panel_);
-        addAndMakeVisible(top_panel_);
         addChildComponent(ui_setting_panel_);
         preset_browser_.setBufferedToImage(true);
         addChildComponent(preset_browser_);
@@ -60,7 +58,6 @@ namespace zlpanel {
         control_panel_.setBounds(0, bound.getBottom() - control_panel_.getIdealHeight(),
                                  control_panel_.getIdealWidth(), control_panel_.getIdealHeight());
 
-        top_panel_.setBounds(bound.removeFromTop(top_panel_.getIdealHeight()));
         curve_panel_.setBounds(bound);
 
         const auto padding = getPaddingSize(font_size);
@@ -87,7 +84,6 @@ namespace zlpanel {
             if (time_stamp - previous_time_stamp_ > 0.1) {
                 previous_time_stamp_ = time_stamp;
                 control_panel_.repaintCallBackSlow();
-                top_panel_.repaintCallBackSlow();
                 curve_panel_.repaintCallBackSlow();
             }
 

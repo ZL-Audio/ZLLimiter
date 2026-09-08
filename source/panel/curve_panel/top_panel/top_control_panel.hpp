@@ -9,17 +9,20 @@
 
 #pragma once
 
-#include "../../PluginProcessor.hpp"
-#include "../../gui/gui.hpp"
-#include "../helper/helper.hpp"
-#include "../multilingual/tooltip_helper.hpp"
+#include "../../../PluginProcessor.hpp"
+#include "../../../gui/gui.hpp"
+#include "../../helper/helper.hpp"
+#include "../../multilingual/tooltip_helper.hpp"
 
 namespace zlpanel {
     class TopControlPanel final : public juce::Component {
     public:
-        TopControlPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper&);
+        explicit TopControlPanel(PluginProcessor& p, zlgui::UIBase& base,
+                                 multilingual::TooltipHelper& tooltip_helper);
+
         void resized() override;
-        void repaintCallBackSlow() { updater_.updateComponents(); }
+
+        void repaintCallBackSlow();
 
     private:
         zlgui::UIBase& base_;

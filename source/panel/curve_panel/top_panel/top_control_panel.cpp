@@ -98,4 +98,8 @@ namespace zlpanel {
             slider->setMouseDragSensitivity(getSliderDraggingDistance(font_size));
         }
     }
+
+    void TopControlPanel::repaintCallBackSlow() {
+        updater_.updateComponents();
+    }
 }

@@ -7,7 +7,7 @@
 //
 // You should have received a copy of the GNU Affero General Public License along with ZLLimiter. If not, see <https://www.gnu.org/licenses/>.
 
-#include "peak_panel.hpp"
+#include "peak_display_panel.hpp"
 
 namespace {
     constexpr auto kMaxAnalyzerPointNum = 300;
@@ -32,7 +32,7 @@ namespace {
 }
 
 namespace zlpanel {
-    PeakPanel::PeakPanel(PluginProcessor& p, zlgui::UIBase& base) :
+    PeakDisplayPanel::PeakDisplayPanel(PluginProcessor& p, zlgui::UIBase& base) :
         base_(base),
         pre_curve_display_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PPreCurveDisplay::kID)),
         post_curve_display_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PPostCurveDisplay::kID)),
@@ -50,12 +50,13 @@ namespace zlpanel {
         for (auto& path : reduction_path_.getBuffer()) {
             path.preallocateSpace(preallocateSpace);
         }
+
         setInterceptsMouseClicks(false, false);
     }
 
-    PeakPanel::~PeakPanel() = default;
+    PeakDisplayPanel::~PeakDisplayPanel() = default;
 
-    void PeakPanel::reset() {
+    void PeakDisplayPanel::reset() {
         is_first_point_ = true;
         num_missing_points_ = 0;
         too_much_samples_ = 0;
@@ -65,7 +66,7 @@ namespace zlpanel {
         gained_pre_receiver_.reset();
     }
 
-    void PeakPanel::paint(juce::Graphics& g) {
+    void PeakDisplayPanel::paint(juce::Graphics& g) {
         if (pre_curve_display_ref_.load(std::memory_order::relaxed) > .5f) {
             in_path_.pull();
             g.setColour(base_.getColourByIdx(zlgui::ColourIdx::kPreColour));
@@ -89,15 +90,17 @@ namespace zlpanel {
         }
     }
 
-    void PeakPanel::resized() {
-        const auto bound = getLocalBounds();
+    void PeakDisplayPanel::resized() {
+        auto bound = getLocalBounds();
+        const auto font_size = base_.getFontSize();
+        bound.removeFromTop(getTopPanelHeight(font_size));
         atomic_bound_.store(bound.toFloat());
         lookAndFeelChanged();
     }
 
-    void PeakPanel::run(const double next_time_stamp, zldsp::analyzer::FIFOTransferBuffer<
-                            zlp::Controller::kAnalyzerStreamNum>& transfer_buffer,
-                        const size_t consumer_id, const MagDBRange& db_range) {
+    void PeakDisplayPanel::run(const double next_time_stamp, zldsp::analyzer::FIFOTransferBuffer<
+                                   zlp::Controller::kAnalyzerStreamNum>& transfer_buffer,
+                               const size_t consumer_id, const MagDBRange& db_range) {
         const auto bound = atomic_bound_.load();
         const auto true_peak = analyzer_mag_type_ref_.load(std::memory_order::relaxed) > .5f;
         if (true_peak != true_peak_) {
@@ -151,9 +154,12 @@ namespace zlpanel {
                 // if not enough samples
                 if (fifo.getNumReady(consumer_id) >= num_samples_per_point_) {
                     const auto range = fifo.prepareToRead(consumer_id, num_samples_per_point_);
-                    pre_receiver_.run(range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPreStream], true_peak);
-                    out_receiver_.run(range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPostStream], true_peak);
-                    gained_pre_receiver_.run(range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerGainedPreStream], true_peak);
+                    pre_receiver_.run(range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPreStream],
+                                      true_peak);
+                    out_receiver_.run(range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPostStream],
+                                      true_peak);
+                    gained_pre_receiver_.run(
+                        range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerGainedPreStream], true_peak);
                     pre_db_ = pre_receiver_.getMaxDB();
                     out_db_ = out_receiver_.getMaxDB();
                     reduction_db_ = out_db_ - gained_pre_receiver_.getMaxDB();
@@ -177,16 +183,16 @@ namespace zlpanel {
                     const auto too_many_missing = num_missing_points_ >= kPausedThreshold;
                     std::ranges::rotate(pre_ys_, pre_ys_.begin() + 1);
                     pre_ys_.back() = too_many_missing
-                                         ? missing_y
-                                         : std::fma(pre_db_, db_to_y_scale_, db_to_y_bias_);
+                        ? missing_y
+                        : std::fma(pre_db_, db_to_y_scale_, db_to_y_bias_);
                     std::ranges::rotate(out_ys_, out_ys_.begin() + 1);
                     out_ys_.back() = too_many_missing
-                                         ? missing_y
-                                         : std::fma(out_db_, db_to_y_scale_, db_to_y_bias_);
+                        ? missing_y
+                        : std::fma(out_db_, db_to_y_scale_, db_to_y_bias_);
                     std::ranges::rotate(reduction_ys_, reduction_ys_.begin() + 1);
                     reduction_ys_.back() = too_many_missing
-                                               ? reduction_y_bias_
-                                               : std::fma(reduction_db_, db_to_y_scale_, reduction_y_bias_);
+                        ? reduction_y_bias_
+                        : std::fma(reduction_db_, db_to_y_scale_, reduction_y_bias_);
                 }
                 if (move_type_ == MoveType::kRoll) {
                     roll_next_point_ = (roll_next_point_ + 1) % xs_.size();
@@ -233,7 +239,7 @@ namespace zlpanel {
         reduction_path_.publish();
     }
 
-    void PeakPanel::updateXs(const juce::Rectangle<float> bound, const double next_time_stamp) {
+    void PeakDisplayPanel::updateXs(const juce::Rectangle<float> bound, const double next_time_stamp) {
         if (move_type_ == MoveType::kRoll) {
             const auto delta_x = static_cast<double>(bound.getWidth()) / static_cast<double>(xs_.size() - 1);
             for (size_t i = 0; i < xs_.size(); ++i) {
@@ -254,10 +260,10 @@ namespace zlpanel {
             const auto phase = std::fmod(std::max(0.0, next_time_stamp - motion_start_time_), length);
             constexpr auto sweep = 1.0 - restart_position;
             const auto head = phase < slow_length
-                                  ? restart_position + sweep * phase / slow_length
-                                  : 1.0 - sweep * (phase - slow_length) / fast_length;
+                ? restart_position + sweep * phase / slow_length
+                : 1.0 - sweep * (phase - slow_length) / fast_length;
             x0 += head * static_cast<double>(bound.getWidth()) -
-                  static_cast<double>(xs_.size() - 1) * delta_x;
+                static_cast<double>(xs_.size() - 1) * delta_x;
         }
         for (size_t i = 0; i < xs_.size(); ++i) {
             xs_[i] = static_cast<float>(x0);
@@ -265,14 +271,14 @@ namespace zlpanel {
         }
     }
 
-    void PeakPanel::updateYMapping(const juce::Rectangle<float> bound,
-                                   const MagDBRange& db_range,
-                                   const bool center_reduction) {
+    void PeakDisplayPanel::updateYMapping(const juce::Rectangle<float> bound,
+                                          const MagDBRange& db_range,
+                                          const bool center_reduction) {
         const auto range_db = db_range.getRangeDB();
         const auto effective_height = std::max(bound.getHeight(), 1.f);
         const auto next_scale = std::abs(range_db) > std::numeric_limits<float>::epsilon()
-                                    ? effective_height / range_db
-                                    : 0.f;
+            ? effective_height / range_db
+            : 0.f;
         const auto next_bias = std::fma(-db_range.getMaxDB(), next_scale, bound.getY());
         const auto next_reduction_bias = center_reduction ? bound.getCentreY() : bound.getY();
 
@@ -302,7 +308,7 @@ namespace zlpanel {
         is_y_mapping_initialized_ = true;
     }
 
-    void PeakPanel::updatePaths(const juce::Rectangle<float> bound) {
+    void PeakDisplayPanel::updatePaths(const juce::Rectangle<float> bound) {
         auto& next_in_path{in_path_.getWriter()};
         auto& next_out_path{out_path_.getWriter()};
         auto& next_reduction_path{reduction_path_.getWriter()};
@@ -333,7 +339,7 @@ namespace zlpanel {
         next_in_path.lineTo(xs_[size - 1], bound.getBottom());
     }
 
-    void PeakPanel::lookAndFeelChanged() {
+    void PeakDisplayPanel::lookAndFeelChanged() {
         curve_thickness_ = base_.getFontSize() * .2f * base_.getMagCurveThickness();
     }
 }

@@ -1,0 +1,63 @@
+// Copyright (C) 2026 - zsliu98
+// This file is part of ZLLimiter
+//
+// ZLLimiter is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License Version 3 as published by the Free Software Foundation.
+//
+// ZLLimiter is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License along with ZLLimiter. If not, see <https://www.gnu.org/licenses/>.
+
+#include "peak_background_panel.hpp"
+#include "../../mag_db_range.hpp"
+
+namespace zlpanel {
+    PeakBackgroundPanel::PeakBackgroundPanel(PluginProcessor& p, zlgui::UIBase& base) :
+        base_(base),
+        mag_min_db_id_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PAnalyzerMinDB::kID)) {
+        setInterceptsMouseClicks(false, false);
+    }
+
+    void PeakBackgroundPanel::paint(juce::Graphics& g) {
+        g.fillAll(base_.getBackgroundColour());
+
+        auto bound = getLocalBounds().toFloat();
+        const auto font_size = base_.getFontSize();
+        bound.removeFromTop(static_cast<float>(getTopPanelHeight(font_size)));
+
+        const auto thickness = base_.getFontSize() * 0.125f;
+        g.setColour(base_.getTextColour().withAlpha(.1f));
+        for (const auto scale : {0.f, 1.f, 2.f, 3.f, 4.f, 5.f}) {
+            const auto y = bound.getHeight() * scale / 6.f + bound.getY() - thickness * .5f;
+            const auto rect = juce::Rectangle<float>({bound.getX(), y, bound.getWidth(), thickness});
+            g.fillRect(rect);
+        }
+
+        const auto text_height = static_cast<float>(juce::roundToInt(base_.getFontSize() * 1.75f));
+        const auto text_width = static_cast<float>(juce::roundToInt(base_.getFontSize() * 2.6f));
+        const auto right_padding = static_cast<float>(juce::roundToInt(base_.getFontSize() * kPaddingScale) / 2);
+        g.setColour(base_.getTextColour().withAlpha(.5f));
+        g.setFont(base_.getFontSize());
+        const MagDBRange db_range{0.f, mag_range_db_};
+        for (const auto scale : {1.f, 2.f, 3.f, 4.f, 5.f, 6.f}) {
+            const auto y = bound.getHeight() * scale / 6.f + bound.getY();
+            auto rect = juce::Rectangle<float>({bound.getX(), y - text_height, bound.getWidth(), text_height});
+            rect.removeFromRight(right_padding);
+            rect = rect.removeFromRight(text_width);
+            const auto value = db_range.getDBAtYProportion(scale / 6.f);
+            const auto rounded_value = std::round(value);
+            if (std::abs(value - rounded_value) < .01f) {
+                g.drawText(std::to_string(static_cast<int>(rounded_value)), rect,
+                           juce::Justification::bottomRight, false);
+            }
+        }
+    }
+
+    void PeakBackgroundPanel::repaintCallBackSlow() {
+        const auto c_mag_min_db_id = mag_min_db_id_ref_.load(std::memory_order::relaxed);
+        if (std::abs(c_mag_min_db_id - mag_min_db_id_) > 1e-3f) {
+            mag_min_db_id_ = std::round(c_mag_min_db_id);
+            mag_range_db_ = zlstate::PAnalyzerMinDB::getDBFromIndex(c_mag_min_db_id);
+            repaint();
+        }
+    }
+}

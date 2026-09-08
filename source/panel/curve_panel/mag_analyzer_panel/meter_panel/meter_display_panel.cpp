@@ -74,12 +74,13 @@ namespace zlpanel {
     }
 
     void MeterDisplayPanel::resized() {
-        const auto bound = getLocalBounds();
+        auto bound = getLocalBounds();
         const auto font_size = base_.getFontSize();
+        const auto padding = getPaddingSize(font_size);
+        meter_top_panel_.setBounds(bound.removeFromTop(getTopPanelHeight(font_size) - padding / 2));
+        bound.removeFromTop(padding / 2);
         pending_bound_.store(bound.toFloat());
-        pending_reduction_max_height_.store(font_size * .25f, std::memory_order::relaxed);
-        size_changed_.signal();
-        meter_top_panel_.setBounds(bound.withHeight(juce::roundToInt(font_size * 1.25f)));
+        lookAndFeelChanged();
     }
 
     void MeterDisplayPanel::updateSize() {
@@ -101,11 +102,12 @@ namespace zlpanel {
         pre_rect_[0].store({x3, 0.f, meter_width, 0.f});
         pre_rect_[1].store({x4, 0.f, meter_width, 0.f});
 
-        out_rect_[0].store({x3, 0.f, meter_width, 0.f});
-        out_rect_[1].store({x4, 0.f, meter_width, 0.f});
+        const auto thickness = pending_thickness_.load(std::memory_order::relaxed);
 
-        reduction_max_rect_.store({x1, 0.f, x2 + meter_width,
-                                   pending_reduction_max_height_.load(std::memory_order::relaxed)});
+        out_rect_[0].store({x3, 0.f, meter_width, thickness});
+        out_rect_[1].store({x4, 0.f, meter_width, thickness});
+
+        reduction_max_rect_.store({x1, 0.f, x2 + meter_width, thickness});
     }
 
     void MeterDisplayPanel::repaintCallBackSlow() {
@@ -114,7 +116,8 @@ namespace zlpanel {
     }
 
     void MeterDisplayPanel::run(const double next_time_stamp,
-                                zldsp::analyzer::FIFOTransferBuffer<zlp::Controller::kAnalyzerStreamNum>& transfer_buffer,
+                                zldsp::analyzer::FIFOTransferBuffer<zlp::Controller::kAnalyzerStreamNum>&
+                                transfer_buffer,
                                 const size_t consumer_id, const MagDBRange& db_range) {
         updateSize();
         const auto true_peak = analyzer_mag_type_ref_.load(std::memory_order::relaxed) > .5f;
@@ -146,7 +149,8 @@ namespace zlpanel {
 
         const auto range = fifo.prepareToRead(consumer_id, num_to_read);
         pre_receiver_.run(range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPreStream], true_peak);
-        gained_pre_receiver_.run(range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerGainedPreStream], true_peak);
+        gained_pre_receiver_.run(range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerGainedPreStream],
+                                 true_peak);
         out_receiver_.run(range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPostStream], true_peak);
         fifo.finishRead(consumer_id, num_to_read);
         const auto& pre_dbs = pre_receiver_.getDBs();
@@ -163,6 +167,7 @@ namespace zlpanel {
         }
 
         const auto bound = bound_;
+        const auto thickness = pending_thickness_.load(std::memory_order::relaxed);
         // update reduction peak
         const auto reduction_peak = std::min(reduction_dbs[0], reduction_dbs[1]);
         reduction_peak_.store(std::min(reduction_peak, reduction_peak_.load(std::memory_order::relaxed)),
@@ -175,18 +180,17 @@ namespace zlpanel {
             previous_reduction_[chan] = std::min(
                 previous_reduction + static_cast<float>(delta_time) * kReductionDecayPerSecond,
                 current_reduction);
+            reduction_rect_[chan].setY(bound_.getY());
             reduction_rect_[chan].setHeight(
                 db_range.getReductionYProportion(previous_reduction_[chan]) * bound.getHeight());
 
         }
         // update reduction short-term max display
-        float reduction_max_value;
-        float reduction_max_pos;
-        reduction_max_value = std::max(0.f, std::max(-reduction_dbs[0], -reduction_dbs[1]));
+        float reduction_max_value = std::max(0.f, std::max(-reduction_dbs[0], -reduction_dbs[1]));
         reduction_max_value = circular_min_max_.push(reduction_max_value);
-        reduction_max_pos = -db_range.getReductionYProportion(reduction_max_value) * bound.getHeight();
+        float reduction_max_pos = -db_range.getReductionYProportion(reduction_max_value) * bound.getHeight();
 
-        reduction_max_rect_.setY(reduction_max_pos - reduction_max_rect_.getHeight() * .5f);
+        reduction_max_rect_.setY(reduction_max_pos + bound.getY() - thickness * .5f);
         reduction_max_value_.store(reduction_max_value, std::memory_order::relaxed);
         // update pre meter
         for (size_t chan = 0; chan < 2; ++chan) {
@@ -202,9 +206,8 @@ namespace zlpanel {
                 pre_decay_mul_[chan] = std::min(pre_decay_mul_[chan] * (1.f + 3.f * static_cast<float>(delta_time)),
                                                 10.f);
             }
-            const auto pre_y = std::clamp(db_range.getYProportion(previous_pre_[chan]), 0.f, 1.f) *
-                bound.getHeight();
-            pre_rect_[chan].setY(pre_y);
+            const auto pre_y = db_range.getYProportion(previous_pre_[chan]) * bound.getHeight();
+            pre_rect_[chan].setY(pre_y + bound.getY());
             pre_rect_[chan].setHeight(bound.getHeight() - pre_y);
         }
         // update out peak
@@ -225,10 +228,8 @@ namespace zlpanel {
                 out_decay_mul_[chan] = std::min(out_decay_mul_[chan] * (1.f + 3.f * static_cast<float>(delta_time)),
                                                 10.f);
             }
-            const auto out_y = std::clamp(db_range.getYProportion(previous_out_[chan]), 0.f, 1.f) *
-                bound.getHeight();
-            out_rect_[chan].setY(out_y);
-            out_rect_[chan].setHeight(bound.getHeight() - out_y);
+            const auto out_y = db_range.getYProportion(previous_out_[chan]) * bound.getHeight();
+            out_rect_[chan].setY(out_y + bound.getY() - thickness * .5f);
         }
     }
 
@@ -244,5 +245,10 @@ namespace zlpanel {
             ss << std::fixed << std::setprecision(0) << value;
         }
         return ss.str();
+    }
+
+    void MeterDisplayPanel::lookAndFeelChanged() {
+        pending_thickness_.store(base_.getFontSize() * .2f * base_.getMagCurveThickness(), std::memory_order::relaxed);
+        size_changed_.signal();
     }
 }

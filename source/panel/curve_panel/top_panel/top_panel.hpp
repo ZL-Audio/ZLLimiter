@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include "../multilingual/tooltip_helper.hpp"
 #include "logo_panel.hpp"
 #include "top_control_panel.hpp"
 #include "analyzer_label.hpp"

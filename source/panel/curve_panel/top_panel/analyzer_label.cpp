@@ -13,13 +13,13 @@ namespace zlpanel {
     AnalyzerLabel::AnalyzerLabel(PluginProcessor&, zlgui::UIBase& base) :
         base_(base),
         control_background_(base),
-        label_laf_(base) {
+        label_laf_(base),
+        analyzer_label_("", "Analyzer") {
         control_background_.setInterceptsMouseClicks(false, false);
         addChildComponent(control_background_);
 
         label_laf_.setFontScale(1.5f);
 
-        analyzer_label_.setText("Analyzer", juce::dontSendNotification);
         for (auto& l : {&analyzer_label_}) {
             l->setInterceptsMouseClicks(false, false);
             l->setLookAndFeel(&label_laf_);

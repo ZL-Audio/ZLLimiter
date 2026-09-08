@@ -9,10 +9,10 @@
 
 #pragma once
 
-#include "../../PluginProcessor.hpp"
-#include "../../gui/gui.hpp"
-#include "../helper/helper.hpp"
-#include "../multilingual/tooltip_helper.hpp"
+#include "../../../PluginProcessor.hpp"
+#include "../../../gui/gui.hpp"
+#include "../../helper/helper.hpp"
+#include "../../multilingual/tooltip_helper.hpp"
 
 namespace zlpanel {
     class LogoPanel final : public juce::Component,

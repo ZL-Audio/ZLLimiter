@@ -10,14 +10,17 @@
 #include "curve_panel.hpp"
 
 namespace zlpanel {
-    CurvePanel::CurvePanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper&) :
+    CurvePanel::CurvePanel(PluginProcessor& p, zlgui::UIBase& base,
+                           multilingual::TooltipHelper& tooltip_helper) :
         juce::Thread("ZL Limiter Analyzer"), p_ref_(p), base_(base),
         min_db_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PAnalyzerMinDB::kID)),
+        top_panel_(p, base, tooltip_helper),
         peak_panel_(p, base), meter_panel_(p, base), analyzer_setting_panel_(p, base),
         peak_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()),
         meter_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()) {
         addAndMakeVisible(peak_panel_);
         addAndMakeVisible(meter_panel_);
+        addAndMakeVisible(top_panel_);
         addChildComponent(analyzer_setting_panel_);
         addMouseListener(this, true);
         startThread(juce::Thread::Priority::low);
@@ -25,9 +28,13 @@ namespace zlpanel {
 
     CurvePanel::~CurvePanel() {
         removeMouseListener(this);
-        signalThreadShouldExit();
-        notify();
-        waitForThreadToExit(-1);
+        if (isThreadRunning()) {
+            stopThread(-1);
+        }
+    }
+
+    void CurvePanel::paint(juce::Graphics& g) {
+        g.fillAll(base_.getBackgroundColour());
     }
 
     void CurvePanel::resized() {
@@ -35,32 +42,14 @@ namespace zlpanel {
         const auto font_size = base_.getFontSize();
         const auto padding = getPaddingSize(font_size);
         meter_panel_.setBounds(bound.removeFromRight(juce::roundToInt(base_.getFontSize() * 6.f)));
-        plot_bound_ = bound;
         peak_panel_.setBounds(bound);
+        top_panel_.setBounds(bound.removeFromTop(top_panel_.getIdealHeight()));
 
         const auto setting_width = analyzer_setting_panel_.getIdealWidth();
         const auto setting_height = analyzer_setting_panel_.getIdealHeight();
         const auto setting_right = getButtonSize(font_size) * 3 + padding * 3 + padding / 2 + juce::roundToInt(
             font_size * 8.f);
-        analyzer_setting_panel_.setBounds(setting_right - setting_width, 0, setting_width, setting_height);
-    }
-
-    void CurvePanel::paint(juce::Graphics& g) {
-        g.fillAll(base_.getBackgroundColour());
-        const auto bound = plot_bound_.toFloat();
-        const auto min_db = zlstate::PAnalyzerMinDB::getDBFromIndex(min_db_ref_.load(std::memory_order_relaxed));
-        const auto text_height = base_.getFontSize() * 1.6f;
-        g.setFont(base_.getFontSize());
-        for (int i = 0; i <= 6; ++i) {
-            const auto proportion = static_cast<float>(i) / 6.f;
-            const auto y = bound.getY() + bound.getHeight() * proportion;
-            g.setColour(base_.getColourByIdx(zlgui::kGridColour));
-            g.fillRect(bound.getX(), y, bound.getWidth(), std::max(1.f, base_.getFontSize() * .125f));
-            g.setColour(base_.getTextColour().withAlpha(.5f));
-            g.drawText(i == 0 ? juce::String("0") : juce::String(min_db * proportion, std::abs(min_db) < 18.f ? 1 : 0),
-                       bound.withY(std::clamp(y - text_height, bound.getY(), bound.getBottom() - text_height))
-                       .withHeight(text_height), juce::Justification::right, false);
-        }
+        analyzer_setting_panel_.setBounds(setting_right - setting_width, bound.getY(), setting_width, setting_height);
     }
 
     void CurvePanel::repaintCallBack(const double time_stamp) {
@@ -72,6 +61,7 @@ namespace zlpanel {
     void CurvePanel::repaintCallBackSlow() {
         analyzer_setting_panel_.repaintCallBackSlow();
         meter_panel_.repaintCallBackSlow();
+        peak_panel_.repaintCallBackSlow();
     }
 
     void CurvePanel::run() {
@@ -101,7 +91,7 @@ namespace zlpanel {
                                                            .getSampleRate());
                     transfer_buffer_.prepare(sender.getSampleRate(), sender.getMaxNumSamples(),
                                              {2, 2, 2}, capacity_seconds);
-                    peak_panel_.reset();
+                    peak_panel_.getDisplayPanel().reset();
                     meter_panel_.getDisplayPanel().reset();
                 }
                 transfer_buffer_.processTransfer(sender.getAbstractFIFO(), sender.getSampleFIFOs());
@@ -112,7 +102,7 @@ namespace zlpanel {
             const MagDBRange range(0.f, zlstate::PAnalyzerMinDB::getDBFromIndex(
                                        min_db_ref_.load(std::memory_order_relaxed)));
             const auto stamp = next_stamp_.load(std::memory_order_relaxed);
-            peak_panel_.run(stamp, transfer_buffer_, peak_consumer_, range);
+            peak_panel_.getDisplayPanel().run(stamp, transfer_buffer_, peak_consumer_, range);
             if (threadShouldExit()) {
                 return;
             }
@@ -122,7 +112,8 @@ namespace zlpanel {
 
     void CurvePanel::mouseDown(const juce::MouseEvent& event) {
         if (event.originalComponent != &analyzer_setting_panel_ &&
-            !analyzer_setting_panel_.isParentOf(event.originalComponent)) {
+            !analyzer_setting_panel_.isParentOf(event.originalComponent) &&
+            !top_panel_.isParentOf(event.originalComponent)) {
             base_.setPanelProperty(zlgui::kAnalyzerSettingPanel, 0.f);
         }
     }

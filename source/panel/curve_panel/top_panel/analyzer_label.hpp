@@ -9,11 +9,11 @@
 
 #pragma once
 
-#include "../../PluginProcessor.hpp"
-#include "../../gui/gui.hpp"
-#include "../helper/helper.hpp"
-#include "../multilingual/tooltip_helper.hpp"
-#include "../background/panel_background.hpp"
+#include "../../../PluginProcessor.hpp"
+#include "../../../gui/gui.hpp"
+#include "../../helper/helper.hpp"
+#include "../../multilingual/tooltip_helper.hpp"
+#include "../../background/panel_background.hpp"
 
 namespace zlpanel {
     class AnalyzerLabel final : public juce::Component,

@@ -40,15 +40,14 @@ namespace zlpanel {
 
     private:
         static constexpr float kReductionDecayPerSecond = 16.f;
-        static constexpr float kMeterDecayPerSecond = 8.f;
+        static constexpr float kMeterDecayPerSecond = 2.f;
         zlgui::UIBase& base_;
         MeterTopPanel meter_top_panel_;
 
         std::atomic<float>& analyzer_mag_type_ref_;
 
-        // UI publishes sizes; only the worker writes meter geometry.
         AtomicBound<float> pending_bound_;
-        std::atomic<float> pending_reduction_max_height_{0.f};
+        std::atomic<float> pending_thickness_{0.f};
         zlchore::thread::Notifier size_changed_{true};
         juce::Rectangle<float> bound_;
         std::array<float, 2> previous_reduction_{0.f, 0.f};
@@ -83,5 +82,7 @@ namespace zlpanel {
         void updateSize();
 
         static std::string formatValue(float value);
+
+        void lookAndFeelChanged() override;
     };
 }

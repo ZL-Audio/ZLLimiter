@@ -130,9 +130,9 @@ namespace zlstate {
         static constexpr auto kID = "analyzer_min_db";
         static constexpr auto kName = "";
         inline static const auto kChoices = juce::StringArray{
-            "-6", "-9", "-18", "-36", "-54"
+            "-6", "-12", "-24", "-36", "-54"
         };
-        static constexpr std::array kDBs = {-6.f, -9.f, -18.f, -36.f, -54.f};
+        static constexpr std::array kDBs = {-6.f, -12.f, -24.f, -36.f, -54.f};
         static constexpr int kDefaultI = 3;
 
         static constexpr float getDBFromIndex(const float x) {

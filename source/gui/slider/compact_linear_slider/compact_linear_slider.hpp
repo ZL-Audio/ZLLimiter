@@ -260,6 +260,9 @@ namespace zlgui::slider {
             if (value_formatter_) {
                 return value_formatter_(value);
             }
+            if (std::abs(value) < 1e-5) {
+                return {"0"};
+            }
             const bool append_k = precision_ >= 4 ? std::abs(value) >= 10000.0 : std::abs(value) >= 1000.0;
             const auto display_value = append_k ? value * 0.001 : value;
             auto actual_precision = append_k ? precision_ - 1 : precision_;

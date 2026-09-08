@@ -28,8 +28,7 @@ namespace zlpanel {
         g.setColour(out_value_ < 0.f
             ? base_.getTextColour()
             : base_.getColourByIdx(zlgui::ColourIdx::kReductionColour));
-        if (out_value_ < -120.f) {
-        } else {
+        if (out_value_ > -120.f) {
             g.drawText(formatValue(out_value_), bound.removeFromRight(meter_width),
                        juce::Justification::centred, false);
         }

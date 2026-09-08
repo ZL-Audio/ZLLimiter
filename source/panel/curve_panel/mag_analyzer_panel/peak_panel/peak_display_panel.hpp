@@ -9,27 +9,25 @@
 
 #pragma once
 
-#include <juce_gui_basics/juce_gui_basics.h>
-
-#include "../../../PluginProcessor.hpp"
-#include "../../../chore/thread/tri_buffer.hpp"
-#include "../../../gui/gui.hpp"
-#include "../../helper/helper.hpp"
-#include "../../../dsp/analyzer/analyzer_base/fifo_transfer_buffer.hpp"
-#include "../../../dsp/analyzer/mag_analyzer/magnitude_receiver.hpp"
-#include "../mag_db_range.hpp"
-
+#include "../../../../PluginProcessor.hpp"
+#include "../../../../chore/thread/tri_buffer.hpp"
+#include "../../../../gui/gui.hpp"
+#include "../../../helper/helper.hpp"
+#include "../../../../dsp/analyzer/analyzer_base/fifo_transfer_buffer.hpp"
+#include "../../../../dsp/analyzer/mag_analyzer/magnitude_receiver.hpp"
+#include "../../mag_db_range.hpp"
 
 namespace zlpanel {
-    class PeakPanel final : public juce::Component {
+    class PeakDisplayPanel final : public juce::Component {
     public:
-        explicit PeakPanel(PluginProcessor& p, zlgui::UIBase& base);
+        explicit PeakDisplayPanel(PluginProcessor& p, zlgui::UIBase& base);
 
-        ~PeakPanel() override;
+        ~PeakDisplayPanel() override;
 
         void paint(juce::Graphics& g) override;
 
-        void run(double next_time_stamp, zldsp::analyzer::FIFOTransferBuffer<zlp::Controller::kAnalyzerStreamNum>& transfer_buffer,
+        void run(double next_time_stamp,
+                 zldsp::analyzer::FIFOTransferBuffer<zlp::Controller::kAnalyzerStreamNum>& transfer_buffer,
                  size_t consumer_id, const MagDBRange& db_range);
 
         void resized() override;
@@ -67,8 +65,10 @@ namespace zlpanel {
         double start_time_{0.0};
         double motion_start_time_{0.0};
 
-        // Matches PAnalyzerMoveType's choice order.
-        enum class MoveType { kSync, kSlow, kRoll };
+        enum class MoveType {
+            kSync, kSlow, kRoll
+        };
+
         MoveType move_type_{MoveType::kSync};
         size_t roll_next_point_{0};
 
