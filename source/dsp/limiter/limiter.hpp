@@ -86,7 +86,7 @@ namespace zldsp::limiter {
                 latency_samples_ += oversampler_.getLatency();
             }
             reset();
-            setOutputCeilingDecibels(output_ceiling_db_, safety_margin_db_);
+            setOutputCeilingDecibels(output_ceiling_db_);
             setTruePeakEnabled(true_peak_enabled_);
         }
 
@@ -104,13 +104,12 @@ namespace zldsp::limiter {
             }
         }
 
-        void setOutputCeilingDecibels(const FloatType ceiling_db, const FloatType safety_margin_db = FloatType(0.05)) {
+        void setOutputCeilingDecibels(const FloatType ceiling_db) {
             output_ceiling_db_ = ceiling_db;
-            safety_margin_db_ = std::max(safety_margin_db, FloatType(0));
             final_ceiling_linear_ = chore::decibelsToGain(output_ceiling_db_);
-            const auto internal_ceiling_db = output_ceiling_db_ - safety_margin_db_;
-            style_.setCeilingDecibels(internal_ceiling_db);
-            guardian_.setCeilingLinear(chore::decibelsToGain(internal_ceiling_db));
+            const auto internal_ceiling_db = output_ceiling_db_;
+            style_.setCeilingDecibels(output_ceiling_db_);
+            guardian_.setCeilingLinear(chore::decibelsToGain(output_ceiling_db_));
             true_peak_limiter_.setCeilingDecibels(output_ceiling_db_);
         }
 
@@ -198,7 +197,6 @@ namespace zldsp::limiter {
         size_t latency_samples_{0};
 
         FloatType output_ceiling_db_{FloatType(-1)};
-        FloatType safety_margin_db_{FloatType(0.05)};
         FloatType final_ceiling_linear_{chore::decibelsToGain(FloatType(-1))};
         bool true_peak_enabled_{true};
 

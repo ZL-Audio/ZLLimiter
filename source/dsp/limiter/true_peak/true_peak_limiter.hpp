@@ -430,8 +430,6 @@ namespace zldsp::limiter {
     public:
         using StageMode = typename TruePeakCorrectionStage<FloatType>::StageMode;
         static constexpr double kDefaultReleaseSeconds = 0.01;
-        static constexpr FloatType kDefaultSafetyMarginDb = FloatType(0.1);
-        static constexpr FloatType kDefaultSampleMarginDb = FloatType(0.01);
 
         void prepare(const double sample_rate, const size_t maximum_block_size, const size_t maximum_channels,
                      const bool oversampling_enabled = true) {
@@ -440,7 +438,7 @@ namespace zldsp::limiter {
             second_.prepare(sample_rate, maximum_block_size, maximum_channels, kDefaultReleaseSeconds);
             third_.prepare(sample_rate, maximum_block_size, maximum_channels, kDefaultReleaseSeconds);
             updateModes();
-            setCeilingDecibels(ceiling_db_, safety_margin_db_);
+            setCeilingDecibels(ceiling_db_);
             reset();
         }
 
@@ -466,14 +464,11 @@ namespace zldsp::limiter {
             updateModes();
         }
 
-        void setCeilingDecibels(const FloatType ceiling_db, const FloatType safety_margin_db = kDefaultSafetyMarginDb) {
+        void setCeilingDecibels(const FloatType ceiling_db) {
             ceiling_db_ = ceiling_db;
-            safety_margin_db_ = std::max(safety_margin_db, FloatType(0));
-            const auto tp_ceiling_db = ceiling_db_ - safety_margin_db_;
-            const auto sp_ceiling_db = ceiling_db_ - kDefaultSampleMarginDb;
-            first_.setCeilingDecibels(tp_ceiling_db, sp_ceiling_db);
-            second_.setCeilingDecibels(tp_ceiling_db, sp_ceiling_db);
-            third_.setCeilingDecibels(tp_ceiling_db, sp_ceiling_db);
+            first_.setCeilingDecibels(ceiling_db, ceiling_db);
+            second_.setCeilingDecibels(ceiling_db, ceiling_db);
+            third_.setCeilingDecibels(ceiling_db, ceiling_db);
         }
 
         void process(std::span<FloatType*> buffer, const size_t num_samples) {
@@ -504,7 +499,6 @@ namespace zldsp::limiter {
 
     private:
         FloatType ceiling_db_{FloatType(-1)};
-        FloatType safety_margin_db_{kDefaultSafetyMarginDb};
         bool enabled_{true};
         bool oversampling_enabled_{true};
         TruePeakCorrectionStage<FloatType> first_{};
