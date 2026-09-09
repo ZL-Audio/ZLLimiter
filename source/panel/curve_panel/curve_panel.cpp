@@ -62,6 +62,7 @@ namespace zlpanel {
         analyzer_setting_panel_.repaintCallBackSlow();
         meter_panel_.repaintCallBackSlow();
         peak_panel_.repaintCallBackSlow();
+        top_panel_.repaintCallBackSlow();
     }
 
     void CurvePanel::run() {
