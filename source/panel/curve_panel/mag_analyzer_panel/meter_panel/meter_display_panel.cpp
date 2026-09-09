@@ -269,7 +269,10 @@ namespace zlpanel {
 
     std::string MeterDisplayPanel::formatValue(const float value) {
         std::stringstream ss;
-        if (std::abs(value) < 100.f) {
+        const auto abs_value = std::abs(value);
+        if (abs_value < 10.f) {
+            ss << std::fixed << std::setprecision(2) << value;
+        } else if (abs_value < 100.f) {
             ss << std::fixed << std::setprecision(1) << value;
         } else {
             ss << std::fixed << std::setprecision(0) << value;
