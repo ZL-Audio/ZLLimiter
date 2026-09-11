@@ -72,7 +72,7 @@ namespace zlpanel {
         const auto padding = getPaddingSize(font_size);
         const auto button_height = getButtonSize(font_size);
 
-        return 4 * padding + 3 * button_height;
+        return 5 * padding + 4 * button_height;
     }
 
     void AnalyzerSettingPanel::resized() {

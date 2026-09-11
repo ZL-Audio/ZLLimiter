@@ -12,30 +12,51 @@
 namespace zlpanel {
     ControlPanel::ControlPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper&) :
         base_(base), background_(base, .5f, {false, false, false, false}), label_laf_(base),
+        top_labels_{
+            juce::Label{"", "Main"},
+            juce::Label{"", "Support"},
+            juce::Label{"", "Stereo"},
+        },
+        labels_{
+            juce::Label{"", "Lookahead"},
+            juce::Label{"", "Recover"},
+            juce::Label{"", "Attack"},
+            juce::Label{"", "Release"},
+            juce::Label{"", "Delta"}
+        },
         sliders_{
-            Rotary("Lookahead", base, "", 1.25f),
-            Rotary("Recover", base, "", 1.25f),
-            Rotary("Attack", base, "", 1.25f),
-            Rotary("Release", base, "", 1.25f),
-            Rotary("Delta", base, "", 1.25f)
+            Rotary("", base, "", 1.25f),
+            Rotary("", base, "", 1.25f),
+            Rotary("", base, "", 1.25f),
+            Rotary("", base, "", 1.25f),
+            Rotary("", base, "", 1.25f)
         } {
         background_.setBufferedToImage(true);
         addAndMakeVisible(background_);
 
         label_laf_.setFontScale(1.5f);
         label_laf_.setMaximumNumberOfLines(2);
-        const std::array names{"Lookahead", "Recover", "Attack", "Release", "Delta"};
         const std::array ids{zlp::PLookahead::kID, zlp::PRecover::kID, zlp::PAttack::kID,
                              zlp::PRelease::kID, zlp::PChannelDelta::kID};
 
+        for (auto& label : top_labels_) {
+            label.setLookAndFeel(&label_laf_);
+            label.setJustificationType(juce::Justification::centred);
+            label.setBorderSize(juce::BorderSize<int>{0});
+            label.setInterceptsMouseClicks(false, false);
+            label.setBufferedToImage(true);
+            addAndMakeVisible(label);
+        }
+        for (auto& label : labels_) {
+            label.setLookAndFeel(&label_laf_);
+            label.setJustificationType(juce::Justification::centred);
+            label.setBorderSize(juce::BorderSize<int>{0});
+            label.setInterceptsMouseClicks(false, false);
+            label.setBufferedToImage(true);
+            addAndMakeVisible(label);
+        }
+
         for (size_t i = 0; i < sliders_.size(); ++i) {
-            labels_[i].setText(names[i], juce::dontSendNotification);
-            labels_[i].setLookAndFeel(&label_laf_);
-            labels_[i].setJustificationType(juce::Justification::centred);
-            labels_[i].setBorderSize(juce::BorderSize<int>{0});
-            labels_[i].setInterceptsMouseClicks(false, false);
-            labels_[i].setBufferedToImage(true);
-            addAndMakeVisible(labels_[i]);
             sliders_[i].setComponentID(ids[i]);
             sliders_[i].getSlider1().setComponentID(ids[i]);
             attachments_[i] = std::make_unique<zlgui::attachment::SliderAttachment<true>>(
@@ -60,7 +81,7 @@ namespace zlpanel {
         const auto button_height = getButtonSize(font_size);
         const auto padding = getPaddingSize(font_size);
 
-        return slider_width + button_height + 3 * padding;
+        return slider_width + 2 * button_height + 3 * padding;
     }
 
     void ControlPanel::resized() {
@@ -69,8 +90,17 @@ namespace zlpanel {
         auto bound = getLocalBounds();
         background_.setBounds(bound);
         bound.reduce(2 * padding, padding);
-        auto label_bound = bound.removeFromTop(getButtonSize(font_size));
+
         const auto width = getSliderWidth(font_size);
+        {
+            auto top_label_bound = bound.removeFromTop(getButtonSize(font_size));
+            top_labels_[0].setBounds(top_label_bound.removeFromLeft(2 * width + padding));
+            top_label_bound.removeFromLeft(3 * padding);
+            top_labels_[1].setBounds(top_label_bound.removeFromLeft(2 * width + padding));
+            top_label_bound.removeFromLeft(3 * padding);
+            top_labels_[2].setBounds(top_label_bound.removeFromLeft(width));
+        }
+        auto label_bound = bound.removeFromTop(getButtonSize(font_size));
         for (size_t i = 0; i < sliders_.size(); ++i) {
             const auto cell = bound.removeFromLeft(width);
             labels_[i].setBounds(label_bound.removeFromLeft(width));
@@ -82,13 +112,7 @@ namespace zlpanel {
         }
     }
 
-    // void ControlPanel::paintOverChildren(juce::Graphics& g) {
-    //     for (const auto& divider : dividers_) {
-    //         juce::ColourGradient gradient(base_.getTextColour().withAlpha(0.f), divider.getTopLeft(),
-    //                                       base_.getTextColour().withAlpha(0.f), divider.getBottomLeft(), false);
-    //         gradient.addColour(.5, base_.getTextColour().withAlpha(.22f));
-    //         g.setGradientFill(gradient);
-    //         g.fillRect(divider);
-    //     }
-    // }
+    void ControlPanel::repaintCallBackSlow() {
+        updater_.updateComponents();
+    }
 }

@@ -31,5 +31,7 @@ namespace zlpanel {
         const float alpha_;
         // left, top, right, bottom
         std::array<bool, 4> hide_shadow_{false, false, false, false};
+
+        void drawSplit(juce::Graphics& g, juce::Rectangle<float> bound) const;
     };
 }

@@ -26,9 +26,7 @@ namespace zlpanel {
 
         int getIdealHeight() const;
 
-        void repaintCallBackSlow() {
-            updater_.updateComponents();
-        }
+        void repaintCallBackSlow();
 
     private:
         using Rotary = zlgui::slider::TwoValueRotarySlider<false, false, false>;
@@ -36,6 +34,7 @@ namespace zlpanel {
         zlgui::attachment::ComponentUpdater updater_;
         ControlBackground background_;
         zlgui::label::NameLookAndFeel label_laf_;
+        std::array<juce::Label, 3> top_labels_;
         std::array<juce::Label, 5> labels_;
         std::array<Rotary, 5> sliders_;
         std::array<std::unique_ptr<zlgui::attachment::SliderAttachment<true>>, 5> attachments_;
