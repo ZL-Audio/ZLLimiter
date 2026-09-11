@@ -107,7 +107,6 @@ namespace zldsp::limiter {
         void setOutputCeilingDecibels(const FloatType ceiling_db) {
             output_ceiling_db_ = ceiling_db;
             final_ceiling_linear_ = chore::decibelsToGain(output_ceiling_db_);
-            const auto internal_ceiling_db = output_ceiling_db_;
             style_.setCeilingDecibels(output_ceiling_db_);
             guardian_.setCeilingLinear(chore::decibelsToGain(output_ceiling_db_));
             true_peak_limiter_.setCeilingDecibels(output_ceiling_db_);

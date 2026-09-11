@@ -56,11 +56,11 @@ namespace zldsp::analyzer {
             }
         }
 
-        const auto& getDBs() const {
+        [[nodiscard]] const auto& getDBs() const {
             return dbs_;
         }
 
-        float getMaxDB() const {
+        [[nodiscard]] float getMaxDB() const {
             return std::max(dbs_[0], dbs_[1]);
         }
 

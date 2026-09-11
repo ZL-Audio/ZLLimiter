@@ -63,7 +63,7 @@ namespace zlpanel {
         roll_next_point_ = 0;
         pre_receiver_.reset();
         out_receiver_.reset();
-        gained_pre_receiver_.reset();
+        limit_reduction_receiver_.reset();
     }
 
     void PeakDisplayPanel::paint(juce::Graphics& g) {
@@ -158,11 +158,12 @@ namespace zlpanel {
                                       true_peak);
                     out_receiver_.run(range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPostStream],
                                       true_peak);
-                    gained_pre_receiver_.run(
-                        range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerGainedPreStream], true_peak);
+                    limit_reduction_receiver_.run(
+                        range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerGainedPreStream],
+                        transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPostStream]);
                     pre_db_ = pre_receiver_.getMaxDB();
                     out_db_ = out_receiver_.getMaxDB();
-                    reduction_db_ = out_db_ - gained_pre_receiver_.getMaxDB();
+                    reduction_db_ = limit_reduction_receiver_.getMinDB();
                     fifo.finishRead(consumer_id, num_samples_per_point_);
                     num_missing_points_ = 0;
                 } else {
@@ -171,7 +172,7 @@ namespace zlpanel {
                     } else if (num_missing_points_ == kPausedThreshold) {
                         pre_receiver_.reset();
                         out_receiver_.reset();
-                        gained_pre_receiver_.reset();
+                        limit_reduction_receiver_.reset();
                         const auto shift = static_cast<ptrdiff_t>(
                             pre_ys_.size() - static_cast<size_t>(kPausedThreshold));
                         std::ranges::fill(pre_ys_.begin() + shift, pre_ys_.end(), missing_y);
@@ -209,7 +210,7 @@ namespace zlpanel {
                     fifo.finishRead(consumer_id, num_ready - threshold);
                     pre_receiver_.reset();
                     out_receiver_.reset();
-                    gained_pre_receiver_.reset();
+                    limit_reduction_receiver_.reset();
                     too_much_samples_ = 0;
                 }
             } else {

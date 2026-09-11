@@ -14,6 +14,7 @@
 #include "../../../../gui/gui.hpp"
 #include "../../../helper/helper.hpp"
 #include "../../../../dsp/analyzer/analyzer_base/fifo_transfer_buffer.hpp"
+#include "../../../../dsp/analyzer/mag_analyzer/limit_reduction_receiver.hpp"
 #include "../../../../dsp/analyzer/mag_analyzer/magnitude_receiver.hpp"
 #include "../../../../dsp/container/circular_minmax_buffer.hpp"
 #include "../../mag_db_range.hpp"
@@ -71,7 +72,7 @@ namespace zlpanel {
         AtomicBound<float> reduction_max_rect_{};
         std::atomic<float> reduction_max_value_{0.f};
 
-        zldsp::analyzer::MagnitudeReceiver gained_pre_receiver_{};
+        zldsp::analyzer::LimitReductionReceiver limit_reduction_receiver_{};
         zldsp::analyzer::MagnitudeReceiver pre_receiver_{};
         zldsp::analyzer::MagnitudeReceiver out_receiver_{};
 

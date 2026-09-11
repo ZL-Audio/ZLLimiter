@@ -33,7 +33,7 @@ namespace zlpanel {
         missing_seconds_ = 0.0;
         pre_receiver_.reset();
         out_receiver_.reset();
-        gained_pre_receiver_.reset();
+        limit_reduction_receiver_.reset();
         previous_pre_.fill(-240.f);
         previous_out_.fill(-240.f);
         previous_reduction_.fill(0.f);
@@ -158,21 +158,19 @@ namespace zlpanel {
 
         const auto range = fifo.prepareToRead(consumer_id, num_to_read);
         pre_receiver_.run(range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPreStream], true_peak);
-        gained_pre_receiver_.run(range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerGainedPreStream],
-                                 true_peak);
+        limit_reduction_receiver_.run(
+            range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerGainedPreStream],
+            transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPostStream]);
         out_receiver_.run(range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPostStream], true_peak);
         fifo.finishRead(consumer_id, num_to_read);
         const auto& pre_dbs = pre_receiver_.getDBs();
-        const auto& gained_pre_dbs = gained_pre_receiver_.getDBs();
         const auto& out_dbs = out_receiver_.getDBs();
-        const std::array<float, 2> reduction_dbs{
-            std::min(0.f, out_dbs[0] - gained_pre_dbs[0]),
-            std::min(0.f, out_dbs[1] - gained_pre_dbs[1])};
+        const auto& reduction_dbs = limit_reduction_receiver_.getDBs();
         missing_seconds_ = num_to_read == 0 ? missing_seconds_ + delta_time : 0.0;
         if (missing_seconds_ > 0.25) {
             pre_receiver_.reset();
             out_receiver_.reset();
-            gained_pre_receiver_.reset();
+            limit_reduction_receiver_.reset();
         }
 
         const auto bound = bound_;
