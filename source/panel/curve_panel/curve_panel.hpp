@@ -26,6 +26,8 @@ namespace zlpanel {
 
         void paint(juce::Graphics& g) override;
 
+        void paintOverChildren(juce::Graphics& g) override;
+
         void resized() override;
 
         void repaintCallBack(double time_stamp);

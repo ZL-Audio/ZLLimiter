@@ -37,6 +37,10 @@ namespace zlpanel {
         g.fillAll(base_.getBackgroundColour());
     }
 
+    void CurvePanel::paintOverChildren(juce::Graphics&) {
+        notify();
+    }
+
     void CurvePanel::resized() {
         auto bound = getLocalBounds();
         const auto font_size = base_.getFontSize();
@@ -54,7 +58,6 @@ namespace zlpanel {
 
     void CurvePanel::repaintCallBack(const double time_stamp) {
         next_stamp_.store(time_stamp, std::memory_order_relaxed);
-        notify();
         repaint();
     }
 
