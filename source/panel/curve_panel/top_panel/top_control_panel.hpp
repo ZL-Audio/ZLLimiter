@@ -27,16 +27,26 @@ namespace zlpanel {
     private:
         zlgui::UIBase& base_;
         zlgui::attachment::ComponentUpdater updater_;
+
         zlgui::label::NameLookAndFeel label_laf_;
         juce::Label input_label_, ceiling_label_, oversample_label_;
+
         zlgui::slider::CompactLinearSlider<false, false, false> input_slider_, ceiling_slider_;
         zlgui::attachment::SliderAttachment<true> input_attachment_, ceiling_attachment_;
+
         zlgui::combobox::CompactCombobox oversample_box_;
         zlgui::attachment::ComboBoxAttachment<true> oversample_attachment_;
-        zlgui::button::ClickTextButton true_peak_button_;
+
+        std::unique_ptr<juce::Drawable> true_peak_icon_;
+        zlgui::button::ClickButton true_peak_button_;
         zlgui::attachment::ButtonAttachment<true> true_peak_attachment_;
-        std::unique_ptr<juce::Drawable> delta_icon_, bypass_icon_;
-        zlgui::button::ClickButton delta_button_, bypass_button_;
-        zlgui::attachment::ButtonAttachment<true> delta_attachment_, bypass_attachment_;
+
+        std::unique_ptr<juce::Drawable> delta_icon_;
+        zlgui::button::ClickButton delta_button_;
+        zlgui::attachment::ButtonAttachment<true> delta_attachment_;
+
+        std::unique_ptr<juce::Drawable> bypass_icon_;
+        zlgui::button::ClickButton bypass_button_;
+        zlgui::attachment::ButtonAttachment<true> bypass_attachment_;
     };
 }

@@ -21,13 +21,14 @@ namespace zlpanel {
         ceiling_attachment_(ceiling_slider_.getSlider(), p.parameters_, zlp::POutputCeiling::kID, updater_),
         oversample_box_(zlp::POversampling::kChoices, base),
         oversample_attachment_(oversample_box_.getBox(), p.parameters_, zlp::POversampling::kID, updater_),
-        true_peak_button_(base, "True Peak"),
+        true_peak_icon_(juce::Drawable::createFromImageData(BinaryData::dline_tp_svg, BinaryData::dline_tp_svgSize)),
+        true_peak_button_(base, true_peak_icon_.get(), true_peak_icon_.get()),
         true_peak_attachment_(true_peak_button_.getButton(), p.parameters_, zlp::PTruePeak::kID, updater_),
         delta_icon_(juce::Drawable::createFromImageData(BinaryData::delta_svg, BinaryData::delta_svgSize)),
-        bypass_icon_(juce::Drawable::createFromImageData(BinaryData::bypass_svg, BinaryData::bypass_svgSize)),
         delta_button_(base, delta_icon_.get(), delta_icon_.get()),
-        bypass_button_(base, bypass_icon_.get(), bypass_icon_.get()),
         delta_attachment_(delta_button_.getButton(), p.parameters_, zlp::PDelta::kID, updater_),
+        bypass_icon_(juce::Drawable::createFromImageData(BinaryData::bypass_svg, BinaryData::bypass_svgSize)),
+        bypass_button_(base, bypass_icon_.get(), bypass_icon_.get()),
         bypass_attachment_(bypass_button_.getButton(), p.parameters_, zlp::PBypass::kID, updater_) {
         label_laf_.setFontScale(1.5f);
         for (auto* label : {&input_label_, &ceiling_label_, &oversample_label_}) {
@@ -44,23 +45,15 @@ namespace zlpanel {
             slider->getSlider().setSliderSnapsToMousePosition(false);
             addAndMakeVisible(slider);
         }
-        input_slider_.setComponentID(zlp::PInputGain::kID);
-        ceiling_slider_.setComponentID(zlp::POutputCeiling::kID);
         input_slider_.getSlider().setComponentID(zlp::PInputGain::kID);
         ceiling_slider_.getSlider().setComponentID(zlp::POutputCeiling::kID);
-        oversample_box_.getBox().setComponentID(zlp::POversampling::kID);
+
         oversample_box_.setScrollEnabled(true);
         oversample_box_.getLAF().setFontScale(1.5f);
         oversample_box_.setBufferedToImage(true);
         addAndMakeVisible(oversample_box_);
-        true_peak_button_.getButton().setClickingTogglesState(true);
-        true_peak_button_.getButton().setComponentID(zlp::PTruePeak::kID);
-        true_peak_button_.getLAF().setFontScale(1.5f);
-        true_peak_button_.getLAF().setJustification(juce::Justification::centred);
-        addAndMakeVisible(true_peak_button_);
-        delta_button_.getButton().setComponentID(zlp::PDelta::kID);
-        bypass_button_.getButton().setComponentID(zlp::PBypass::kID);
-        for (auto* button : {&delta_button_, &bypass_button_}) {
+
+        for (auto* button : {&true_peak_button_, &delta_button_, &bypass_button_}) {
             button->getButton().setClickingTogglesState(true);
             button->setImageAlpha(.5f, .75f, 1.f, 1.f);
             addAndMakeVisible(button);
@@ -77,11 +70,14 @@ namespace zlpanel {
         const auto value_width = juce::roundToInt(font_size * kSmallSliderWidthScale * .75f);
         bypass_button_.setBounds(bound.removeFromRight(button_width));
         bound.removeFromRight(padding);
+
         delta_button_.setBounds(bound.removeFromRight(button_width));
         delta_button_.getButton().setEdgeIndent(juce::roundToInt(font_size * .225f));
         bound.removeFromRight(padding);
-        true_peak_button_.setBounds(bound.removeFromRight(label_width));
+
+        true_peak_button_.setBounds(bound.removeFromRight(button_width));
         bound.removeFromRight(padding);
+
         oversample_box_.setBounds(bound.removeFromRight(value_width));
         bound.removeFromRight(padding);
         oversample_label_.setBounds(bound.removeFromRight(label_width));
