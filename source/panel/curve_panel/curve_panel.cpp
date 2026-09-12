@@ -14,12 +14,19 @@ namespace zlpanel {
                            multilingual::TooltipHelper& tooltip_helper) :
         juce::Thread("ZL Limiter Analyzer"), p_ref_(p), base_(base),
         min_db_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PAnalyzerMinDB::kID)),
+        is_meter_on_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PMeterDisplayON::kID)),
+        is_value_on_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueDisplayON::kID)),
         top_panel_(p, base, tooltip_helper),
-        peak_panel_(p, base), meter_panel_(p, base), analyzer_setting_panel_(p, base),
+        peak_panel_(p, base),
+        meter_panel_(p, base),
+        value_panel_(p, base),
+        analyzer_setting_panel_(p, base),
         peak_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()),
         meter_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()) {
         addAndMakeVisible(peak_panel_);
         addAndMakeVisible(meter_panel_);
+        value_panel_.setBufferedToImage(true);
+        addAndMakeVisible(value_panel_);
         top_panel_.setBufferedToImage(true);
         addAndMakeVisible(top_panel_);
         analyzer_setting_panel_.setBufferedToImage(true);
@@ -44,17 +51,16 @@ namespace zlpanel {
     }
 
     void CurvePanel::resized() {
+        updateBounds();
+
         auto bound = getLocalBounds();
         const auto font_size = base_.getFontSize();
         const auto padding = getPaddingSize(font_size);
-        meter_panel_.setBounds(bound.removeFromRight(juce::roundToInt(base_.getFontSize() * 6.f)));
-        peak_panel_.setBounds(bound);
-        top_panel_.setBounds(bound.removeFromTop(top_panel_.getIdealHeight()));
-
         const auto setting_width = analyzer_setting_panel_.getIdealWidth();
         const auto setting_height = analyzer_setting_panel_.getIdealHeight();
         const auto setting_right = getButtonSize(font_size) * 3 + padding * 3 + padding / 2 + juce::roundToInt(
             font_size * 8.f);
+        bound.removeFromTop(top_panel_.getIdealHeight());
         analyzer_setting_panel_.setBounds(setting_right - setting_width, bound.getY(), setting_width, setting_height);
     }
 
@@ -64,9 +70,17 @@ namespace zlpanel {
     }
 
     void CurvePanel::repaintCallBackSlow() {
+        const auto is_meter_on = is_meter_on_ref_.load(std::memory_order_relaxed) > .5f;
+        const auto is_value_on = is_value_on_ref_.load(std::memory_order_relaxed) > .5f;
+        if (is_meter_on != is_meter_on_ || is_value_on != is_value_on_) {
+            is_meter_on_ = is_meter_on;
+            is_value_on_ = is_value_on;
+            updateBounds();
+        }
         analyzer_setting_panel_.repaintCallBackSlow();
         meter_panel_.repaintCallBackSlow();
         peak_panel_.repaintCallBackSlow();
+        value_panel_.repaintCallBackSlow();
         top_panel_.repaintCallBackSlow();
     }
 
@@ -122,5 +136,19 @@ namespace zlpanel {
             !top_panel_.isParentOf(event.originalComponent)) {
             base_.setPanelProperty(zlgui::kAnalyzerSettingPanel, 0.f);
         }
+    }
+
+    void CurvePanel::updateBounds() {
+        auto bound = getLocalBounds();
+        value_panel_.setVisible(is_value_on_);
+        if (is_value_on_) {
+            value_panel_.setBounds(bound.removeFromRight(value_panel_.getIdealWidth()));
+        }
+        meter_panel_.setVisible(is_meter_on_);
+        if (is_meter_on_) {
+            meter_panel_.setBounds(bound.removeFromRight(meter_panel_.getIdealWidth()));
+        }
+        peak_panel_.setBounds(bound);
+        top_panel_.setBounds(bound.removeFromTop(top_panel_.getIdealHeight()));
     }
 }

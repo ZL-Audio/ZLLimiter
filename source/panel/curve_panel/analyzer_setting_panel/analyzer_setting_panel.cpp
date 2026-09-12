@@ -125,11 +125,9 @@ namespace zlpanel {
         bound.removeFromTop(padding);
         {
             auto row = bound.removeFromTop(height);
-            const auto h_padding = (row.getWidth() - 2 * height) / 3;
-            row.removeFromLeft(h_padding);
-            row.removeFromRight(h_padding);
-            buttons_[0].setBounds(row.removeFromLeft(height));
-            buttons_[1].setBounds(row.removeFromRight(height));
+            const auto width = row.getWidth() / 2;
+            buttons_[0].setBounds(row.removeFromLeft(width));
+            buttons_[1].setBounds(row.removeFromRight(width));
         }
     }
 

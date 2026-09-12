@@ -7,21 +7,23 @@
 //
 // You should have received a copy of the GNU Affero General Public License along with ZLLimiter. If not, see <https://www.gnu.org/licenses/>.
 
+
 #pragma once
 
-#include "meter_background_panel.hpp"
-#include "meter_display_panel.hpp"
+#include "../../../../PluginProcessor.hpp"
+#include "../../../../chore/thread/notifier.hpp"
+#include "../../../../gui/gui.hpp"
+#include "../../../helper/helper.hpp"
+#include "../../../../dsp/analyzer/mag_analyzer/magnitude_receiver.hpp"
+#include "../../../../dsp/loudness/lufs_meter.hpp"
+
 
 namespace zlpanel {
-    class MeterPanel final : public juce::Component {
+    class ValuePanel final : public juce::Component {
     public:
-        explicit MeterPanel(PluginProcessor& p, zlgui::UIBase& base);
+        explicit ValuePanel(PluginProcessor& p, zlgui::UIBase& base);
 
-        ~MeterPanel() override;
-
-        MeterDisplayPanel& getDisplayPanel() {
-            return meter_display_panel_;
-        }
+        ~ValuePanel() override;
 
         int getIdealWidth() const;
 
@@ -31,8 +33,5 @@ namespace zlpanel {
 
     private:
         zlgui::UIBase& base_;
-
-        MeterBackgroundPanel meter_background_panel_;
-        MeterDisplayPanel meter_display_panel_;
     };
 }

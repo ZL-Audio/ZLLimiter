@@ -18,8 +18,6 @@ namespace zlpanel {
     }
 
     void PeakBackgroundPanel::paint(juce::Graphics& g) {
-        g.fillAll(base_.getBackgroundColour());
-
         auto bound = getLocalBounds().toFloat();
         const auto font_size = base_.getFontSize();
         bound.removeFromTop(static_cast<float>(getTopPanelHeight(font_size)));

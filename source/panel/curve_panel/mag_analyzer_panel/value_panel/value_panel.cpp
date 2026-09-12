@@ -7,32 +7,27 @@
 //
 // You should have received a copy of the GNU Affero General Public License along with ZLLimiter. If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once
 
-#include "meter_background_panel.hpp"
-#include "meter_display_panel.hpp"
+#include "value_panel.hpp"
 
 namespace zlpanel {
-    class MeterPanel final : public juce::Component {
-    public:
-        explicit MeterPanel(PluginProcessor& p, zlgui::UIBase& base);
+    ValuePanel::ValuePanel(PluginProcessor&, zlgui::UIBase& base) :
+        base_(base) {
 
-        ~MeterPanel() override;
+    }
 
-        MeterDisplayPanel& getDisplayPanel() {
-            return meter_display_panel_;
-        }
+    ValuePanel::~ValuePanel() {
+    }
 
-        int getIdealWidth() const;
+    int ValuePanel::getIdealWidth() const {
+        return juce::roundToInt(base_.getFontSize() * 12.f);
+    }
 
-        void resized() override;
+    void ValuePanel::resized() {
 
-        void repaintCallBackSlow();
+    }
 
-    private:
-        zlgui::UIBase& base_;
+    void ValuePanel::repaintCallBackSlow() {
 
-        MeterBackgroundPanel meter_background_panel_;
-        MeterDisplayPanel meter_display_panel_;
-    };
+    }
 }
