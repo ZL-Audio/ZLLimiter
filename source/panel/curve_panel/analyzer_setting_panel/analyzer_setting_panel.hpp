@@ -34,9 +34,15 @@ namespace zlpanel {
         zlgui::attachment::ComponentUpdater updater_;
         PanelBackground background_;
         std::array<zlgui::combobox::CompactCombobox, 4> boxes_;
-        std::array<zlgui::button::ClickTextButton, 3> buttons_;
         std::array<std::unique_ptr<zlgui::attachment::ComboBoxAttachment<true>>, 4> box_attachments_;
-        std::array<std::unique_ptr<zlgui::attachment::ButtonAttachment<true>>, 3> button_attachments_;
+
+        std::array<zlgui::button::ClickTextButton, 3> click_buttons_;
+        std::array<std::unique_ptr<zlgui::attachment::ButtonAttachment<true>>, 3> click_button_attachments_;
+
+        const std::array<std::unique_ptr<juce::Drawable>, 2> drawables_;
+        std::array<zlgui::button::ClickButton, 2> buttons_;
+        std::array<std::unique_ptr<zlgui::attachment::ButtonAttachment<true>>, 2> button_attachments_;
+
 
         void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override;
     };

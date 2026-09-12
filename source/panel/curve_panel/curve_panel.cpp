@@ -20,7 +20,9 @@ namespace zlpanel {
         meter_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()) {
         addAndMakeVisible(peak_panel_);
         addAndMakeVisible(meter_panel_);
+        top_panel_.setBufferedToImage(true);
         addAndMakeVisible(top_panel_);
+        analyzer_setting_panel_.setBufferedToImage(true);
         addChildComponent(analyzer_setting_panel_);
         addMouseListener(this, true);
         startThread(juce::Thread::Priority::low);

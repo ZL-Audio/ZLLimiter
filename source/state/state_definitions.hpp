@@ -35,7 +35,7 @@ namespace zlstate {
         static std::unique_ptr<juce::AudioParameterFloat> get(const std::string& suffix, const bool meta,
                                                               const bool automate = true) {
             auto attributes = juce::AudioParameterFloatAttributes().withAutomatable(automate).withLabel(T::kName).
-                                                                    withMeta(meta);
+                withMeta(meta);
             return std::make_unique<juce::AudioParameterFloat>(juce::ParameterID(T::kID + suffix, kVersionHint),
                                                                T::kName + suffix, T::kRange, T::kDefaultV, attributes);
         }
@@ -64,7 +64,7 @@ namespace zlstate {
         static std::unique_ptr<juce::AudioParameterBool> get(const std::string& suffix, const bool meta,
                                                              const bool automate = true) {
             auto attributes = juce::AudioParameterBoolAttributes().withAutomatable(automate).withLabel(T::kName).
-                                                                   withMeta(meta);
+                withMeta(meta);
             return std::make_unique<juce::AudioParameterBool>(juce::ParameterID(T::kID + suffix, kVersionHint),
                                                               T::kName + suffix, T::kDefaultV, attributes);
         }
@@ -172,11 +172,26 @@ namespace zlstate {
         static constexpr auto kDefaultV = true;
     };
 
+    class PMeterDisplayON : public BoolParameters<PMeterDisplayON> {
+    public:
+        static constexpr auto kID = "meter_display_on";
+        static constexpr auto kName = "";
+        static constexpr auto kDefaultV = true;
+    };
+
+    class PValueDisplayON : public BoolParameters<PValueDisplayON> {
+    public:
+        static constexpr auto kID = "value_display_on";
+        static constexpr auto kName = "";
+        static constexpr auto kDefaultV = true;
+    };
+
     inline juce::AudioProcessorValueTreeState::ParameterLayout getNAParameterLayout() {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;
         layout.add(PAnalyzerMagType::get(false), PAnalyzerMoveType::get(false),
                    PAnalyzerMinDB::get(false), PAnalyzerTimeLength::get(false),
-                   PPreCurveDisplay::get(false), PPostCurveDisplay::get(false), PDeltaCurveDisplay::get(false));
+                   PPreCurveDisplay::get(false), PPostCurveDisplay::get(false), PDeltaCurveDisplay::get(false),
+                   PMeterDisplayON::get(false), PValueDisplayON::get(false));
         return layout;
     }
 
@@ -184,7 +199,7 @@ namespace zlstate {
     public:
         static constexpr auto kID = "window_w";
         static constexpr auto kName = "";
-        inline static constexpr float kMinV = 600.f;
+        inline static constexpr float kMinV = 345.f;
         inline static constexpr float kMaxV = 6000.f;
         inline static constexpr float kDefaultV = 600.f;
         inline static const auto kRange = juce::NormalisableRange<float>(kMinV, kMaxV, 1.f);

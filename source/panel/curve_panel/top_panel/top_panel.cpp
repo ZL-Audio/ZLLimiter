@@ -32,8 +32,6 @@ namespace zlpanel {
         addAndMakeVisible(preset_button_);
         addAndMakeVisible(analyzer_label_);
         addAndMakeVisible(top_control_panel_);
-
-        setBufferedToImage(true);
     }
 
     void TopPanel::paint(juce::Graphics& g) {
