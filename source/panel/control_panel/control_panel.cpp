@@ -19,7 +19,7 @@ namespace zlpanel {
         },
         labels_{
             juce::Label{"", "Lookahead"},
-            juce::Label{"", "Recover"},
+            juce::Label{"", "Recovery"},
             juce::Label{"", "Attack"},
             juce::Label{"", "Release"},
             juce::Label{"", "Delta"}
@@ -36,7 +36,7 @@ namespace zlpanel {
 
         label_laf_.setFontScale(1.5f);
         label_laf_.setMaximumNumberOfLines(2);
-        const std::array ids{zlp::PLookahead::kID, zlp::PRecover::kID, zlp::PAttack::kID,
+        const std::array ids{zlp::PLookahead::kID, zlp::PRecovery::kID, zlp::PAttack::kID,
                              zlp::PRelease::kID, zlp::PChannelDelta::kID};
 
         for (auto& label : top_labels_) {

@@ -114,10 +114,10 @@ namespace zlp {
                 (limiter.setChannelDeltaDecibels(decibels), ...);
             }, limiters_);
         }
-        if (to_update_recover_.check()) {
-            const auto percent = recover_percent_.load(std::memory_order_relaxed);
+        if (to_update_recovery_.check()) {
+            const auto percent = recovery_percent_.load(std::memory_order_relaxed);
             std::apply([&](auto&... limiter) {
-                (limiter.setRecoverPercent(percent), ...);
+                (limiter.setRecoveryPercent(percent), ...);
             }, limiters_);
         }
 
@@ -192,7 +192,7 @@ namespace zlp {
         to_update_attack_.signal();
         to_update_release_.signal();
         to_update_channel_delta_.signal();
-        to_update_recover_.signal();
+        to_update_recovery_.signal();
         to_update_.signal();
     }
 

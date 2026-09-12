@@ -131,8 +131,8 @@ namespace zldsp::limiter {
             channel_delta_db_ = std::max(decibels, FloatType(0));
         }
 
-        void setRecoverPercent(const FloatType percent) {
-            recovery_.setRecoverPercent(percent);
+        void setRecoveryPercent(const FloatType percent) {
+            recovery_.setRecoveryPercent(percent);
         }
 
         void setCeilingDecibels(const FloatType ceiling_db) {

@@ -133,8 +133,8 @@ namespace zldsp::limiter {
             style_.setChannelDeltaDecibels(decibels);
         }
 
-        void setRecoverPercent(const FloatType percent) {
-            style_.setRecoverPercent(percent);
+        void setRecoveryPercent(const FloatType percent) {
+            style_.setRecoveryPercent(percent);
         }
 
         void process(std::span<FloatType*> buffer, const size_t num_samples) {

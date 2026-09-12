@@ -24,7 +24,7 @@ namespace zlp {
     class PAttack;
     class PRelease;
     class PChannelDelta;
-    class PRecover;
+    class PRecovery;
 
     template <typename FloatType>
     inline juce::NormalisableRange<FloatType> getLogMidRange(
@@ -292,10 +292,10 @@ namespace zlp {
         static constexpr auto kDefaultV = 1.5f;
     };
 
-    class PRecover : public FloatParameters<PRecover> {
+    class PRecovery : public FloatParameters<PRecovery> {
     public:
-        static constexpr auto kID = "recover";
-        static constexpr auto kName = "Recover";
+        static constexpr auto kID = "recovery";
+        static constexpr auto kName = "Recovery";
         inline static const auto kRange = juce::NormalisableRange<float>(0.f, 100.f, 0.01f);
         static constexpr auto kDefaultV = 50.f;
     };
@@ -304,7 +304,7 @@ namespace zlp {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;
         layout.add(PInputGain::get(), POutputCeiling::get(),
                    PTruePeak::get(), POversampling::get(),
-                   PLookahead::get(), PRecover::get(), PAttack::get(), PRelease::get(),
+                   PLookahead::get(), PRecovery::get(), PAttack::get(), PRelease::get(),
                    PChannelDelta::get(),
                    PBypass::get(), PDelta::get());
         return layout;

@@ -33,7 +33,7 @@ namespace zlp {
         static constexpr std::array kIDs{PInputGain::kID, POutputCeiling::kID,
                                          PTruePeak::kID, POversampling::kID,
                                          PLookahead::kID, PAttack::kID, PRelease::kID, PChannelDelta::kID,
-                                         PBypass::kID, PDelta::kID, PRecover::kID,
+                                         PBypass::kID, PDelta::kID, PRecovery::kID,
         };
 
         void parameterChanged(const juce::String& parameter_id, float value) override;

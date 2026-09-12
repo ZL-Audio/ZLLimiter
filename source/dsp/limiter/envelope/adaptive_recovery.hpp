@@ -40,12 +40,12 @@ namespace zldsp::limiter {
             ramp_remaining_ = 0;
         }
 
-        void setRecoverPercent(const FloatType percent) {
-            const auto recover = std::clamp(static_cast<double>(percent), 0.0, 100.0);
-            if (std::abs(recover - recover_percent_) < 1e-10) {
+        void setRecoveryPercent(const FloatType percent) {
+            const auto recovery = std::clamp(static_cast<double>(percent), 0.0, 100.0);
+            if (std::abs(recovery - recovery_percent_) < 1e-10) {
                 return;
             }
-            recover_percent_ = recover;
+            recovery_percent_ = recovery;
             updateTargets();
             ramp_remaining_ = ramp_samples_;
             fast_increment_ = (target_fast_step_ - fast_step_) / static_cast<double>(ramp_samples_);
@@ -71,7 +71,7 @@ namespace zldsp::limiter {
 
     private:
         double sample_rate_{48000.0};
-        double recover_percent_{50.0};
+        double recovery_percent_{50.0};
         double fast_step_{-std::expm1(std::log(0.1) / (48000.0 * 0.05))};
         double slow_step_{-std::expm1(std::log(0.1) / (48000.0 * 0.25))};
         double target_fast_step_{fast_step_}, target_slow_step_{slow_step_};
@@ -80,7 +80,7 @@ namespace zldsp::limiter {
         AsymmetricFollower<FloatType> persistence_{}, depth_{};
 
         void updateTargets() {
-            const auto fast_seconds = 0.1 * std::exp2(-recover_percent_ * 0.02);
+            const auto fast_seconds = 0.025 * std::exp2(recovery_percent_ * 0.02);
             target_fast_step_ = -std::expm1(std::log(0.1) / (sample_rate_ * fast_seconds));
             target_slow_step_ = -std::expm1(std::log(0.1) / (sample_rate_ * fast_seconds * 5.0));
         }

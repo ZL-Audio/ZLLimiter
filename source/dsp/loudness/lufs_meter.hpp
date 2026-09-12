@@ -13,6 +13,7 @@
 #include <bit>
 #include <cmath>
 #include <limits>
+#include <span>
 
 #include "../vector/vector.hpp"
 #include "k_weighting_filter.hpp"
@@ -29,6 +30,8 @@ namespace zldsp::loudness {
             k_weighting_filter_(use_low_pass) {
             histogram_.resize(701);
             histogram_sums_.resize(701);
+            loudness_range_histogram_.resize(kLoudnessRangeBinCount);
+            loudness_range_histogram_sums_.resize(kLoudnessRangeBinCount);
         }
 
         void prepare(const double sample_rate, const size_t num_channels) {
@@ -59,6 +62,13 @@ namespace zldsp::loudness {
             short_term_write_idx_ = 0;
             short_term_ready_count_ = 0;
             short_term_loudness_ = -std::numeric_limits<FloatType>::infinity();
+            std::fill(loudness_range_histogram_.begin(), loudness_range_histogram_.end(), FloatType(0));
+            std::fill(loudness_range_histogram_sums_.begin(), loudness_range_histogram_sums_.end(), FloatType(0));
+            loudness_range_first_bin_ = kLoudnessRangeBinCount;
+            loudness_range_last_bin_ = 0;
+            loudness_range_warmup_blocks_ = 0;
+            loudness_range_dirty_ = false;
+            loudness_range_ = FloatType(0);
             std::fill(histogram_.begin(), histogram_.end(), FloatType(0));
             std::fill(histogram_sums_.begin(), histogram_sums_.end(), FloatType(0));
             for (auto& buffer : small_buffer_) {
@@ -98,6 +108,22 @@ namespace zldsp::loudness {
 
         [[nodiscard]] bool isShortTermReady() const noexcept {
             return short_term_ready_count_ == kShortTermBlockCount;
+        }
+
+        [[nodiscard]] FloatType getLoudnessRange() const noexcept {
+            if (loudness_range_dirty_) {
+                loudness_range_ = calculateLoudnessRange();
+                loudness_range_dirty_ = false;
+            }
+            return loudness_range_;
+        }
+
+        [[nodiscard]] bool isLoudnessRangeReady() const noexcept {
+            return loudness_range_first_bin_ < kLoudnessRangeBinCount;
+        }
+
+        [[nodiscard]] bool isLoudnessRangeProvisional() const noexcept {
+            return !isLoudnessRangeReady() || loudness_range_warmup_blocks_ < kLoudnessRangeWarmupBlocks;
         }
 
         FloatType getIntegratedLoudness() const {
@@ -140,11 +166,82 @@ namespace zldsp::loudness {
         double short_term_mean_mul_{1};
         FloatType short_term_loudness_{-std::numeric_limits<FloatType>::infinity()};
 
+        static constexpr FloatType kLoudnessRangeMaxLUFS = FloatType(10) * FloatType(
+            std::numeric_limits<FloatType>::max_exponent10 + 1);
+        static constexpr size_t kLoudnessRangeBinCount = static_cast<size_t>(
+            (kLoudnessRangeMaxLUFS + FloatType(70)) * FloatType(10)) + 1;
+        static constexpr size_t kLoudnessRangeWarmupBlocks = 600;
+        vector::aligned_vector<FloatType> loudness_range_histogram_{};
+        vector::aligned_vector<FloatType> loudness_range_histogram_sums_{};
+        size_t loudness_range_first_bin_{kLoudnessRangeBinCount}, loudness_range_last_bin_{0};
+        size_t loudness_range_warmup_blocks_{0};
+        mutable bool loudness_range_dirty_{false};
+        mutable FloatType loudness_range_{FloatType(0)};
+
         vector::aligned_vector<FloatType> histogram_{};
         vector::aligned_vector<FloatType> histogram_sums_{};
         std::vector<FloatType> weights_;
 
+        void updateLoudnessRange(const FloatType mean_square, const FloatType loudness) {
+            if (mean_square >= FloatType(1.1724653045822963e-7) && std::isfinite(mean_square)) {
+                const auto hist_idx = static_cast<size_t>(std::clamp(
+                    std::round((loudness + FloatType(70)) * FloatType(10)),
+                    FloatType(0), static_cast<FloatType>(kLoudnessRangeBinCount - 1)));
+                loudness_range_histogram_[hist_idx] += FloatType(1);
+                loudness_range_histogram_sums_[hist_idx] += mean_square;
+                loudness_range_first_bin_ = std::min(loudness_range_first_bin_, hist_idx);
+                loudness_range_last_bin_ = std::max(loudness_range_last_bin_, hist_idx);
+                loudness_range_dirty_ = true;
+            }
+        }
+
+        FloatType calculateLoudnessRange() const noexcept {
+            if (!isLoudnessRangeReady()) {
+                return FloatType(0);
+            }
+            const auto histogram_size = loudness_range_last_bin_ - loudness_range_first_bin_ + 1;
+            const auto total_count = vector::sum(
+                loudness_range_histogram_.data() + loudness_range_first_bin_, histogram_size);
+            if (total_count < FloatType(0.5)) {
+                return FloatType(0);
+            }
+            const auto total_sum = vector::sum(
+                loudness_range_histogram_sums_.data() + loudness_range_first_bin_, histogram_size);
+            const auto total_mean_square = total_sum / total_count;
+            if (!std::isfinite(total_mean_square)) {
+                return FloatType(0);
+            }
+            const auto total_lufs = FloatType(-0.691) + FloatType(10) * std::log10(total_mean_square);
+            const auto gate = std::max(total_lufs - FloatType(20), FloatType(-70));
+            const auto start_idx = std::max(loudness_range_first_bin_, static_cast<size_t>(
+                std::ceil((gate + FloatType(70)) * FloatType(10))));
+            if (start_idx > loudness_range_last_bin_) {
+                return FloatType(0);
+            }
+            const auto sub_count = vector::sum(
+                loudness_range_histogram_.data() + start_idx, loudness_range_last_bin_ - start_idx + 1);
+            if (sub_count < FloatType(0.5)) {
+                return FloatType(0);
+            }
+            const auto low_rank = std::round((sub_count - FloatType(1)) * FloatType(0.10));
+            const auto high_rank = std::round((sub_count - FloatType(1)) * FloatType(0.95));
+            auto low_idx = start_idx;
+            FloatType count = 0;
+            for (size_t i = start_idx; i <= loudness_range_last_bin_; ++i) {
+                const auto next_count = count + loudness_range_histogram_[i];
+                if (count <= low_rank && low_rank < next_count) {
+                    low_idx = i;
+                }
+                if (high_rank < next_count) {
+                    return static_cast<FloatType>(i - low_idx) / FloatType(10);
+                }
+                count = next_count;
+            }
+            return FloatType(0);
+        }
+
         void updateShortTerm(const FloatType sum_square) {
+            loudness_range_warmup_blocks_ = std::min(loudness_range_warmup_blocks_ + 1, kLoudnessRangeWarmupBlocks);
             auto index = kShortTermTreeLeaves + short_term_write_idx_;
             short_term_energy_tree_[index] = static_cast<double>(sum_square);
             while (index > 1) {
@@ -156,9 +253,11 @@ namespace zldsp::loudness {
             short_term_ready_count_ = std::min(short_term_ready_count_ + 1, kShortTermBlockCount);
             if (isShortTermReady()) {
                 const auto mean_square = short_term_energy_tree_[1] * short_term_mean_mul_;
-                short_term_loudness_ = mean_square > 0.0
-                    ? static_cast<FloatType>(-0.691 + 10.0 * std::log10(mean_square))
-                    : -std::numeric_limits<FloatType>::infinity();
+                const auto loudness = mean_square > 0.0
+                    ? -0.691 + 10.0 * std::log10(mean_square)
+                    : -std::numeric_limits<double>::infinity();
+                short_term_loudness_ = static_cast<FloatType>(loudness);
+                updateLoudnessRange(static_cast<FloatType>(mean_square), short_term_loudness_);
             }
         }
 
