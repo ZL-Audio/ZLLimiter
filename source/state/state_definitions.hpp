@@ -186,12 +186,56 @@ namespace zlstate {
         static constexpr auto kDefaultV = true;
     };
 
+    class PValueTruePeakON : public BoolParameters<PValueTruePeakON> {
+    public:
+        static constexpr auto kID = "value_true_peak_on";
+        static constexpr auto kName = "";
+        static constexpr auto kDefaultV = true;
+    };
+
+    class PValueLUFSSON : public BoolParameters<PValueLUFSSON> {
+    public:
+        static constexpr auto kID = "value_lufs_s_on";
+        static constexpr auto kName = "";
+        static constexpr auto kDefaultV = true;
+    };
+
+    class PValueLUFSION : public BoolParameters<PValueLUFSION> {
+    public:
+        static constexpr auto kID = "value_lufs_i_on";
+        static constexpr auto kName = "";
+        static constexpr auto kDefaultV = true;
+    };
+
+    class PValueLRAON : public BoolParameters<PValueLRAON> {
+    public:
+        static constexpr auto kID = "value_lra_on";
+        static constexpr auto kName = "";
+        static constexpr auto kDefaultV = true;
+    };
+
+    class PValueRMSON : public BoolParameters<PValueRMSON> {
+    public:
+        static constexpr auto kID = "value_rms_on";
+        static constexpr auto kName = "";
+        static constexpr auto kDefaultV = false;
+    };
+
+    class PValueStereoCorrON : public BoolParameters<PValueStereoCorrON> {
+    public:
+        static constexpr auto kID = "value_stereo_corr_on";
+        static constexpr auto kName = "";
+        static constexpr auto kDefaultV = false;
+    };
+
     inline juce::AudioProcessorValueTreeState::ParameterLayout getNAParameterLayout() {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;
         layout.add(PAnalyzerMagType::get(false), PAnalyzerMoveType::get(false),
                    PAnalyzerMinDB::get(false), PAnalyzerTimeLength::get(false),
                    PPreCurveDisplay::get(false), PPostCurveDisplay::get(false), PDeltaCurveDisplay::get(false),
-                   PMeterDisplayON::get(false), PValueDisplayON::get(false));
+                   PMeterDisplayON::get(false), PValueDisplayON::get(false),
+                   PValueTruePeakON::get(false), PValueRMSON::get(false), PValueStereoCorrON::get(false),
+                   PValueLUFSSON::get(false), PValueLUFSION::get(false), PValueLRAON::get(false));
         return layout;
     }
 
@@ -471,7 +515,7 @@ namespace zlstate {
         ColourDefaultSetting{0, 0, 0, true, 1.f},
         ColourDefaultSetting{70, 66, 62, true, 1.f},
         ColourDefaultSetting{255 - 8, 255 - 9, 255 - 11, true, .25f},
-        ColourDefaultSetting{255 - 8, 255 - 9, 255 - 11, true, .75f},
+        ColourDefaultSetting{255 - 8, 255 - 9, 255 - 11, true, .5f},
         ColourDefaultSetting{255, 0, 0, true, 1.f},
         ColourDefaultSetting{255 - 8, 255 - 9, 255 - 11, true, .1f}
     };
