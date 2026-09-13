@@ -76,6 +76,9 @@ namespace zldsp::loudness {
             ready_count_ = 0;
             sum_squares_.fill(0.0);
             block_sizes_.fill(0);
+            momentary_mean_square_ = 0.0;
+            momentary_dirty_ = false;
+            momentary_loudness_ = -std::numeric_limits<FloatType>::infinity();
             short_term_energy_tree_.fill(0.0);
             short_term_block_sizes_.fill(0);
             short_term_num_samples_ = 0;
@@ -94,12 +97,15 @@ namespace zldsp::loudness {
         }
 
         void process(std::span<FloatType*> buffer, const size_t num_samples) {
-            process(buffer, num_samples, [](const auto&) {});
+            process(buffer, num_samples, [](const auto&) {
+            });
         }
 
-        /** Calls on_short_term with this meter after each complete three-second window. */
+        /** Calls on_update every 100 ms after the first complete 400 ms window.
+         *  Check isShortTermReady() before reading short-term loudness.
+         */
         template <typename Callback>
-        void process(std::span<FloatType*> buffer, const size_t num_samples, Callback&& on_short_term) {
+        void process(std::span<FloatType*> buffer, const size_t num_samples, Callback&& on_update) {
             assert(base_block_size_ > 0 && buffer.size() == small_buffer_.size());
             if (base_block_size_ == 0 || buffer.size() != small_buffer_.size()) {
                 return;
@@ -120,8 +126,8 @@ namespace zldsp::loudness {
                     block_processed_ += scratch_size;
                     if (block_processed_ == block_size_) {
                         update(block_sum_square_);
-                        if (isShortTermReady()) {
-                            on_short_term(std::as_const(*this));
+                        if (isMomentaryReady()) {
+                            on_update(std::as_const(*this));
                         }
                         block_processed_ = 0;
                         block_sum_square_ = 0.0;
@@ -129,6 +135,18 @@ namespace zldsp::loudness {
                     }
                 }
             }
+        }
+
+        [[nodiscard]] FloatType getMomentaryLoudness() const noexcept {
+            if (momentary_dirty_) {
+                momentary_loudness_ = toLoudness(momentary_mean_square_);
+                momentary_dirty_ = false;
+            }
+            return momentary_loudness_;
+        }
+
+        [[nodiscard]] bool isMomentaryReady() const noexcept {
+            return ready_count_ == kMomentaryBlockCount;
         }
 
         [[nodiscard]] FloatType getShortTermLoudness() const noexcept {
@@ -320,9 +338,13 @@ namespace zldsp::loudness {
         std::vector<FloatType> weights_;
         size_t current_idx_{0}, base_block_size_{0}, block_size_{0}, block_processed_{0};
         double block_size_remainder_{0.0}, block_remainder_{0.0}, block_sum_square_{0.0};
+        static constexpr size_t kMomentaryBlockCount = 4;
         size_t ready_count_{0};
-        std::array<double, 4> sum_squares_{};
-        std::array<size_t, 4> block_sizes_{};
+        std::array<double, kMomentaryBlockCount> sum_squares_{};
+        std::array<size_t, kMomentaryBlockCount> block_sizes_{};
+        double momentary_mean_square_{0.0};
+        mutable bool momentary_dirty_{false};
+        mutable FloatType momentary_loudness_{-std::numeric_limits<FloatType>::infinity()};
 
         static constexpr size_t kShortTermBlockCount = 30;
         static constexpr size_t kShortTermTreeLeaves = std::bit_ceil(kShortTermBlockCount);
@@ -422,15 +444,16 @@ namespace zldsp::loudness {
             block_sizes_[1] = block_sizes_[2];
             block_sizes_[2] = block_sizes_[3];
             block_sizes_[3] = block_size_;
-            if (ready_count_ < 3) {
-                ready_count_ += 1;
+            ready_count_ = std::min(ready_count_ + 1, kMomentaryBlockCount);
+            if (!isMomentaryReady()) {
                 return;
             }
-            const auto mean_square = (sum_squares_[0] + sum_squares_[1] + sum_squares_[2] + sum_squares_[3])
+            momentary_mean_square_ = (sum_squares_[0] + sum_squares_[1] + sum_squares_[2] + sum_squares_[3])
                 / static_cast<double>(block_sizes_[0] + block_sizes_[1]
                     + block_sizes_[2] + block_sizes_[3]);
-            if (mean_square > kAbsoluteGate && std::isfinite(mean_square)) {
-                integrated_history_.insert(mean_square);
+            momentary_dirty_ = true;
+            if (momentary_mean_square_ > kAbsoluteGate && std::isfinite(momentary_mean_square_)) {
+                integrated_history_.insert(momentary_mean_square_);
                 integrated_dirty_ = true;
             }
         }

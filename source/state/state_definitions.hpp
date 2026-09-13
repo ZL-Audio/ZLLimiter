@@ -214,18 +214,18 @@ namespace zlstate {
         static constexpr auto kDefaultV = true;
     };
 
-    class PValueRMSON : public BoolParameters<PValueRMSON> {
+    class PValueLUFSMON : public BoolParameters<PValueLUFSMON> {
     public:
-        static constexpr auto kID = "value_rms_on";
+        static constexpr auto kID = "value_lufs_m_on";
         static constexpr auto kName = "";
-        static constexpr auto kDefaultV = false;
+        static constexpr auto kDefaultV = true;
     };
 
     class PValueStereoCorrON : public BoolParameters<PValueStereoCorrON> {
     public:
         static constexpr auto kID = "value_stereo_corr_on";
         static constexpr auto kName = "";
-        static constexpr auto kDefaultV = false;
+        static constexpr auto kDefaultV = true;
     };
 
     inline juce::AudioProcessorValueTreeState::ParameterLayout getNAParameterLayout() {
@@ -234,7 +234,7 @@ namespace zlstate {
                    PAnalyzerMinDB::get(false), PAnalyzerTimeLength::get(false),
                    PPreCurveDisplay::get(false), PPostCurveDisplay::get(false), PDeltaCurveDisplay::get(false),
                    PMeterDisplayON::get(false), PValueDisplayON::get(false),
-                   PValueTruePeakON::get(false), PValueStereoCorrON::get(false), PValueRMSON::get(false),
+                   PValueTruePeakON::get(false), PValueStereoCorrON::get(false), PValueLUFSMON::get(false),
                    PValueLUFSSON::get(false), PValueLRAON::get(false), PValueLUFSION::get(false));
         return layout;
     }

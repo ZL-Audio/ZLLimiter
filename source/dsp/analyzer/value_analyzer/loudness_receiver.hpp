@@ -39,10 +39,12 @@ namespace zldsp::analyzer {
             run(range, samples, [](const auto&) {});
         }
 
-        /** Reports every completed short-term window, including intermediate readings in this range. */
+        /** Reports every completed 400 ms window, including intermediate readings in this range.
+         *  Check the meter's isShortTermReady() before reading short-term loudness.
+         */
         template <typename Callback>
         void run(const zldsp::container::FIFORange range,
-                 const std::vector<std::vector<float>>& samples, Callback&& on_short_term) {
+                 const std::vector<std::vector<float>>& samples, Callback&& on_update) {
             assert(num_channels_ > 0 && samples.size() >= num_channels_);
             const auto measure = [&](const int start, const int count) {
                 for (size_t offset = 0; offset < static_cast<size_t>(count); offset += kChunkSize) {
@@ -72,7 +74,7 @@ namespace zldsp::analyzer {
                     std::array<float*, 2> pointers{
                         buffer_[0].data() + first_sample, buffer_[1].data() + first_sample};
                     meter_.process(std::span(pointers.data(), num_channels_), size - first_sample,
-                                   on_short_term);
+                                   on_update);
                 }
             };
             measure(range.start_index1, range.block_size1);

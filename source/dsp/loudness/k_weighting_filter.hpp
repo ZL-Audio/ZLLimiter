@@ -36,17 +36,17 @@ namespace zldsp::loudness {
                 high_pass_.prepare(sample_rate, num_channels, 0);
                 high_pass_.setFilterType(filter::FilterType::kHighPass);
                 high_pass_.setOrder(2);
-                high_pass_.setFreq(38.13713296248405);
-                high_pass_.setQ(0.500242812458813);
+                high_pass_.template setFreq<true>(38.13713296248405);
+                high_pass_.template setQ<true>(0.500242812458813);
                 high_pass_.updateCoeffs();
             }
             {
                 high_shelf_.prepare(sample_rate, num_channels, 0);
                 high_shelf_.setFilterType(filter::FilterType::kHighShelf);
                 high_shelf_.setOrder(2);
-                high_shelf_.setFreq(1500.6868667368922);
-                high_shelf_.setGain(3.9993623475151354);
-                high_shelf_.setQ(0.7096433028107384);
+                high_shelf_.template setFreq<true>(1500.6868667368922);
+                high_shelf_.template setGain<true>(3.9993623475151354);
+                high_shelf_.template setQ<true>(0.7096433028107384);
                 high_shelf_.updateCoeffs();
             }
             low_pass_enabled_ = use_low_pass_ && sample_rate > 40000.0;
@@ -54,8 +54,8 @@ namespace zldsp::loudness {
                 low_pass_.prepare(sample_rate, num_channels, 0);
                 low_pass_.setFilterType(filter::FilterType::kLowPass);
                 low_pass_.setOrder(2);
-                low_pass_.setFreq(std::min(22000.0, 0.49964 * sample_rate));
-                low_pass_.setQ(0.7071067811865476);
+                low_pass_.template setFreq<true>(std::min(22000.0, 0.49964 * sample_rate));
+                low_pass_.template setQ<true>(0.7071067811865476);
                 low_pass_.updateCoeffs();
             }
         }

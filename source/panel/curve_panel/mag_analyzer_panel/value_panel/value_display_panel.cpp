@@ -12,12 +12,18 @@
 namespace zlpanel {
     ValueDisplayPanel::ValueDisplayPanel(PluginProcessor& p, zlgui::UIBase& base) :
         base_(base),
-        true_peak_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueTruePeakON::kID), true),
-        corr_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueStereoCorrON::kID), false),
-        rms_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueRMSON::kID), false),
-        lufss_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLUFSSON::kID), true),
-        lra_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLRAON::kID), true),
-        lufsi_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLUFSION::kID), true) {
+        true_peak_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueTruePeakON::kID),
+                      zlstate::PValueTruePeakON::kDefaultV),
+        corr_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueStereoCorrON::kID),
+                 zlstate::PValueStereoCorrON::kDefaultV),
+        lufsm_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLUFSMON::kID),
+                  zlstate::PValueLUFSMON::kDefaultV),
+        lufss_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLUFSSON::kID),
+                  zlstate::PValueLUFSSON::kDefaultV),
+        lra_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLRAON::kID),
+                zlstate::PValueLRAON::kDefaultV),
+        lufsi_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLUFSION::kID),
+                  zlstate::PValueLUFSION::kDefaultV) {
         reset();
     }
 
@@ -35,7 +41,7 @@ namespace zlpanel {
 
         peak_hold_db_ = kUnavailable;
         max_short_term_ = kUnavailable;
-        max_rms_db_ = kUnavailable;
+        max_momentary_ = kUnavailable;
         weighted_correlation_sum_ = 0.0;
         correlation_weight_sum_ = 0.0;
         for (auto& value : values_) {
@@ -60,21 +66,23 @@ namespace zlpanel {
         const auto& samples = transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPostStream];
         magnitude_receiver_.run(range, samples, true);
         loudness_receiver_.run(range, samples, [this](const auto& meter) {
-            const auto short_term = meter.getShortTermLoudness();
-            if (!std::isnan(short_term)) {
-                max_short_term_ = std::isnan(max_short_term_)
-                    ? short_term
-                    : std::max(max_short_term_, short_term);
+            const auto momentary = meter.getMomentaryLoudness();
+            if (!std::isnan(momentary)) {
+                max_momentary_ = std::isnan(max_momentary_)
+                    ? momentary
+                    : std::max(max_momentary_, momentary);
+            }
+            if (meter.isShortTermReady()) {
+                const auto short_term = meter.getShortTermLoudness();
+                if (!std::isnan(short_term)) {
+                    max_short_term_ = std::isnan(max_short_term_)
+                        ? short_term
+                        : std::max(max_short_term_, short_term);
+                }
             }
         });
         stereo_statistics_receiver_.run(range, samples,
-                                        [this](const float rms_db, const float correlation,
-                                               const double energy_weight) {
-                                            if (!std::isnan(rms_db)) {
-                                                max_rms_db_ = std::isnan(max_rms_db_)
-                                                    ? rms_db
-                                                    : std::max(max_rms_db_, rms_db);
-                                            }
+                                        [this](const float correlation, const double energy_weight) {
                                             if (std::isfinite(correlation) && energy_weight > 0.0 && std::isfinite(
                                                 energy_weight)) {
                                                 weighted_correlation_sum_ += static_cast<double>(correlation) *
@@ -90,16 +98,17 @@ namespace zlpanel {
             peak_hold_db_ = std::max(peak_hold_db_, magnitude_receiver_.getMaxDB());
         }
         values_[kTruePeak].store(peak_hold_db_, std::memory_order::relaxed);
-        values_[kRMS].store(stereo_statistics_receiver_.getRMSDB(), std::memory_order::relaxed);
         values_[kCorrelation].store(stereo_statistics_receiver_.getCorrelation(), std::memory_order::relaxed);
         values_[kMaxShortTerm].store(max_short_term_, std::memory_order::relaxed);
-        values_[kMaxRMS].store(max_rms_db_, std::memory_order::relaxed);
+        values_[kMaxMomentary].store(max_momentary_, std::memory_order::relaxed);
         values_[kAverageCorrelation].store(correlation_weight_sum_ > 0.0
                                            ? static_cast<float>(std::clamp(
                                                weighted_correlation_sum_ / correlation_weight_sum_, -1.0, 1.0))
                                            : kUnavailable,
                                            std::memory_order::relaxed);
         const auto& meter = loudness_receiver_.getMeter();
+        values_[kMomentary].store(meter.isMomentaryReady() ? meter.getMomentaryLoudness() : kUnavailable,
+                                  std::memory_order::relaxed);
         values_[kIntegrated].store(meter.isIntegratedReady() ? meter.getIntegratedLoudness() : kUnavailable,
                                    std::memory_order::relaxed);
         values_[kShortTerm].store(meter.isShortTermReady() ? meter.getShortTermLoudness() : kUnavailable,
@@ -110,7 +119,7 @@ namespace zlpanel {
 
     void ValueDisplayPanel::paint(juce::Graphics& g) {
         const auto num_values = static_cast<int>(true_peak_on_.value) + static_cast<int>(corr_on_.value) +
-            static_cast<int>(rms_on_.value) + static_cast<int>(lufss_on_.value) +
+            static_cast<int>(lufsm_on_.value) + static_cast<int>(lufss_on_.value) +
             static_cast<int>(lra_on_.value) + static_cast<int>(lufsi_on_.value);
 
         auto bound = getLocalBounds().toFloat();
@@ -142,17 +151,17 @@ namespace zlpanel {
                            juce::Justification::centred, false);
             }
         }
-        if (rms_on_.value) {
+        if (lufsm_on_.value) {
             bound.removeFromTop(height);
             auto t_bound = bound.removeFromTop(height);
             {
-                const auto v = values_[kRMS].load(std::memory_order::relaxed);
+                const auto v = values_[kMomentary].load(std::memory_order::relaxed);
                 g.drawText(std::isfinite(v) && v > -220.f ? formatValue(v) : "--",
                            t_bound.removeFromLeft(bound.getWidth() * .5f),
                            juce::Justification::centred, false);
             }
             {
-                const auto v = values_[kMaxRMS].load(std::memory_order::relaxed);
+                const auto v = values_[kMaxMomentary].load(std::memory_order::relaxed);
                 g.drawText(std::isfinite(v) ? formatValue(v) : "--",
                            t_bound,
                            juce::Justification::centred, false);
@@ -195,7 +204,7 @@ namespace zlpanel {
 
         to_repaint = to_repaint || true_peak_on_.update();
         to_repaint = to_repaint || corr_on_.update();
-        to_repaint = to_repaint || rms_on_.update();
+        to_repaint = to_repaint || lufsm_on_.update();
         to_repaint = to_repaint || lufss_on_.update();
         to_repaint = to_repaint || lra_on_.update();
         to_repaint = to_repaint || lufsi_on_.update();

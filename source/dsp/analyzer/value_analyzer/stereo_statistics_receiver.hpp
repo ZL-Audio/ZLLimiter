@@ -36,15 +36,15 @@ namespace zldsp::analyzer {
             ready_count_ = 0;
             block_remainder_ = 0.0;
             nextBlock();
-            rms_db_ = correlation_ = std::numeric_limits<float>::quiet_NaN();
+            correlation_ = std::numeric_limits<float>::quiet_NaN();
         }
 
         void run(const zldsp::container::FIFORange range,
                  const std::vector<std::vector<float>>& samples) {
-            run(range, samples, [](float, float, double) {});
+            run(range, samples, [](float, double) {});
         }
 
-        /** Reports RMS dB, correlation and its energy weight for every complete 400 ms window. */
+        /** Reports correlation and its unweighted energy weight for every complete 400 ms window. */
         template <typename Callback>
         void run(const zldsp::container::FIFORange range,
                  const std::vector<std::vector<float>>& samples, Callback&& on_update) {
@@ -79,10 +79,6 @@ namespace zldsp::analyzer {
             measure(range.start_index2, range.block_size2);
         }
 
-        [[nodiscard]] float getRMSDB() const noexcept {
-            return rms_db_;
-        }
-
         [[nodiscard]] float getCorrelation() const noexcept {
             return correlation_;
         }
@@ -105,7 +101,6 @@ namespace zldsp::analyzer {
         std::array<Statistics, kBlockCount> history_{};
         size_t write_idx_{0}, ready_count_{0};
         std::array<std::array<float, kChunkSize>, 2> buffer_{};
-        float rms_db_{std::numeric_limits<float>::quiet_NaN()};
         float correlation_{std::numeric_limits<float>::quiet_NaN()};
 
         void nextBlock() noexcept {
@@ -132,9 +127,6 @@ namespace zldsp::analyzer {
             }
             const auto mean_square = (total.left_energy + total.right_energy)
                 / (static_cast<double>(total.num_samples) * static_cast<double>(num_channels_));
-            rms_db_ = mean_square > 0.0
-                ? static_cast<float>(10.0 * std::log10(mean_square))
-                : -std::numeric_limits<float>::infinity();
             correlation_ = num_channels_ == 2 && total.left_energy > 0.0 && total.right_energy > 0.0
                 ? static_cast<float>(std::clamp(total.cross_product
                                                 / (std::sqrt(total.left_energy)
@@ -142,7 +134,7 @@ namespace zldsp::analyzer {
                 : std::numeric_limits<float>::quiet_NaN();
             // Power times hop length is proportional to RMS^2 * elapsed time.
             // The common 1/sample_rate factor cancels in the weighted mean between resets.
-            on_update(rms_db_, correlation_, mean_square * static_cast<double>(block_.num_samples));
+            on_update(correlation_, mean_square * static_cast<double>(block_.num_samples));
         }
     };
 }
