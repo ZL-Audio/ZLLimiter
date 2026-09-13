@@ -34,7 +34,7 @@ namespace zlpanel {
         const auto text_width = static_cast<float>(juce::roundToInt(base_.getFontSize() * 2.6f));
         const auto right_padding = static_cast<float>(juce::roundToInt(base_.getFontSize() * kPaddingScale) / 2);
         g.setColour(base_.getTextColour().withAlpha(.5f));
-        g.setFont(base_.getFontSize());
+        g.setFont(base_.getFontSize() * 1.25f);
         const MagDBRange db_range{0.f, mag_range_db_};
         for (const auto scale : {1.f, 2.f, 3.f, 4.f, 5.f, 6.f}) {
             const auto y = bound.getHeight() * scale / 6.f + bound.getY();
