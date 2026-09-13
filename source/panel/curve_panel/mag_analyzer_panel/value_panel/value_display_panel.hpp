@@ -40,8 +40,8 @@ namespace zlpanel {
 
     private:
         enum ValueIdx : size_t {
-            kTruePeak, kRMS, kIntegrated, kShortTerm, kLoudnessRange, kCorrelation,
-            kMaxShortTerm, kMaxRMS, kAverageCorrelation, kNumValues
+            kTruePeak, kCorrelation, kRMS, kShortTerm, kLoudnessRange, kIntegrated,
+            kAverageCorrelation, kMaxRMS, kMaxShortTerm, kNumValues
         };
 
         static constexpr float kUnavailable = std::numeric_limits<float>::quiet_NaN();
@@ -57,6 +57,32 @@ namespace zlpanel {
 
         std::array<std::atomic<float>, kNumValues> values_{};
 
+        int callback_counts_{0};
+
+        struct AtomicBool {
+            std::atomic<float>& ref;
+            bool value;
+
+            bool update() {
+                const auto v = ref.load(std::memory_order::relaxed) > .5f;
+                if (v != value) {
+                    value = v;
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        };
+
+        AtomicBool true_peak_on_;
+        AtomicBool corr_on_;
+        AtomicBool rms_on_;
+        AtomicBool lufss_on_;
+        AtomicBool lra_on_;
+        AtomicBool lufsi_on_;
+
         void mouseDoubleClick(const juce::MouseEvent& event) override;
+
+        static std::string formatValue(float value);
     };
 }

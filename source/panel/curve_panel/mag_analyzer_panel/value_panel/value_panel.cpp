@@ -14,18 +14,21 @@ namespace zlpanel {
     ValuePanel::ValuePanel(PluginProcessor& p, zlgui::UIBase& base) :
         base_(base),
         value_display_panel_(p, base) {
+        value_display_panel_.setBufferedToImage(true);
         addAndMakeVisible(value_display_panel_);
     }
 
-    ValuePanel::~ValuePanel() {
-    }
+    ValuePanel::~ValuePanel() = default;
 
     int ValuePanel::getIdealWidth() const {
-        return juce::roundToInt(base_.getFontSize() * 12.f);
+        return juce::roundToInt(base_.getFontSize() * 10.f);
     }
 
     void ValuePanel::resized() {
-        value_display_panel_.setBounds(getLocalBounds());
+        const auto font_size = base_.getFontSize();
+        auto bound = getLocalBounds();
+        bound.removeFromTop(getTopPanelHeight(font_size));
+        value_display_panel_.setBounds(bound);
     }
 
     void ValuePanel::repaintCallBackSlow() {

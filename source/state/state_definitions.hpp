@@ -234,8 +234,8 @@ namespace zlstate {
                    PAnalyzerMinDB::get(false), PAnalyzerTimeLength::get(false),
                    PPreCurveDisplay::get(false), PPostCurveDisplay::get(false), PDeltaCurveDisplay::get(false),
                    PMeterDisplayON::get(false), PValueDisplayON::get(false),
-                   PValueTruePeakON::get(false), PValueRMSON::get(false), PValueStereoCorrON::get(false),
-                   PValueLUFSSON::get(false), PValueLUFSION::get(false), PValueLRAON::get(false));
+                   PValueTruePeakON::get(false), PValueStereoCorrON::get(false), PValueRMSON::get(false),
+                   PValueLUFSSON::get(false), PValueLRAON::get(false), PValueLUFSION::get(false));
         return layout;
     }
 

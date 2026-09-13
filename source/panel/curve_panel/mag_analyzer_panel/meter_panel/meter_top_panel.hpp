@@ -27,6 +27,5 @@ namespace zlpanel {
         float out_value_{-240.f};
 
         static std::string formatValue(float value);
-
     };
 }
