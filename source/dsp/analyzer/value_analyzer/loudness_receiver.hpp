@@ -36,6 +36,13 @@ namespace zldsp::analyzer {
 
         void run(const zldsp::container::FIFORange range,
                  const std::vector<std::vector<float>>& samples) {
+            run(range, samples, [](const auto&) {});
+        }
+
+        /** Reports every completed short-term window, including intermediate readings in this range. */
+        template <typename Callback>
+        void run(const zldsp::container::FIFORange range,
+                 const std::vector<std::vector<float>>& samples, Callback&& on_short_term) {
             assert(num_channels_ > 0 && samples.size() >= num_channels_);
             const auto measure = [&](const int start, const int count) {
                 for (size_t offset = 0; offset < static_cast<size_t>(count); offset += kChunkSize) {
@@ -64,7 +71,8 @@ namespace zldsp::analyzer {
                     }
                     std::array<float*, 2> pointers{
                         buffer_[0].data() + first_sample, buffer_[1].data() + first_sample};
-                    meter_.process(std::span(pointers.data(), num_channels_), size - first_sample);
+                    meter_.process(std::span(pointers.data(), num_channels_), size - first_sample,
+                                   on_short_term);
                 }
             };
             measure(range.start_index1, range.block_size1);

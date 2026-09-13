@@ -40,7 +40,8 @@ namespace zlpanel {
 
     private:
         enum ValueIdx : size_t {
-            kTruePeak, kRMS, kIntegrated, kShortTerm, kLoudnessRange, kCorrelation, kNumValues
+            kTruePeak, kRMS, kIntegrated, kShortTerm, kLoudnessRange, kCorrelation,
+            kMaxShortTerm, kMaxRMS, kAverageCorrelation, kNumValues
         };
 
         static constexpr float kUnavailable = std::numeric_limits<float>::quiet_NaN();
@@ -50,6 +51,8 @@ namespace zlpanel {
         zldsp::analyzer::LoudnessReceiver loudness_receiver_;
         zldsp::analyzer::StereoStatisticsReceiver stereo_statistics_receiver_;
         float peak_hold_db_{-240.f};
+        float max_short_term_{kUnavailable}, max_rms_db_{kUnavailable};
+        double weighted_correlation_sum_{0.0}, correlation_weight_sum_{0.0};
         zlchore::thread::Notifier reset_requested_;
 
         std::array<std::atomic<float>, kNumValues> values_{};

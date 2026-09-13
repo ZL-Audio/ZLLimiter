@@ -28,6 +28,8 @@ namespace zlpanel {
         stereo_statistics_receiver_.reset();
 
         peak_hold_db_ = -240.f;
+        max_short_term_ = max_rms_db_ = kUnavailable;
+        weighted_correlation_sum_ = correlation_weight_sum_ = 0.0;
         for (auto& value : values_) {
             value.store(kUnavailable, std::memory_order::relaxed);
         }
@@ -49,14 +51,38 @@ namespace zlpanel {
         const auto range = fifo.prepareToRead(consumer_id, num_ready);
         const auto& samples = transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPostStream];
         magnitude_receiver_.run(range, samples, true);
-        loudness_receiver_.run(range, samples);
-        stereo_statistics_receiver_.run(range, samples);
+        loudness_receiver_.run(range, samples, [this](const auto& meter) {
+            const auto short_term = meter.getShortTermLoudness();
+            if (!std::isnan(short_term)) {
+                max_short_term_ = std::isnan(max_short_term_)
+                    ? short_term : std::max(max_short_term_, short_term);
+            }
+        });
+        stereo_statistics_receiver_.run(range, samples,
+                                        [this](const float rms_db, const float correlation,
+                                               const double energy_weight) {
+            if (!std::isnan(rms_db)) {
+                max_rms_db_ = std::isnan(max_rms_db_)
+                    ? rms_db : std::max(max_rms_db_, rms_db);
+            }
+            if (std::isfinite(correlation) && energy_weight > 0.0 && std::isfinite(energy_weight)) {
+                weighted_correlation_sum_ += static_cast<double>(correlation) * energy_weight;
+                correlation_weight_sum_ += energy_weight;
+            }
+        });
         fifo.finishRead(consumer_id, num_ready);
 
         peak_hold_db_ = std::max(peak_hold_db_, magnitude_receiver_.getMaxDB());
         values_[kTruePeak].store(peak_hold_db_, std::memory_order::relaxed);
         values_[kRMS].store(stereo_statistics_receiver_.getRMSDB(), std::memory_order::relaxed);
         values_[kCorrelation].store(stereo_statistics_receiver_.getCorrelation(), std::memory_order::relaxed);
+        values_[kMaxShortTerm].store(max_short_term_, std::memory_order::relaxed);
+        values_[kMaxRMS].store(max_rms_db_, std::memory_order::relaxed);
+        values_[kAverageCorrelation].store(correlation_weight_sum_ > 0.0
+                                              ? static_cast<float>(std::clamp(
+                                                  weighted_correlation_sum_ / correlation_weight_sum_, -1.0, 1.0))
+                                              : kUnavailable,
+                                          std::memory_order::relaxed);
         const auto& meter = loudness_receiver_.getMeter();
         values_[kIntegrated].store(meter.isIntegratedReady() ? meter.getIntegratedLoudness() : kUnavailable,
                                    std::memory_order::relaxed);

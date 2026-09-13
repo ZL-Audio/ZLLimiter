@@ -41,6 +41,13 @@ namespace zldsp::analyzer {
 
         void run(const zldsp::container::FIFORange range,
                  const std::vector<std::vector<float>>& samples) {
+            run(range, samples, [](float, float, double) {});
+        }
+
+        /** Reports RMS dB, correlation and its energy weight for every complete 400 ms window. */
+        template <typename Callback>
+        void run(const zldsp::container::FIFORange range,
+                 const std::vector<std::vector<float>>& samples, Callback&& on_update) {
             assert(base_block_size_ > 0 && samples.size() >= num_channels_);
             const auto measure = [&](const int start, const int count) {
                 size_t offset = 0;
@@ -62,7 +69,7 @@ namespace zldsp::analyzer {
                     block_.num_samples += size;
                     offset += size;
                     if (block_.num_samples == block_size_) {
-                        update();
+                        update(on_update);
                         block_ = {};
                         nextBlock();
                     }
@@ -108,7 +115,8 @@ namespace zldsp::analyzer {
             block_remainder_ -= extra_sample ? 10.0 : 0.0;
         }
 
-        void update() noexcept {
+        template <typename Callback>
+        void update(Callback& on_update) {
             history_[write_idx_] = block_;
             write_idx_ = (write_idx_ + 1) % kBlockCount;
             ready_count_ = std::min(ready_count_ + 1, kBlockCount);
@@ -132,6 +140,9 @@ namespace zldsp::analyzer {
                                                 / (std::sqrt(total.left_energy)
                                                     * std::sqrt(total.right_energy)), -1.0, 1.0))
                 : std::numeric_limits<float>::quiet_NaN();
+            // Power times hop length is proportional to RMS^2 * elapsed time.
+            // The common 1/sample_rate factor cancels in the weighted mean between resets.
+            on_update(rms_db_, correlation_, mean_square * static_cast<double>(block_.num_samples));
         }
     };
 }

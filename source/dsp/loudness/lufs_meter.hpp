@@ -18,6 +18,7 @@
 #include <deque>
 #include <limits>
 #include <span>
+#include <utility>
 #include <vector>
 
 #include "../vector/vector.hpp"
@@ -93,6 +94,12 @@ namespace zldsp::loudness {
         }
 
         void process(std::span<FloatType*> buffer, const size_t num_samples) {
+            process(buffer, num_samples, [](const auto&) {});
+        }
+
+        /** Calls on_short_term with this meter after each complete three-second window. */
+        template <typename Callback>
+        void process(std::span<FloatType*> buffer, const size_t num_samples, Callback&& on_short_term) {
             assert(base_block_size_ > 0 && buffer.size() == small_buffer_.size());
             if (base_block_size_ == 0 || buffer.size() != small_buffer_.size()) {
                 return;
@@ -113,6 +120,9 @@ namespace zldsp::loudness {
                     block_processed_ += scratch_size;
                     if (block_processed_ == block_size_) {
                         update(block_sum_square_);
+                        if (isShortTermReady()) {
+                            on_short_term(std::as_const(*this));
+                        }
                         block_processed_ = 0;
                         block_sum_square_ = 0.0;
                         nextBlock();
