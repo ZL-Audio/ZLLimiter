@@ -9,11 +9,16 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <bit>
+#include <cassert>
 #include <cmath>
+#include <cstdint>
+#include <deque>
 #include <limits>
 #include <span>
+#include <vector>
 
 #include "../vector/vector.hpp"
 #include "k_weighting_filter.hpp"
@@ -28,27 +33,33 @@ namespace zldsp::loudness {
          */
         explicit LUFSMeter(const bool use_low_pass = true) :
             k_weighting_filter_(use_low_pass) {
-            histogram_.resize(701);
-            histogram_sums_.resize(701);
-            loudness_range_histogram_.resize(kLoudnessRangeBinCount);
-            loudness_range_histogram_sums_.resize(kLoudnessRangeBinCount);
         }
 
         void prepare(const double sample_rate, const size_t num_channels) {
-            k_weighting_filter_.prepare(sample_rate, num_channels);
-            weights_.resize(num_channels);
-            for (size_t i = 0; i < num_channels; ++i) {
-                weights_[i] = (i == 4 || i == 5) ? FloatType(1.41) : FloatType(1);
+            std::array<FloatType, 6> weights{FloatType(1), FloatType(1), FloatType(1),
+                                             FloatType(1), FloatType(1), FloatType(1)};
+            if (num_channels >= 4) {
+                weights[num_channels - 2] = FloatType(1.41);
+                weights[num_channels - 1] = FloatType(1.41);
             }
+            if (num_channels == 6) {
+                weights[3] = FloatType(0);
+            }
+            prepare(sample_rate, std::span<const FloatType>(weights.data(), num_channels));
+        }
 
-            max_idx_ = static_cast<int>(sample_rate * 0.1);
-            mean_mul_ = static_cast<FloatType>(2.5 / sample_rate);
-            short_term_mean_mul_ = 1.0 / (static_cast<double>(max_idx_) * kShortTermBlockCount);
+        void prepare(const double sample_rate, const std::span<const FloatType> weights) {
+            const auto block_size = sample_rate / 10.0;
 
-            small_buffer_.resize(num_channels);
-            small_buffer_ptrs_.resize(num_channels);
-            for (size_t channel = 0; channel < num_channels; ++channel) {
-                small_buffer_[channel].resize(static_cast<size_t>(max_idx_));
+            k_weighting_filter_.prepare(sample_rate, weights.size());
+            weights_.assign(weights.begin(), weights.end());
+            base_block_size_ = static_cast<size_t>(block_size);
+            block_size_remainder_ = sample_rate - static_cast<double>(base_block_size_) * 10.0;
+
+            small_buffer_.resize(weights.size());
+            small_buffer_ptrs_.resize(weights.size());
+            for (size_t channel = 0; channel < weights.size(); ++channel) {
+                small_buffer_[channel].resize(kScratchSize);
                 small_buffer_ptrs_[channel] = small_buffer_[channel].data();
             }
             reset();
@@ -57,52 +68,64 @@ namespace zldsp::loudness {
         void reset() {
             k_weighting_filter_.reset();
             current_idx_ = 0;
+            block_processed_ = 0;
+            block_remainder_ = 0.0;
+            nextBlock();
+            block_sum_square_ = 0.0;
             ready_count_ = 0;
+            sum_squares_.fill(0.0);
+            block_sizes_.fill(0);
             short_term_energy_tree_.fill(0.0);
+            short_term_block_sizes_.fill(0);
+            short_term_num_samples_ = 0;
             short_term_write_idx_ = 0;
             short_term_ready_count_ = 0;
+            short_term_mean_square_ = 0.0;
+            short_term_dirty_ = false;
             short_term_loudness_ = -std::numeric_limits<FloatType>::infinity();
-            std::fill(loudness_range_histogram_.begin(), loudness_range_histogram_.end(), FloatType(0));
-            std::fill(loudness_range_histogram_sums_.begin(), loudness_range_histogram_sums_.end(), FloatType(0));
-            loudness_range_first_bin_ = kLoudnessRangeBinCount;
-            loudness_range_last_bin_ = 0;
+            loudness_range_history_.reset();
             loudness_range_warmup_blocks_ = 0;
             loudness_range_dirty_ = false;
             loudness_range_ = FloatType(0);
-            std::fill(histogram_.begin(), histogram_.end(), FloatType(0));
-            std::fill(histogram_sums_.begin(), histogram_sums_.end(), FloatType(0));
-            for (auto& buffer : small_buffer_) {
-                std::fill(buffer.begin(), buffer.end(), FloatType(0));
-            }
+            integrated_history_.reset();
+            integrated_dirty_ = false;
+            integrated_loudness_ = -std::numeric_limits<FloatType>::infinity();
         }
 
         void process(std::span<FloatType*> buffer, const size_t num_samples) {
-            const auto num_total = static_cast<int>(num_samples);
-            int start_idx = 0;
-            while (num_total - start_idx >= max_idx_ - current_idx_) {
-                // now we get a full 100 ms small block
-                const auto remaining_num = max_idx_ - current_idx_;
+            assert(base_block_size_ > 0 && buffer.size() == small_buffer_.size());
+            if (base_block_size_ == 0 || buffer.size() != small_buffer_.size()) {
+                return;
+            }
+            size_t start_idx = 0;
+            while (start_idx < num_samples) {
+                const auto scratch_size = std::min(kScratchSize, block_size_ - block_processed_);
+                const auto remaining_num = std::min(num_samples - start_idx, scratch_size - current_idx_);
                 for (size_t channel = 0; channel < buffer.size(); ++channel) {
-                    vector::copy(small_buffer_[channel].data() + static_cast<size_t>(current_idx_),
-                                 buffer[channel] + static_cast<size_t>(start_idx),
-                                 static_cast<size_t>(remaining_num));
+                    vector::copy(small_buffer_[channel].data() + current_idx_,
+                                 buffer[channel] + start_idx, remaining_num);
                 }
                 start_idx += remaining_num;
-                current_idx_ = 0;
-                update();
-            }
-            if (num_total - start_idx > 0) {
-                const auto remaining_num = num_total - start_idx;
-                for (size_t channel = 0; channel < buffer.size(); ++channel) {
-                    vector::copy(small_buffer_[channel].data() + static_cast<size_t>(current_idx_),
-                                 buffer[channel] + static_cast<size_t>(start_idx),
-                                 static_cast<size_t>(remaining_num));
-                }
                 current_idx_ += remaining_num;
+                if (current_idx_ == scratch_size) {
+                    processScratch(scratch_size);
+                    current_idx_ = 0;
+                    block_processed_ += scratch_size;
+                    if (block_processed_ == block_size_) {
+                        update(block_sum_square_);
+                        block_processed_ = 0;
+                        block_sum_square_ = 0.0;
+                        nextBlock();
+                    }
+                }
             }
         }
 
         [[nodiscard]] FloatType getShortTermLoudness() const noexcept {
+            if (short_term_dirty_) {
+                short_term_loudness_ = toLoudness(short_term_mean_square_);
+                short_term_dirty_ = false;
+            }
             return short_term_loudness_;
         }
 
@@ -119,178 +142,286 @@ namespace zldsp::loudness {
         }
 
         [[nodiscard]] bool isLoudnessRangeReady() const noexcept {
-            return loudness_range_first_bin_ < kLoudnessRangeBinCount;
+            return loudness_range_history_.getTotal().count > 0;
         }
 
         [[nodiscard]] bool isLoudnessRangeProvisional() const noexcept {
             return !isLoudnessRangeReady() || loudness_range_warmup_blocks_ < kLoudnessRangeWarmupBlocks;
         }
 
-        FloatType getIntegratedLoudness() const {
-            const auto total_count = vector::sum(histogram_.data(), histogram_.size());
-            if (total_count < FloatType(0.5)) {
-                return FloatType(0);
+        [[nodiscard]] FloatType getIntegratedLoudness() const noexcept {
+            if (integrated_dirty_) {
+                const auto total = integrated_history_.getTotal();
+                const auto gate = std::max(kAbsoluteGate, total.sum / static_cast<double>(total.count) * 0.1);
+                const auto gated = integrated_history_.getGated(gate, false);
+                integrated_loudness_ = toLoudness(gated.sum / static_cast<double>(gated.count));
+                integrated_dirty_ = false;
             }
-            const auto total_sum = vector::sum(histogram_sums_.data(), histogram_sums_.size());
-            const auto total_mean_square = total_sum / total_count;
-            const auto total_lufs = FloatType(-0.691) + FloatType(10) * std::log10(total_mean_square);
-            if (total_lufs <= FloatType(-60) || total_lufs >= FloatType(9)) {
-                return total_lufs;
-            } else {
-                const auto end_idx = static_cast<size_t>(std::round(-(total_lufs - FloatType(10)) * FloatType(10)));
-                const auto sub_count = vector::sum(histogram_.data(), end_idx);
-                const auto sub_sum = vector::sum(histogram_sums_.data(), end_idx);
-                if (sub_count <= FloatType(0) || sub_sum <= FloatType(0)) {
-                    return total_lufs;
-                } else {
-                    const auto sub_mean_square = sub_sum / sub_count;
-                    const auto sub_lufs = FloatType(-0.691) + FloatType(10) * std::log10(sub_mean_square);
-                    return sub_lufs;
-                }
-            }
+            return integrated_loudness_;
+        }
+
+        [[nodiscard]] bool isIntegratedReady() const noexcept {
+            return integrated_history_.getTotal().count > 0;
         }
 
     private:
+        class EnergyHistory {
+        public:
+            struct Statistics {
+                double sum{0.0};
+                uint64_t count{0};
+            };
+
+            void reset() noexcept {
+                root_ = kEmpty;
+                used_nodes_ = 0;
+            }
+
+            void insert(const double energy) {
+                root_ = insert(root_, energy);
+            }
+
+            [[nodiscard]] Statistics getTotal() const noexcept {
+                return getTotal(root_);
+            }
+
+            [[nodiscard]] Statistics getGated(const double gate, const bool inclusive) const noexcept {
+                Statistics result;
+                auto index = root_;
+                while (index != kEmpty) {
+                    const auto& node = nodes_[index];
+                    if (inclusive ? node.energy >= gate : node.energy > gate) {
+                        const auto right = getTotal(node.right);
+                        result.sum += node.energy * static_cast<double>(node.count) + right.sum;
+                        result.count += node.count + right.count;
+                        index = node.left;
+                    } else {
+                        index = node.right;
+                    }
+                }
+                return result;
+            }
+
+            [[nodiscard]] double getEnergyAtRank(uint64_t rank) const noexcept {
+                assert(rank < getTotal().count);
+                auto index = root_;
+                while (index != kEmpty) {
+                    const auto& node = nodes_[index];
+                    const auto left_count = getTotal(node.left).count;
+                    if (rank < left_count) {
+                        index = node.left;
+                    } else if (rank - left_count < node.count) {
+                        return node.energy;
+                    } else {
+                        rank -= left_count + node.count;
+                        index = node.right;
+                    }
+                }
+                return 0.0;
+            }
+
+        private:
+            static constexpr size_t kEmpty = std::numeric_limits<size_t>::max();
+
+            struct Node {
+                double energy{0.0}, sum{0.0};
+                uint64_t count{1}, total_count{1};
+                size_t left{kEmpty}, right{kEmpty};
+                int height{1};
+            };
+
+            std::deque<Node> nodes_;
+            size_t root_{kEmpty}, used_nodes_{0};
+
+            [[nodiscard]] Statistics getTotal(const size_t index) const noexcept {
+                return index == kEmpty ? Statistics{} : Statistics{nodes_[index].sum, nodes_[index].total_count};
+            }
+
+            [[nodiscard]] int getHeight(const size_t index) const noexcept {
+                return index == kEmpty ? 0 : nodes_[index].height;
+            }
+
+            void updateNode(const size_t index) noexcept {
+                auto& node = nodes_[index];
+                const auto left = getTotal(node.left);
+                const auto right = getTotal(node.right);
+                node.sum = left.sum + right.sum + node.energy * static_cast<double>(node.count);
+                node.total_count = left.count + right.count + node.count;
+                node.height = 1 + std::max(getHeight(node.left), getHeight(node.right));
+            }
+
+            size_t rotateLeft(const size_t index) noexcept {
+                const auto right = nodes_[index].right;
+                nodes_[index].right = nodes_[right].left;
+                nodes_[right].left = index;
+                updateNode(index);
+                updateNode(right);
+                return right;
+            }
+
+            size_t rotateRight(const size_t index) noexcept {
+                const auto left = nodes_[index].left;
+                nodes_[index].left = nodes_[left].right;
+                nodes_[left].right = index;
+                updateNode(index);
+                updateNode(left);
+                return left;
+            }
+
+            size_t insert(const size_t index, const double energy) {
+                if (index == kEmpty) {
+                    if (used_nodes_ == nodes_.size()) {
+                        nodes_.emplace_back();
+                    }
+                    nodes_[used_nodes_] = Node{.energy = energy, .sum = energy};
+                    return used_nodes_++;
+                }
+                auto& node = nodes_[index];
+                if (energy < node.energy) {
+                    node.left = insert(node.left, energy);
+                } else if (energy > node.energy) {
+                    node.right = insert(node.right, energy);
+                } else {
+                    node.count += 1;
+                }
+                updateNode(index);
+                const auto balance = getHeight(node.left) - getHeight(node.right);
+                if (balance > 1) {
+                    if (energy > nodes_[node.left].energy) {
+                        node.left = rotateLeft(node.left);
+                    }
+                    return rotateRight(index);
+                }
+                if (balance < -1) {
+                    if (energy < nodes_[node.right].energy) {
+                        node.right = rotateRight(node.right);
+                    }
+                    return rotateLeft(index);
+                }
+                return index;
+            }
+        };
+
+        static constexpr double kAbsoluteGate = 1.1724653045822963e-7;
+        static constexpr size_t kScratchSize = 512;
         KWeightingFilter<FloatType> k_weighting_filter_;
         std::vector<std::vector<FloatType>> small_buffer_;
         std::vector<FloatType*> small_buffer_ptrs_;
-        int current_idx_{0}, max_idx_{0};
-        int ready_count_{0};
-        FloatType mean_mul_{1};
-        std::array<FloatType, 4> sum_squares_{};
+        std::vector<FloatType> weights_;
+        size_t current_idx_{0}, base_block_size_{0}, block_size_{0}, block_processed_{0};
+        double block_size_remainder_{0.0}, block_remainder_{0.0}, block_sum_square_{0.0};
+        size_t ready_count_{0};
+        std::array<double, 4> sum_squares_{};
+        std::array<size_t, 4> block_sizes_{};
 
         static constexpr size_t kShortTermBlockCount = 30;
         static constexpr size_t kShortTermTreeLeaves = std::bit_ceil(kShortTermBlockCount);
         std::array<double, kShortTermTreeLeaves * 2> short_term_energy_tree_{};
+        std::array<size_t, kShortTermBlockCount> short_term_block_sizes_{};
+        size_t short_term_num_samples_{0};
         size_t short_term_write_idx_{0}, short_term_ready_count_{0};
-        double short_term_mean_mul_{1};
-        FloatType short_term_loudness_{-std::numeric_limits<FloatType>::infinity()};
+        double short_term_mean_square_{0.0};
+        mutable bool short_term_dirty_{false};
+        mutable FloatType short_term_loudness_{-std::numeric_limits<FloatType>::infinity()};
 
-        static constexpr FloatType kLoudnessRangeMaxLUFS = FloatType(10) * FloatType(
-            std::numeric_limits<FloatType>::max_exponent10 + 1);
-        static constexpr size_t kLoudnessRangeBinCount = static_cast<size_t>(
-            (kLoudnessRangeMaxLUFS + FloatType(70)) * FloatType(10)) + 1;
         static constexpr size_t kLoudnessRangeWarmupBlocks = 600;
-        vector::aligned_vector<FloatType> loudness_range_histogram_{};
-        vector::aligned_vector<FloatType> loudness_range_histogram_sums_{};
-        size_t loudness_range_first_bin_{kLoudnessRangeBinCount}, loudness_range_last_bin_{0};
+        EnergyHistory loudness_range_history_;
         size_t loudness_range_warmup_blocks_{0};
         mutable bool loudness_range_dirty_{false};
         mutable FloatType loudness_range_{FloatType(0)};
 
-        vector::aligned_vector<FloatType> histogram_{};
-        vector::aligned_vector<FloatType> histogram_sums_{};
-        std::vector<FloatType> weights_;
+        EnergyHistory integrated_history_;
+        mutable bool integrated_dirty_{false};
+        mutable FloatType integrated_loudness_{-std::numeric_limits<FloatType>::infinity()};
 
-        void updateLoudnessRange(const FloatType mean_square, const FloatType loudness) {
-            if (mean_square >= FloatType(1.1724653045822963e-7) && std::isfinite(mean_square)) {
-                const auto hist_idx = static_cast<size_t>(std::clamp(
-                    std::round((loudness + FloatType(70)) * FloatType(10)),
-                    FloatType(0), static_cast<FloatType>(kLoudnessRangeBinCount - 1)));
-                loudness_range_histogram_[hist_idx] += FloatType(1);
-                loudness_range_histogram_sums_[hist_idx] += mean_square;
-                loudness_range_first_bin_ = std::min(loudness_range_first_bin_, hist_idx);
-                loudness_range_last_bin_ = std::max(loudness_range_last_bin_, hist_idx);
-                loudness_range_dirty_ = true;
-            }
+        static FloatType toLoudness(const double mean_square) noexcept {
+            return mean_square > 0.0
+                ? static_cast<FloatType>(-0.691 + 10.0 * std::log10(mean_square))
+                : -std::numeric_limits<FloatType>::infinity();
+        }
+
+        static uint64_t percentileRank(const uint64_t count, const uint64_t numerator,
+                                       const uint64_t denominator) noexcept {
+            const auto last_rank = count - 1;
+            return (last_rank / denominator) * numerator
+                + ((last_rank % denominator) * numerator + denominator / 2) / denominator;
         }
 
         FloatType calculateLoudnessRange() const noexcept {
-            if (!isLoudnessRangeReady()) {
-                return FloatType(0);
-            }
-            const auto histogram_size = loudness_range_last_bin_ - loudness_range_first_bin_ + 1;
-            const auto total_count = vector::sum(
-                loudness_range_histogram_.data() + loudness_range_first_bin_, histogram_size);
-            if (total_count < FloatType(0.5)) {
-                return FloatType(0);
-            }
-            const auto total_sum = vector::sum(
-                loudness_range_histogram_sums_.data() + loudness_range_first_bin_, histogram_size);
-            const auto total_mean_square = total_sum / total_count;
-            if (!std::isfinite(total_mean_square)) {
-                return FloatType(0);
-            }
-            const auto total_lufs = FloatType(-0.691) + FloatType(10) * std::log10(total_mean_square);
-            const auto gate = std::max(total_lufs - FloatType(20), FloatType(-70));
-            const auto start_idx = std::max(loudness_range_first_bin_, static_cast<size_t>(
-                std::ceil((gate + FloatType(70)) * FloatType(10))));
-            if (start_idx > loudness_range_last_bin_) {
-                return FloatType(0);
-            }
-            const auto sub_count = vector::sum(
-                loudness_range_histogram_.data() + start_idx, loudness_range_last_bin_ - start_idx + 1);
-            if (sub_count < FloatType(0.5)) {
-                return FloatType(0);
-            }
-            const auto low_rank = std::round((sub_count - FloatType(1)) * FloatType(0.10));
-            const auto high_rank = std::round((sub_count - FloatType(1)) * FloatType(0.95));
-            auto low_idx = start_idx;
-            FloatType count = 0;
-            for (size_t i = start_idx; i <= loudness_range_last_bin_; ++i) {
-                const auto next_count = count + loudness_range_histogram_[i];
-                if (count <= low_rank && low_rank < next_count) {
-                    low_idx = i;
-                }
-                if (high_rank < next_count) {
-                    return static_cast<FloatType>(i - low_idx) / FloatType(10);
-                }
-                count = next_count;
-            }
-            return FloatType(0);
+            const auto total = loudness_range_history_.getTotal();
+            const auto gate = std::max(kAbsoluteGate, total.sum / static_cast<double>(total.count) * 0.01);
+            const auto gated = loudness_range_history_.getGated(gate, true);
+            const auto first_rank = total.count - gated.count;
+            const auto low = loudness_range_history_.getEnergyAtRank(
+                first_rank + percentileRank(gated.count, 1, 10));
+            const auto high = loudness_range_history_.getEnergyAtRank(
+                first_rank + percentileRank(gated.count, 19, 20));
+            return static_cast<FloatType>(10.0 * std::log10(high / low));
         }
 
-        void updateShortTerm(const FloatType sum_square) {
+        void updateShortTerm(const double sum_square) {
             loudness_range_warmup_blocks_ = std::min(loudness_range_warmup_blocks_ + 1, kLoudnessRangeWarmupBlocks);
             auto index = kShortTermTreeLeaves + short_term_write_idx_;
-            short_term_energy_tree_[index] = static_cast<double>(sum_square);
+            short_term_energy_tree_[index] = sum_square;
             while (index > 1) {
                 index /= 2;
                 short_term_energy_tree_[index] = short_term_energy_tree_[index * 2]
                     + short_term_energy_tree_[index * 2 + 1];
             }
+            short_term_num_samples_ -= short_term_block_sizes_[short_term_write_idx_];
+            short_term_block_sizes_[short_term_write_idx_] = block_size_;
+            short_term_num_samples_ += block_size_;
             short_term_write_idx_ = (short_term_write_idx_ + 1) % kShortTermBlockCount;
             short_term_ready_count_ = std::min(short_term_ready_count_ + 1, kShortTermBlockCount);
             if (isShortTermReady()) {
-                const auto mean_square = short_term_energy_tree_[1] * short_term_mean_mul_;
-                const auto loudness = mean_square > 0.0
-                    ? -0.691 + 10.0 * std::log10(mean_square)
-                    : -std::numeric_limits<double>::infinity();
-                short_term_loudness_ = static_cast<FloatType>(loudness);
-                updateLoudnessRange(static_cast<FloatType>(mean_square), short_term_loudness_);
+                short_term_mean_square_ = short_term_energy_tree_[1] / static_cast<double>(short_term_num_samples_);
+                short_term_dirty_ = true;
+                if (short_term_mean_square_ >= kAbsoluteGate && std::isfinite(short_term_mean_square_)) {
+                    loudness_range_history_.insert(short_term_mean_square_);
+                    loudness_range_dirty_ = true;
+                }
             }
         }
 
-        void update() {
-            // perform K-weighting filtering
-            k_weighting_filter_.process(std::span(small_buffer_ptrs_), static_cast<size_t>(max_idx_));
-            // calculate the sum square of the small block
-            FloatType sum_square = 0;
+        void nextBlock() noexcept {
+            block_remainder_ += block_size_remainder_;
+            const auto extra_sample = block_remainder_ >= 10.0;
+            block_size_ = base_block_size_ + static_cast<size_t>(extra_sample);
+            block_remainder_ -= extra_sample ? 10.0 : 0.0;
+        }
+
+        void processScratch(const size_t num_samples) {
+            k_weighting_filter_.process(std::span(small_buffer_ptrs_), num_samples);
             for (size_t channel = 0; channel < small_buffer_.size(); ++channel) {
+                if (weights_[channel] == FloatType(0)) {
+                    continue;
+                }
                 const auto channel_sum_square = vector::sum_sqr(small_buffer_[channel].data(),
-                                                                small_buffer_[channel].size());
-                sum_square += channel_sum_square * weights_[channel];
+                                                                num_samples);
+                block_sum_square_ += static_cast<double>(channel_sum_square) * static_cast<double>(weights_[channel]);
             }
+        }
+
+        void update(const double sum_square) {
             updateShortTerm(sum_square);
-            // shift circular sumSquares
             sum_squares_[0] = sum_squares_[1];
             sum_squares_[1] = sum_squares_[2];
             sum_squares_[2] = sum_squares_[3];
             sum_squares_[3] = sum_square;
+            block_sizes_[0] = block_sizes_[1];
+            block_sizes_[1] = block_sizes_[2];
+            block_sizes_[2] = block_sizes_[3];
+            block_sizes_[3] = block_size_;
             if (ready_count_ < 3) {
                 ready_count_ += 1;
                 return;
             }
-            // calculate the mean square
-            const auto mean_square = (
-                sum_squares_[0] + sum_squares_[1] + sum_squares_[2] + sum_squares_[3]) * mean_mul_;
-            // update histogram
-            if (mean_square >= FloatType(1.1724653045822963e-7)) {
-                // if greater than -70 LKFS
-                const auto lkfs = std::min(-FloatType(0.691) + FloatType(10) * std::log10(mean_square), FloatType(0));
-                const auto hist_idx = static_cast<size_t>(std::round(-lkfs * FloatType(10)));
-                histogram_[hist_idx] += FloatType(1);
-                histogram_sums_[hist_idx] += mean_square;
+            const auto mean_square = (sum_squares_[0] + sum_squares_[1] + sum_squares_[2] + sum_squares_[3])
+                / static_cast<double>(block_sizes_[0] + block_sizes_[1]
+                    + block_sizes_[2] + block_sizes_[3]);
+            if (mean_square > kAbsoluteGate && std::isfinite(mean_square)) {
+                integrated_history_.insert(mean_square);
+                integrated_dirty_ = true;
             }
         }
     };
