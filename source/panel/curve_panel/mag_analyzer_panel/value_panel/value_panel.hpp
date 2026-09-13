@@ -10,12 +10,7 @@
 
 #pragma once
 
-#include "../../../../PluginProcessor.hpp"
-#include "../../../../chore/thread/notifier.hpp"
-#include "../../../../gui/gui.hpp"
-#include "../../../helper/helper.hpp"
-#include "../../../../dsp/analyzer/mag_analyzer/magnitude_receiver.hpp"
-#include "../../../../dsp/loudness/lufs_meter.hpp"
+#include "value_display_panel.hpp"
 
 
 namespace zlpanel {
@@ -25,6 +20,10 @@ namespace zlpanel {
 
         ~ValuePanel() override;
 
+        ValueDisplayPanel& getDisplayPanel() {
+            return value_display_panel_;
+        }
+
         int getIdealWidth() const;
 
         void resized() override;
@@ -33,5 +32,6 @@ namespace zlpanel {
 
     private:
         zlgui::UIBase& base_;
+        ValueDisplayPanel value_display_panel_;
     };
 }

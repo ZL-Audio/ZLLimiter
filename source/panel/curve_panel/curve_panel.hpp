@@ -50,7 +50,7 @@ namespace zlpanel {
         ValuePanel value_panel_;
         AnalyzerSettingPanel analyzer_setting_panel_;
         zldsp::analyzer::FIFOTransferBuffer<zlp::Controller::kAnalyzerStreamNum> transfer_buffer_;
-        size_t peak_consumer_, meter_consumer_;
+        size_t peak_consumer_, meter_consumer_, value_consumer_;
         uint64_t generation_{std::numeric_limits<uint64_t>::max()};
         std::atomic<double> next_stamp_{0.0};
 

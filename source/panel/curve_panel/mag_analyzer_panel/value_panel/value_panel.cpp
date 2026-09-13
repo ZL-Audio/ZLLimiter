@@ -11,9 +11,10 @@
 #include "value_panel.hpp"
 
 namespace zlpanel {
-    ValuePanel::ValuePanel(PluginProcessor&, zlgui::UIBase& base) :
-        base_(base) {
-
+    ValuePanel::ValuePanel(PluginProcessor& p, zlgui::UIBase& base) :
+        base_(base),
+        value_display_panel_(p, base) {
+        addAndMakeVisible(value_display_panel_);
     }
 
     ValuePanel::~ValuePanel() {
@@ -24,10 +25,10 @@ namespace zlpanel {
     }
 
     void ValuePanel::resized() {
-
+        value_display_panel_.setBounds(getLocalBounds());
     }
 
     void ValuePanel::repaintCallBackSlow() {
-
+        value_display_panel_.repaintCallBackSlow();
     }
 }

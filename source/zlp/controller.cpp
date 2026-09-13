@@ -46,6 +46,7 @@ namespace zlp {
         gained_delay_needs_reset_ = true;
         gained_delay_needs_warmup_ = false;
         gained_delay_fill_remaining_ = 0;
+        analyzer_num_channels_.store(maximum_channels, std::memory_order_release);
         mag_analyzer_sender_.prepare(sample_rate, maximum_block_size, {2, 2, 2}, 0.5);
         for (size_t stream = 0; stream < kAnalyzerStreamNum; ++stream) {
             mag_analyzer_sender_.setON(stream, true);

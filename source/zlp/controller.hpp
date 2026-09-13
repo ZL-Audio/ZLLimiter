@@ -53,6 +53,10 @@ namespace zlp {
             return analyzer_generation_.load(std::memory_order_acquire);
         }
 
+        [[nodiscard]] size_t getAnalyzerNumChannels() const {
+            return analyzer_num_channels_.load(std::memory_order_acquire);
+        }
+
         void setInputGain(const float db) {
             input_gain_db_.store(db, std::memory_order_relaxed);
             to_update_input_gain_.signal();
@@ -124,6 +128,7 @@ namespace zlp {
         zldsp::analyzer::AnalyzerSenderBase<float, kAnalyzerStreamNum> mag_analyzer_sender_;
         std::atomic<bool> analyzer_enabled_{false};
         std::atomic<uint64_t> analyzer_generation_{0};
+        std::atomic<size_t> analyzer_num_channels_{0};
 
         using Limiter1x = zldsp::limiter::Limiter<float, 0>;
         using Limiter2x = zldsp::limiter::Limiter<float, 1>;

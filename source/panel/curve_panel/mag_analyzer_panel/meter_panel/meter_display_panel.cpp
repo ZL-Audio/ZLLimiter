@@ -22,6 +22,9 @@ namespace zlpanel {
         circular_min_max_.setCapacity(circular_capacity);
         circular_min_max_.setSize(circular_capacity);
 
+        pre_receiver_.prepare(2);
+        out_receiver_.prepare(2);
+
         meter_top_panel_.setBufferedToImage(true);
         addAndMakeVisible(meter_top_panel_);
     }

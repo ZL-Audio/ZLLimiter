@@ -393,7 +393,7 @@ namespace zldsp::loudness {
         void processScratch(const size_t num_samples) {
             k_weighting_filter_.process(std::span(small_buffer_ptrs_), num_samples);
             for (size_t channel = 0; channel < small_buffer_.size(); ++channel) {
-                if (weights_[channel] == FloatType(0)) {
+                if (std::fpclassify(weights_[channel]) == FP_ZERO) {
                     continue;
                 }
                 const auto channel_sum_square = vector::sum_sqr(small_buffer_[channel].data(),

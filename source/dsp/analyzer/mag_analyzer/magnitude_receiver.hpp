@@ -20,8 +20,12 @@
 namespace zldsp::analyzer {
     class MagnitudeReceiver {
     public:
-        MagnitudeReceiver() {
-            estimator_.prepare(2, kChunkSize);
+        MagnitudeReceiver() = default;
+
+        void prepare(const size_t num_channels) {
+            num_channels_ = num_channels;
+            estimator_.prepare(num_channels_, kChunkSize);
+            reset();
         }
 
         void reset() {
@@ -32,7 +36,7 @@ namespace zldsp::analyzer {
         void run(const zldsp::container::FIFORange range,
                  const std::vector<std::vector<float>>& samples, const bool true_peak) {
             dbs_.fill(-240.f);
-            for (size_t channel = 0; channel < 2; ++channel) {
+            for (size_t channel = 0; channel < num_channels_; ++channel) {
                 float peak = 0.f;
                 const auto measure = [&](const int start, const int count) {
                     for (size_t offset = 0; offset < static_cast<size_t>(count); offset += kChunkSize) {
@@ -66,6 +70,7 @@ namespace zldsp::analyzer {
 
     private:
         static constexpr size_t kChunkSize = 4096;
+        size_t num_channels_{2};
         zldsp::limiter::TruePeakEstimator<float> estimator_;
         std::array<float, kChunkSize> input_{}, output_{};
         std::array<float, 2> dbs_{-240.f, -240.f};

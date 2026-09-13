@@ -51,6 +51,9 @@ namespace zlpanel {
             path.preallocateSpace(preallocateSpace);
         }
 
+        pre_receiver_.prepare(2);
+        out_receiver_.prepare(2);
+
         setInterceptsMouseClicks(false, false);
     }
 

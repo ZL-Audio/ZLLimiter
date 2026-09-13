@@ -22,7 +22,8 @@ namespace zlpanel {
         value_panel_(p, base),
         analyzer_setting_panel_(p, base),
         peak_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()),
-        meter_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()) {
+        meter_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()),
+        value_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()) {
         addAndMakeVisible(peak_panel_);
         addAndMakeVisible(meter_panel_);
         value_panel_.setBufferedToImage(true);
@@ -93,6 +94,8 @@ namespace zlpanel {
             }
             auto& controller = p_ref_.getController();
             auto& sender = controller.getMagAnalyzerSender();
+            double value_sample_rate = 0.0;
+            size_t value_num_channels = 0;
             {
                 const std::lock_guard guard(sender.getLock());
                 if (sender.getSampleRate() <= 0.0 || sender.getMaxNumSamples() == 0) {
@@ -113,11 +116,16 @@ namespace zlpanel {
                                              {2, 2, 2}, capacity_seconds);
                     peak_panel_.getDisplayPanel().reset();
                     meter_panel_.getDisplayPanel().reset();
+                    value_sample_rate = sender.getSampleRate();
+                    value_num_channels = controller.getAnalyzerNumChannels();
                 }
                 transfer_buffer_.processTransfer(sender.getAbstractFIFO(), sender.getSampleFIFOs());
             }
             if (threadShouldExit()) {
                 return;
+            }
+            if (value_num_channels > 0) {
+                value_panel_.getDisplayPanel().prepare(value_sample_rate, value_num_channels);
             }
             const MagDBRange range(0.f, zlstate::PAnalyzerMinDB::getDBFromIndex(
                                        min_db_ref_.load(std::memory_order_relaxed)));
@@ -127,6 +135,10 @@ namespace zlpanel {
                 return;
             }
             meter_panel_.getDisplayPanel().run(stamp, transfer_buffer_, meter_consumer_, range);
+            if (threadShouldExit()) {
+                return;
+            }
+            value_panel_.getDisplayPanel().run(transfer_buffer_, value_consumer_);
         }
     }
 
