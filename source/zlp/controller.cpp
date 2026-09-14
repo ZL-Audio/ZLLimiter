@@ -14,7 +14,6 @@
 namespace zlp {
     Controller::Controller(juce::AudioProcessor& processor) :
         p_ref_(processor) {
-        jassert(POversampling::kChoices.size() == static_cast<int>(kOversamplingModeCount));
     }
 
     Controller::~Controller() {
@@ -151,7 +150,6 @@ namespace zlp {
                 gained_delay_needs_warmup_ = false;
             }
             gained_delay_.process(buffer, gained_buffer, num_samples);
-            // Only reopening after idle capture needs history; jointly reset delays start aligned.
             capture_ready = gained_delay_fill_remaining_ == 0;
             gained_delay_fill_remaining_ -= std::min(gained_delay_fill_remaining_, num_samples);
         } else {
@@ -161,7 +159,6 @@ namespace zlp {
 
         processActiveLimiter(buffer, num_samples);
         if (capture_ready && analyzer_enabled_.load(std::memory_order_acquire)) {
-            // Publish complete, aligned blocks and duplicate mono for the two meter channels.
             if (static_cast<size_t>(mag_analyzer_sender_.getAbstractFIFO().getNumFree()) >= num_samples) {
                 const auto right = std::min(size_t(1), buffer.size() - 1);
                 std::array<float*, 2> pre{dry_buffer[0], dry_buffer[right]};

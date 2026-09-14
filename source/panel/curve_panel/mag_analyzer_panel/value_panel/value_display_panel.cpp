@@ -12,6 +12,7 @@
 namespace zlpanel {
     ValueDisplayPanel::ValueDisplayPanel(PluginProcessor& p, zlgui::UIBase& base) :
         base_(base),
+        reset_requested_(p.getValueResetNotifier()),
         true_peak_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueTruePeakON::kID),
                       zlstate::PValueTruePeakON::kDefaultV),
         corr_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueStereoCorrON::kID),
@@ -53,11 +54,6 @@ namespace zlpanel {
         zldsp::analyzer::FIFOTransferBuffer<zlp::Controller::kAnalyzerStreamNum>& transfer_buffer,
         const size_t consumer_id) {
         auto& fifo = transfer_buffer.getMulticastFIFO();
-        if (reset_requested_.check()) {
-            reset();
-            fifo.finishRead(consumer_id, fifo.getNumReady(consumer_id));
-            return;
-        }
         const auto num_ready = fifo.getNumReady(consumer_id);
         if (num_ready == 0) {
             return;

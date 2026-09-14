@@ -10,6 +10,7 @@
 #include "PluginProcessor.hpp"
 
 #include <array>
+#include <limits>
 
 #include "PluginEditor.hpp"
 
@@ -94,6 +95,9 @@ void PluginProcessor::changeProgramName(int, const juce::String&) {
 
 void PluginProcessor::prepareToPlay(const double sample_rate, const int samples_per_block) {
     sample_rate_.store(sample_rate, std::memory_order::relaxed);
+    value_measurement_active_.store(true, std::memory_order::release);
+    value_free_running_ = true;
+    expected_playhead_sample_.reset();
 
     const juce::PluginHostType host_type;
     update_channel_layout_per_call_ = host_type.isMaschine();
@@ -104,6 +108,8 @@ void PluginProcessor::prepareToPlay(const double sample_rate, const int samples_
 }
 
 void PluginProcessor::releaseResources() {
+    value_measurement_active_.store(false, std::memory_order::release);
+    expected_playhead_sample_.reset();
 }
 
 bool PluginProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {
@@ -188,8 +194,49 @@ void PluginProcessor::updateChannelLayout() {
     }
 }
 
+void PluginProcessor::updateValueTransport(const int num_samples) {
+    const auto* playhead = getPlayHead();
+    const auto position = playhead != nullptr ? playhead->getPosition() : juce::Optional<juce::AudioPlayHead::PositionInfo>{};
+    bool reset_values = !value_measurement_active_.load(std::memory_order::relaxed);
+    if (position.hasValue()) {
+        if (!position->getIsPlaying()) {
+            value_measurement_active_.store(false, std::memory_order::release);
+            expected_playhead_sample_.reset();
+            return;
+        }
+
+        reset_values = reset_values || value_free_running_;
+        value_free_running_ = false;
+        if (const auto sample = position->getTimeInSamples()) {
+            if (expected_playhead_sample_.has_value()) {
+                const auto expected = *expected_playhead_sample_;
+
+                const auto later = std::max(*sample, expected);
+                const auto earlier = std::min(*sample, expected);
+                reset_values = reset_values || (later != earlier && later - 1 != earlier);
+            }
+            expected_playhead_sample_ = *sample;
+        }
+    } else if (reset_values) {
+        value_free_running_ = true;
+    }
+    value_measurement_active_.store(true, std::memory_order::release);
+    if (reset_values) {
+        value_reset_requested_.signal();
+    }
+
+    if (expected_playhead_sample_.has_value()) {
+        if (*expected_playhead_sample_ <= std::numeric_limits<int64_t>::max() - num_samples) {
+            *expected_playhead_sample_ += num_samples;
+        } else {
+            expected_playhead_sample_.reset();
+        }
+    }
+}
+
 void PluginProcessor::processBlockInternal(juce::AudioBuffer<float>& buffer, const bool bypass) {
     juce::ScopedNoDenormals noDenormals;
+    updateValueTransport(buffer.getNumSamples());
     if (buffer.getNumSamples() == 0) {
         return; // ignore empty blocks
     }

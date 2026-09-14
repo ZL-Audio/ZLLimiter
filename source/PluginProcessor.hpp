@@ -9,10 +9,13 @@
 
 #pragma once
 
+#include <optional>
+
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include "zlp/zlp.hpp"
 #include "state/state.hpp"
+#include "chore/thread/notifier.hpp"
 
 class PluginProcessor final : public juce::AudioProcessor {
 public:
@@ -74,6 +77,14 @@ public:
         return sample_rate_.load(std::memory_order::relaxed);
     }
 
+    zlchore::thread::Notifier& getValueResetNotifier() {
+        return value_reset_requested_;
+    }
+
+    bool isValueMeasurementActive() const {
+        return value_measurement_active_.load(std::memory_order::acquire);
+    }
+
 private:
     zlp::Controller controller_;
     zlp::LimiterAttach limiter_attach_;
@@ -88,7 +99,14 @@ private:
 
     bool update_channel_layout_per_call_{false};
 
+    zlchore::thread::Notifier value_reset_requested_;
+    std::atomic<bool> value_measurement_active_{true};
+    bool value_free_running_{true};
+    std::optional<int64_t> expected_playhead_sample_;
+
     void updateChannelLayout();
+
+    void updateValueTransport(int num_samples);
 
     void processBlockInternal(juce::AudioBuffer<float>& buffer, bool bypass);
 

@@ -53,7 +53,7 @@ namespace zlpanel {
         float peak_hold_db_{-240.f};
         float max_short_term_{kUnavailable}, max_momentary_{kUnavailable};
         double weighted_correlation_sum_{0.0}, correlation_weight_sum_{0.0};
-        zlchore::thread::Notifier reset_requested_;
+        zlchore::thread::Notifier& reset_requested_;
 
         std::array<std::atomic<float>, kNumValues> values_{};
 

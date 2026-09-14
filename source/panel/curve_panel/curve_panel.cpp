@@ -96,6 +96,8 @@ namespace zlpanel {
             auto& sender = controller.getMagAnalyzerSender();
             double value_sample_rate = 0.0;
             size_t value_num_channels = 0;
+            bool reset_values = false;
+            bool measure_values = false;
             {
                 const std::lock_guard guard(sender.getLock());
                 if (sender.getSampleRate() <= 0.0 || sender.getMaxNumSamples() == 0) {
@@ -119,6 +121,12 @@ namespace zlpanel {
                     value_sample_rate = sender.getSampleRate();
                     value_num_channels = controller.getAnalyzerNumChannels();
                 }
+                measure_values = p_ref_.isValueMeasurementActive();
+                reset_values = p_ref_.getValueResetNotifier().check();
+                if (reset_values) {
+                    auto& fifo = sender.getAbstractFIFO();
+                    fifo.finishRead(fifo.getNumReady());
+                }
                 transfer_buffer_.processTransfer(sender.getAbstractFIFO(), sender.getSampleFIFOs());
             }
             if (threadShouldExit()) {
@@ -126,6 +134,8 @@ namespace zlpanel {
             }
             if (value_num_channels > 0) {
                 value_panel_.getDisplayPanel().prepare(value_sample_rate, value_num_channels);
+            } else if (reset_values) {
+                value_panel_.getDisplayPanel().reset();
             }
             const MagDBRange range(0.f, zlstate::PAnalyzerMinDB::getDBFromIndex(
                                        min_db_ref_.load(std::memory_order_relaxed)));
@@ -138,7 +148,12 @@ namespace zlpanel {
             if (threadShouldExit()) {
                 return;
             }
-            value_panel_.getDisplayPanel().run(transfer_buffer_, value_consumer_);
+            if (reset_values || !measure_values) {
+                auto& fifo = transfer_buffer_.getMulticastFIFO();
+                fifo.finishRead(value_consumer_, fifo.getNumReady(value_consumer_));
+            } else {
+                value_panel_.getDisplayPanel().run(transfer_buffer_, value_consumer_);
+            }
         }
     }
 
