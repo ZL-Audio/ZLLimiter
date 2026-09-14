@@ -10,9 +10,13 @@
 #include "value_background_panel.hpp"
 
 namespace zlpanel {
-    ValueBackgroundPanel::ValueBackgroundPanel(PluginProcessor&, zlgui::UIBase& base) :
-        base_(base) {
-        setInterceptsMouseClicks(false, false);
+    ValueBackgroundPanel::ValueBackgroundPanel(PluginProcessor& p, zlgui::UIBase& base) :
+        base_(base),
+        label_(p, base, "Value", zlgui::PanelSettingIdx::kValueSettingPanel) {
+        label_.setBufferedToImage(true);
+        addAndMakeVisible(label_);
+
+        setInterceptsMouseClicks(false, true);
     }
 
     void ValueBackgroundPanel::paint(juce::Graphics& g) {
@@ -48,5 +52,14 @@ namespace zlpanel {
         if (to_repaint) {
             repaint();
         }
+    }
+
+    void ValueBackgroundPanel::resized() {
+        const auto font_size = base_.getFontSize();
+        const auto padding = getPaddingSize(font_size);
+        const auto bound = getLocalBounds().removeFromTop(getTopPanelHeight(font_size));
+
+        label_.setBounds(bound.withSizeKeepingCentre(juce::roundToInt(font_size * 8.f),
+                                                     bound.getHeight() - (padding / 2) * 2));
     }
 }

@@ -31,6 +31,8 @@ namespace zlpanel {
         addAndMakeVisible(value_display_panel_);
         value_background_panel_.setBufferedToImage(true);
         addAndMakeVisible(value_background_panel_);
+
+        setInterceptsMouseClicks(false, true);
     }
 
     ValuePanel::~ValuePanel() = default;

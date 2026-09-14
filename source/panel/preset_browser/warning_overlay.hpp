@@ -16,7 +16,7 @@
 #include "../../gui/button/click_text_button/click_text_button.hpp"
 #include "../../gui/interface_definitions.hpp"
 #include "../../gui/label/name_look_and_feel.hpp"
-#include "../background/panel_background.hpp"
+#include "../common/panel_background.hpp"
 
 namespace zlpanel {
     class WarningOverlay final : public juce::Component {

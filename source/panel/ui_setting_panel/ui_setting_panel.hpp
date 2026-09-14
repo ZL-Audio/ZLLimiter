@@ -19,7 +19,7 @@
 #include "ui_setting_components.hpp"
 #include "../../gui/label/name_look_and_feel.hpp"
 #include "../../gui/scrolling/scrollable_viewport.hpp"
-#include "../background/panel_background.hpp"
+#include "../common/panel_background.hpp"
 
 namespace zlpanel {
     class UISettingPanel final : public juce::Component {

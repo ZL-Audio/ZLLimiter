@@ -11,7 +11,7 @@
 
 #include "logo_panel.hpp"
 #include "top_control_panel.hpp"
-#include "analyzer_label.hpp"
+#include "../../common/setting_label.hpp"
 
 namespace zlpanel {
     class TopPanel final : public juce::Component {
@@ -32,7 +32,7 @@ namespace zlpanel {
         LogoPanel logo_panel_;
         const std::unique_ptr<juce::Drawable> preset_drawable_;
         zlgui::button::ClickButton preset_button_;
-        AnalyzerLabel analyzer_label_;
+        SettingLabel analyzer_label_;
         TopControlPanel top_control_panel_;
     };
 }

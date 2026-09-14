@@ -20,7 +20,7 @@
 #include "preset_list.hpp"
 #include "rounded_text_editor.hpp"
 #include "warning_overlay.hpp"
-#include "../background/panel_background.hpp"
+#include "../common/panel_background.hpp"
 
 namespace zlpanel {
     class PresetBrowser final : public juce::Component,

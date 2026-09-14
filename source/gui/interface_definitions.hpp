@@ -57,6 +57,7 @@ namespace zlgui {
         kUISettingChanged,
         kPresetBrowser,
         kAnalyzerSettingPanel,
+        kValueSettingPanel,
         kPanelSettingNum
     };
 
@@ -65,6 +66,7 @@ namespace zlgui {
         juce::Identifier("ui_setting_changed"),
         juce::Identifier("preset_browser"),
         juce::Identifier("analyzer_setting_panel"),
+        juce::Identifier("value_setting_panel"),
     };
 
     static constexpr size_t kColourMap1Size = 10;

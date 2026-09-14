@@ -12,6 +12,7 @@
 #include "../../../../PluginProcessor.hpp"
 #include "../../../../gui/gui.hpp"
 #include "../../../helper/helper.hpp"
+#include "../../../common/setting_label.hpp"
 
 namespace zlpanel {
     class ValueBackgroundPanel final : public juce::Component {
@@ -22,8 +23,11 @@ namespace zlpanel {
 
         void repaintCallBackSlow(const std::array<bool, 6>& value_on, bool to_repaint);
 
+        void resized() override;
+
     private:
         zlgui::UIBase& base_;
+        SettingLabel label_;
 
         std::array<bool, 6> value_on_{true, true, true, true, true, true};
     };

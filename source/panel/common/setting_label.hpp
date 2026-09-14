@@ -9,29 +9,31 @@
 
 #pragma once
 
-#include "../../../PluginProcessor.hpp"
-#include "../../../gui/gui.hpp"
-#include "../../helper/helper.hpp"
-#include "../../multilingual/tooltip_helper.hpp"
-#include "../../background/panel_background.hpp"
+#include "../../PluginProcessor.hpp"
+#include "../../gui/gui.hpp"
+#include "../helper/helper.hpp"
+#include "../multilingual/tooltip_helper.hpp"
+#include "panel_background.hpp"
 
 namespace zlpanel {
-    class AnalyzerLabel final : public juce::Component,
-                                private juce::ValueTree::Listener {
+    class SettingLabel final : public juce::Component,
+                               private juce::ValueTree::Listener {
     public:
-        explicit AnalyzerLabel(PluginProcessor&, zlgui::UIBase& base);
+        explicit SettingLabel(PluginProcessor&, zlgui::UIBase& base,
+                              juce::String label, zlgui::PanelSettingIdx setting_idx);
 
-        ~AnalyzerLabel() override;
+        ~SettingLabel() override;
 
         void resized() override;
 
     private:
         zlgui::UIBase& base_;
+        zlgui::PanelSettingIdx setting_idx_;
 
         PanelBackground control_background_;
 
         zlgui::label::NameLookAndFeel label_laf_;
-        juce::Label analyzer_label_;
+        juce::Label setting_label_;
 
         bool is_over_{false};
 
