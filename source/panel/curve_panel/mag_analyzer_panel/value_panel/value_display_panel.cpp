@@ -142,8 +142,21 @@ namespace zlpanel {
         }
         const auto index = std::min(static_cast<size_t>(proportion * static_cast<float>(kHistogramBins)),
                                     kHistogramBins - 1);
-        histogram_[index] += 1.0;
-        histogram_max_ = std::max(histogram_max_, histogram_[index]);
+
+        static constexpr std::array<double, 5> kWeights{1.0, 4.0, 6.0, 4.0, 1.0};
+        static constexpr auto kRadius = kWeights.size() / 2;
+        const auto first = index > kRadius ? index - kRadius : 0;
+        const auto end = std::min(index + kRadius + 1, kHistogramBins);
+        double scale = 1.0 / 16.0;
+        if (end - first == 4) {
+            scale = 1.0 / 15.0;
+        } else if (end - first == 3) {
+            scale = 1.0 / 11.0;
+        }
+        for (auto i = first; i < end; ++i) {
+            histogram_[i] += kWeights[i + kRadius - index] * scale;
+            histogram_max_ = std::max(histogram_max_, histogram_[i]);
+        }
         histogram_dirty_ = true;
     }
 
@@ -269,7 +282,7 @@ namespace zlpanel {
         to_repaint = lufsi_on_.update() || to_repaint;
 
         callback_counts_ += 1;
-        if (callback_counts_ == 5) {
+        if (callback_counts_ == 3) {
             callback_counts_ = 0;
             to_repaint = true;
         }
