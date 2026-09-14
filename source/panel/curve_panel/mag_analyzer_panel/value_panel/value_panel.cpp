@@ -27,10 +27,10 @@ namespace zlpanel {
                 zlstate::PValueLRAON::kDefaultV),
         lufsi_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLUFSION::kID),
                   zlstate::PValueLUFSION::kDefaultV) {
-        value_background_panel_.setBufferedToImage(true);
-        addAndMakeVisible(value_background_panel_);
         value_display_panel_.setBufferedToImage(true);
         addAndMakeVisible(value_display_panel_);
+        value_background_panel_.setBufferedToImage(true);
+        addAndMakeVisible(value_background_panel_);
     }
 
     ValuePanel::~ValuePanel() = default;
