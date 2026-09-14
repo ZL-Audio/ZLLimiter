@@ -12,19 +12,7 @@
 namespace zlpanel {
     ValueDisplayPanel::ValueDisplayPanel(PluginProcessor& p, zlgui::UIBase& base) :
         base_(base),
-        reset_requested_(p.getValueResetNotifier()),
-        true_peak_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueTruePeakON::kID),
-                      zlstate::PValueTruePeakON::kDefaultV),
-        corr_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueStereoCorrON::kID),
-                 zlstate::PValueStereoCorrON::kDefaultV),
-        lufsm_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLUFSMON::kID),
-                  zlstate::PValueLUFSMON::kDefaultV),
-        lufss_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLUFSSON::kID),
-                  zlstate::PValueLUFSSON::kDefaultV),
-        lra_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLRAON::kID),
-                zlstate::PValueLRAON::kDefaultV),
-        lufsi_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLUFSION::kID),
-                  zlstate::PValueLUFSION::kDefaultV) {
+        reset_requested_(p.getValueResetNotifier()) {
         for (auto& path : histogram_path_.getBuffer()) {
             path.preallocateSpace(static_cast<int>(3 * (kHistogramBins + 3)));
         }
@@ -188,23 +176,23 @@ namespace zlpanel {
     }
 
     void ValueDisplayPanel::paint(juce::Graphics& g) {
-        auto bound = getLocalBounds().toFloat();
         histogram_path_.pull();
         g.setColour(base_.getColourByIdx(zlgui::ColourIdx::kPostColour).withMultipliedAlpha(.5f));
         g.fillPath(histogram_path_.getReader());
-        const auto height = bound.getHeight() / 12.f;
 
+        auto bound = getLocalBounds().toFloat();
+        const auto height = bound.getHeight() / 12.f;
         g.setFont(base_.getFontSize() * 1.75f);
         g.setColour(base_.getTextColour());
 
-        if (true_peak_on_.value) {
+        if (value_on_[0]) {
             bound.removeFromTop(height);
             const auto v = values_[kTruePeak].load(std::memory_order::relaxed);
             g.drawText(std::isfinite(v) && v > -220.f ? formatValue(v) : "--",
                        bound.removeFromTop(height),
                        juce::Justification::centred, false);
         }
-        if (corr_on_.value) {
+        if (value_on_[1]) {
             bound.removeFromTop(height);
             auto t_bound = bound.removeFromTop(height);
             {
@@ -220,7 +208,7 @@ namespace zlpanel {
                            juce::Justification::centred, false);
             }
         }
-        if (lufsm_on_.value) {
+        if (value_on_[2]) {
             bound.removeFromTop(height);
             auto t_bound = bound.removeFromTop(height);
             {
@@ -236,7 +224,7 @@ namespace zlpanel {
                            juce::Justification::centred, false);
             }
         }
-        if (lufss_on_.value) {
+        if (value_on_[3]) {
             bound.removeFromTop(height);
             auto t_bound = bound.removeFromTop(height);
             {
@@ -252,14 +240,14 @@ namespace zlpanel {
                            juce::Justification::centred, false);
             }
         }
-        if (lra_on_.value) {
+        if (value_on_[4]) {
             bound.removeFromTop(height);
             const auto v = values_[kLoudnessRange].load(std::memory_order::relaxed);
             g.drawText(std::isfinite(v) ? formatValue(v) : "--",
                        bound.removeFromTop(height),
                        juce::Justification::centred, false);
         }
-        if (lufsi_on_.value) {
+        if (value_on_[5]) {
             bound.removeFromTop(height);
             const auto v = values_[kIntegrated].load(std::memory_order::relaxed);
             g.drawText(std::isfinite(v) ? formatValue(v) : "--",
@@ -273,20 +261,13 @@ namespace zlpanel {
         pending_histogram_bound_.store(bound.removeFromRight(bound.getWidth() * .5f));
     }
 
-    void ValueDisplayPanel::repaintCallBackSlow() {
-        bool to_repaint = true_peak_on_.update();
-        to_repaint = corr_on_.update() || to_repaint;
-        to_repaint = lufsm_on_.update() || to_repaint;
-        to_repaint = lufss_on_.update() || to_repaint;
-        to_repaint = lra_on_.update() || to_repaint;
-        to_repaint = lufsi_on_.update() || to_repaint;
-
+    void ValueDisplayPanel::repaintCallBackSlow(const std::array<bool, 6>& value_on, const bool to_repaint) {
+        value_on_ = value_on;
         callback_counts_ += 1;
         if (callback_counts_ == 3) {
             callback_counts_ = 0;
-            to_repaint = true;
         }
-        if (to_repaint) {
+        if (callback_counts_ == 0 || to_repaint) {
             repaint();
         }
     }

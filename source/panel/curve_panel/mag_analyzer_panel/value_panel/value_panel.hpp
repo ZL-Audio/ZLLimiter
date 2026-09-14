@@ -34,5 +34,27 @@ namespace zlpanel {
         zlgui::UIBase& base_;
         ValueDisplayPanel value_display_panel_;
         ValueBackgroundPanel value_background_panel_;
+
+        struct AtomicBool {
+            std::atomic<float>& ref;
+            bool value;
+
+            bool update() {
+                const auto v = ref.load(std::memory_order::relaxed) > .5f;
+                if (v != value) {
+                    value = v;
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        };
+
+        AtomicBool true_peak_on_;
+        AtomicBool corr_on_;
+        AtomicBool lufsm_on_;
+        AtomicBool lufss_on_;
+        AtomicBool lra_on_;
+        AtomicBool lufsi_on_;
     };
 }

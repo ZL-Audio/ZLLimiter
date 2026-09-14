@@ -122,7 +122,7 @@ namespace zlstate {
         inline static const auto kChoices = juce::StringArray{
             "Sync", "Slow", "Roll"
         };
-        static constexpr int kDefaultI = 0;
+        static constexpr int kDefaultI = 1;
     };
 
     class PAnalyzerMinDB : public ChoiceParameters<PAnalyzerMinDB> {

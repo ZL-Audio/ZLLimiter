@@ -27,5 +27,30 @@ namespace zlpanel {
             const auto rect = juce::Rectangle<float>({bound.getX(), y, bound.getWidth(), thickness});
             g.fillRect(rect);
         }
+
+        const auto height = bound.getHeight() / 12.f;
+        g.setFont(base_.getFontSize() * 1.75f);
+        g.setColour(base_.getTextColour());
+
+        const std::array<juce::String, 6> labels = {
+            "True Peak", "Correlation", "LUFS-M", "LUFS-S", "LRA", "LUFS-I"
+        };
+        for (size_t i = 0; i < labels.size(); ++i) {
+            if (value_on_[i]) {
+                g.drawText(labels[i], bound.removeFromTop(height), juce::Justification::centred, false);
+                bound.removeFromTop(height);
+            }
+        }
+    }
+
+    void ValueBackgroundPanel::repaintCallBackSlow(const std::array<bool, 6>& value_on, bool to_repaint) {
+        value_on_ = value_on;
+        if (to_repaint) {
+            repaint();
+        }
+    }
+
+    ValueBackgroundPanel::ValueLabel::ValueLabel(const juce::String tooltip) {
+        SettableTooltipClient::setTooltip(tooltip);
     }
 }

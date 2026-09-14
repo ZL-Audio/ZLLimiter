@@ -14,7 +14,19 @@ namespace zlpanel {
     ValuePanel::ValuePanel(PluginProcessor& p, zlgui::UIBase& base) :
         base_(base),
         value_display_panel_(p, base),
-        value_background_panel_(p, base) {
+        value_background_panel_(p, base),
+        true_peak_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueTruePeakON::kID),
+                      zlstate::PValueTruePeakON::kDefaultV),
+        corr_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueStereoCorrON::kID),
+                 zlstate::PValueStereoCorrON::kDefaultV),
+        lufsm_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLUFSMON::kID),
+                  zlstate::PValueLUFSMON::kDefaultV),
+        lufss_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLUFSSON::kID),
+                  zlstate::PValueLUFSSON::kDefaultV),
+        lra_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLRAON::kID),
+                zlstate::PValueLRAON::kDefaultV),
+        lufsi_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLUFSION::kID),
+                  zlstate::PValueLUFSION::kDefaultV) {
         value_background_panel_.setBufferedToImage(true);
         addAndMakeVisible(value_background_panel_);
         value_display_panel_.setBufferedToImage(true);
@@ -36,6 +48,12 @@ namespace zlpanel {
     }
 
     void ValuePanel::repaintCallBackSlow() {
-        value_display_panel_.repaintCallBackSlow();
+        const bool to_repaint = true_peak_on_.update() || corr_on_.update() || lufsm_on_.update()
+            || lufss_on_.update() || lra_on_.update() || lufsi_on_.update();
+        const std::array<bool, 6> value_on{
+            true_peak_on_.value, corr_on_.value, lufsm_on_.value,
+            lufss_on_.value, lra_on_.value, lufsi_on_.value
+        };
+        value_display_panel_.repaintCallBackSlow(value_on, to_repaint);
     }
 }

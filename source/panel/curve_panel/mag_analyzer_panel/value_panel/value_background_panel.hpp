@@ -20,7 +20,16 @@ namespace zlpanel {
 
         void paint(juce::Graphics& g) override;
 
+        void repaintCallBackSlow(const std::array<bool, 6>& value_on, bool to_repaint);
+
     private:
         zlgui::UIBase& base_;
+
+        std::array<bool, 6> value_on_{true, true, true, true, true, true};
+
+        class ValueLabel final : public juce::Component, public juce::SettableTooltipClient {
+        public:
+            explicit ValueLabel(juce::String tooltip = "");
+        };
     };
 }

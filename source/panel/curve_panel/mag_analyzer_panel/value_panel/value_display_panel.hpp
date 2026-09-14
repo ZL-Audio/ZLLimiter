@@ -40,7 +40,7 @@ namespace zlpanel {
 
         void resized() override;
 
-        void repaintCallBackSlow();
+        void repaintCallBackSlow(const std::array<bool, 6>& value_on, bool to_repaint);
 
     private:
         enum ValueIdx : size_t {
@@ -72,27 +72,7 @@ namespace zlpanel {
 
         int callback_counts_{0};
 
-        struct AtomicBool {
-            std::atomic<float>& ref;
-            bool value;
-
-            bool update() {
-                const auto v = ref.load(std::memory_order::relaxed) > .5f;
-                if (v != value) {
-                    value = v;
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        };
-
-        AtomicBool true_peak_on_;
-        AtomicBool corr_on_;
-        AtomicBool lufsm_on_;
-        AtomicBool lufss_on_;
-        AtomicBool lra_on_;
-        AtomicBool lufsi_on_;
+        std::array<bool, 6> value_on_{true, true, true, true, true, true};
 
         void addToHistogram(float momentary);
 
