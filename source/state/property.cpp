@@ -24,8 +24,7 @@ namespace zlstate {
         if (checkCreateDirectory()) {
             if (const auto xml = juce::XmlDocument::parse(kUIPath); xml) {
                 const auto loaded_state = juce::ValueTree::fromXml(*xml);
-                if (!loaded_state.hasType(zlstate::schema::kUISettings) &&
-                    !loaded_state.hasType(zlstate::schema::legacy::kUISettings)) {
+                if (!loaded_state.hasType(zlstate::schema::kUISettings)) {
                     return;
                 }
 
@@ -33,11 +32,6 @@ namespace zlstate {
                 migrated_state.copyPropertiesAndChildrenFrom(loaded_state, nullptr);
                 apvts.replaceState(migrated_state);
 
-                if (loaded_state.hasType(zlstate::schema::legacy::kUISettings)) {
-                    if (const auto migrated_xml = migrated_state.createXml(); migrated_xml) {
-                        migrated_xml->writeTo(kUIPath);
-                    }
-                }
             }
         }
     }
@@ -63,15 +57,6 @@ namespace zlstate {
         // check if UI preset exists
         if (kUIPath.existsAsFile()) {
             return true;
-        }
-        // check if old UI preset exists
-        // yes -> copy old UI preset to UI preset
-        if (kOldUIPath.existsAsFile()) {
-            if (const auto c_res = kOldUIPath.copyFileTo(kUIPath); c_res) {
-                if (const auto d_res = kOldUIPath.deleteFile(); d_res) {
-                    return true;
-                }
-            }
         }
         // no -> create a blank UI preset
         const auto res = kUIPath.create();

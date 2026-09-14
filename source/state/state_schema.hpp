@@ -14,11 +14,4 @@ namespace zlstate::schema {
     inline constexpr auto kParameterState = "Para";
     inline constexpr auto kNonAutomatableState = "State";
     inline constexpr auto kUISettings = "UISetting";
-
-    namespace legacy {
-        inline constexpr auto kProcessorState = "ZLSpectrumEqualizerParaState";
-        inline constexpr auto kParameterState = "ZLSpectrumEqualizerParameters";
-        inline constexpr auto kNonAutomatableState = "ZLSpectrumEqualizerNAParameters";
-        inline constexpr auto kUISettings = "ZLSpectrumEqualizerState";
-    }
 }

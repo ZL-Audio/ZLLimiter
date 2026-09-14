@@ -44,6 +44,6 @@ namespace zlpanel {
         std::array<std::unique_ptr<zlgui::attachment::ButtonAttachment<true>>, 2> button_attachments_;
 
 
-        void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override;
+        void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier& property) override;
     };
 }

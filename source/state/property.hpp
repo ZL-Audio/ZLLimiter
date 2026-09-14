@@ -23,14 +23,6 @@ namespace zlstate {
         void saveAPVTS(juce::AudioProcessorValueTreeState& apvts);
 
     private:
-        const juce::File kOldPath =
-            juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-            .getChildFile("Audio")
-            .getChildFile("Presets")
-            .getChildFile(JucePlugin_Manufacturer)
-            .getChildFile(JucePlugin_Name);
-        const juce::File kOldUIPath = kOldPath.getChildFile("ui.xml");
-
         const juce::File kPath =
             juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
             .getChildFile("ZL Audio")

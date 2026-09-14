@@ -14,24 +14,6 @@
 
 #include "PluginEditor.hpp"
 
-namespace {
-    juce::ValueTree copyWithType(const juce::ValueTree& source, const juce::Identifier& type) {
-        if (!source.isValid()) {
-            return {};
-        }
-
-        juce::ValueTree result(type);
-        result.copyPropertiesAndChildrenFrom(source, nullptr);
-        return result;
-    }
-
-    juce::ValueTree getChildWithLegacyFallback(const juce::ValueTree& parent,
-                                               const juce::Identifier& type,
-                                               const juce::Identifier& legacy_type) {
-        const auto child = parent.getChildWithName(type);
-        return child.isValid() ? child : parent.getChildWithName(legacy_type);
-    }
-}
 
 //==============================================================================
 PluginProcessor::PluginProcessor() :
@@ -156,29 +138,22 @@ void PluginProcessor::getStateInformation(juce::MemoryBlock& dest_data) {
 
 void PluginProcessor::setStateInformation(const void* data, const int size_in_bytes) {
     std::unique_ptr<juce::XmlElement> xml_state(getXmlFromBinary(data, size_in_bytes));
-    if (xml_state == nullptr ||
-        (!xml_state->hasTagName(zlstate::schema::kProcessorState) &&
-            !xml_state->hasTagName(zlstate::schema::legacy::kProcessorState))) {
+    if (xml_state == nullptr || !xml_state->hasTagName(zlstate::schema::kProcessorState)) {
         return;
     }
 
     const auto temp_tree = juce::ValueTree::fromXml(*xml_state);
-    const auto parameter_state = getChildWithLegacyFallback(
-        temp_tree,
-        juce::Identifier(zlstate::schema::kParameterState),
-        juce::Identifier(zlstate::schema::legacy::kParameterState));
-    const auto non_automatable_state = getChildWithLegacyFallback(
-        temp_tree,
-        juce::Identifier(zlstate::schema::kNonAutomatableState),
-        juce::Identifier(zlstate::schema::legacy::kNonAutomatableState));
+    const auto parameter_state = temp_tree.getChildWithName(
+        juce::Identifier(zlstate::schema::kParameterState));
+    const auto non_automatable_state = temp_tree.getChildWithName(
+        juce::Identifier(zlstate::schema::kNonAutomatableState));
+
     if (!parameter_state.isValid() || !non_automatable_state.isValid()) {
         return;
     }
 
-    parameters_.replaceState(copyWithType(parameter_state,
-                                          juce::Identifier(zlstate::schema::kParameterState)));
-    parameters_NA_.replaceState(copyWithType(non_automatable_state,
-                                             juce::Identifier(zlstate::schema::kNonAutomatableState)));
+    parameters_.replaceState(parameter_state);
+    parameters_NA_.replaceState(non_automatable_state);
 }
 
 void PluginProcessor::updateChannelLayout() {
@@ -196,7 +171,9 @@ void PluginProcessor::updateChannelLayout() {
 
 void PluginProcessor::updateValueTransport(const int num_samples) {
     const auto* playhead = getPlayHead();
-    const auto position = playhead != nullptr ? playhead->getPosition() : juce::Optional<juce::AudioPlayHead::PositionInfo>{};
+    const auto position = playhead != nullptr
+        ? playhead->getPosition()
+        : juce::Optional<juce::AudioPlayHead::PositionInfo>{};
     bool reset_values = !value_measurement_active_.load(std::memory_order::relaxed);
     if (position.hasValue()) {
         if (!position->getIsPlaying()) {
