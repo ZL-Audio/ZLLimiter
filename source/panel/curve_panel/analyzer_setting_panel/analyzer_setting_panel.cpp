@@ -67,6 +67,7 @@ namespace zlpanel {
         constexpr std::array button_ids{zlstate::PMeterDisplayON::kID, zlstate::PValueDisplayON::kID};
         for (size_t i = 0; i < buttons_.size(); ++i) {
             buttons_[i].getButton().setClickingTogglesState(true);
+            buttons_[i].setImageAlpha(.5f, .75f, 1.f, 1.f);
             buttons_[i].getButton().setComponentID(button_ids[i]);
             button_attachments_[i] = std::make_unique<zlgui::attachment::ButtonAttachment<true>>(
                 buttons_[i].getButton(), p.parameters_NA_, button_ids[i], updater_);
