@@ -25,6 +25,9 @@ namespace zlpanel {
                 zlstate::PValueLRAON::kDefaultV),
         lufsi_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueLUFSION::kID),
                   zlstate::PValueLUFSION::kDefaultV) {
+        for (auto& path : histogram_path_.getBuffer()) {
+            path.preallocateSpace(static_cast<int>(3 * (kHistogramBins + 3)));
+        }
         reset();
     }
 
@@ -48,14 +51,28 @@ namespace zlpanel {
         for (auto& value : values_) {
             value.store(kUnavailable, std::memory_order::relaxed);
         }
+        histogram_.fill(0.0);
+        histogram_max_ = 0.0;
+        histogram_dirty_ = true;
+        histogram_path_.getWriter().clear();
+        histogram_path_.publish();
     }
 
     void ValueDisplayPanel::run(
         zldsp::analyzer::FIFOTransferBuffer<zlp::Controller::kAnalyzerStreamNum>& transfer_buffer,
-        const size_t consumer_id) {
+        const size_t consumer_id, const MagDBRange& db_range, const bool measure_values) {
+        if (!juce::exactlyEqual(histogram_db_range_.getMaxDB(), db_range.getMaxDB()) ||
+            !juce::exactlyEqual(histogram_db_range_.getRangeDB(), db_range.getRangeDB())) {
+            histogram_db_range_ = db_range;
+            histogram_.fill(0.0);
+            histogram_max_ = 0.0;
+            histogram_dirty_ = true;
+        }
         auto& fifo = transfer_buffer.getMulticastFIFO();
         const auto num_ready = fifo.getNumReady(consumer_id);
-        if (num_ready == 0) {
+        if (!measure_values || num_ready == 0) {
+            fifo.finishRead(consumer_id, num_ready);
+            updateHistogramPath();
             return;
         }
         const auto range = fifo.prepareToRead(consumer_id, num_ready);
@@ -63,6 +80,7 @@ namespace zlpanel {
         magnitude_receiver_.run(range, samples, true);
         loudness_receiver_.run(range, samples, [this](const auto& meter) {
             const auto momentary = meter.getMomentaryLoudness();
+            addToHistogram(momentary);
             if (!std::isnan(momentary)) {
                 max_momentary_ = std::isnan(max_momentary_)
                     ? momentary
@@ -111,10 +129,56 @@ namespace zlpanel {
                                   std::memory_order::relaxed);
         values_[kLoudnessRange].store(meter.isLoudnessRangeReady() ? meter.getLoudnessRange() : kUnavailable,
                                       std::memory_order::relaxed);
+        updateHistogramPath();
+    }
+
+    void ValueDisplayPanel::addToHistogram(const float momentary) {
+        if (!std::isfinite(momentary) || !(histogram_db_range_.getRangeDB() < 0.f)) {
+            return;
+        }
+        const auto proportion = histogram_db_range_.getYProportion(momentary);
+        if (!std::isfinite(proportion) || proportion < 0.f || proportion > 1.f) {
+            return;
+        }
+        const auto index = std::min(static_cast<size_t>(proportion * static_cast<float>(kHistogramBins)),
+                                    kHistogramBins - 1);
+        histogram_[index] += 1.0;
+        histogram_max_ = std::max(histogram_max_, histogram_[index]);
+        histogram_dirty_ = true;
+    }
+
+    void ValueDisplayPanel::updateHistogramPath() {
+        const auto bound = pending_histogram_bound_.load();
+        if (bound != histogram_bound_) {
+            histogram_bound_ = bound;
+            histogram_dirty_ = true;
+        }
+        if (!histogram_dirty_) {
+            return;
+        }
+        auto& path = histogram_path_.getWriter();
+        path.clear();
+        if (!bound.isEmpty() && histogram_max_ > 0.0) {
+            const auto right = bound.getRight();
+            path.startNewSubPath(right, bound.getY());
+            const auto scale = bound.getWidth() / static_cast<float>(std::max(histogram_max_, 5.0));
+            for (size_t i = 0; i < kHistogramBins; ++i) {
+                const auto width = static_cast<float>(histogram_[i]) * scale;
+                const auto proportion = (static_cast<float>(i) + .5f) / static_cast<float>(kHistogramBins);
+                path.lineTo(right - width, std::fma(proportion, bound.getHeight(), bound.getY()));
+            }
+            path.lineTo(right, bound.getBottom());
+            path.closeSubPath();
+        }
+        histogram_path_.publish();
+        histogram_dirty_ = false;
     }
 
     void ValueDisplayPanel::paint(juce::Graphics& g) {
         auto bound = getLocalBounds().toFloat();
+        histogram_path_.pull();
+        g.setColour(base_.getColourByIdx(zlgui::ColourIdx::kPostColour).withMultipliedAlpha(.5f));
+        g.fillPath(histogram_path_.getReader());
         const auto height = bound.getHeight() / 12.f;
 
         g.setFont(base_.getFontSize() * 1.75f);
@@ -191,15 +255,18 @@ namespace zlpanel {
         }
     }
 
-    void ValueDisplayPanel::repaintCallBackSlow() {
-        bool to_repaint = false;
+    void ValueDisplayPanel::resized() {
+        auto bound = getLocalBounds().toFloat();
+        pending_histogram_bound_.store(bound.removeFromRight(bound.getWidth() * .5f));
+    }
 
-        to_repaint = to_repaint || true_peak_on_.update();
-        to_repaint = to_repaint || corr_on_.update();
-        to_repaint = to_repaint || lufsm_on_.update();
-        to_repaint = to_repaint || lufss_on_.update();
-        to_repaint = to_repaint || lra_on_.update();
-        to_repaint = to_repaint || lufsi_on_.update();
+    void ValueDisplayPanel::repaintCallBackSlow() {
+        bool to_repaint = true_peak_on_.update();
+        to_repaint = corr_on_.update() || to_repaint;
+        to_repaint = lufsm_on_.update() || to_repaint;
+        to_repaint = lufss_on_.update() || to_repaint;
+        to_repaint = lra_on_.update() || to_repaint;
+        to_repaint = lufsi_on_.update() || to_repaint;
 
         callback_counts_ += 1;
         if (callback_counts_ == 5) {

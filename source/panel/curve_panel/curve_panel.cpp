@@ -148,12 +148,8 @@ namespace zlpanel {
             if (threadShouldExit()) {
                 return;
             }
-            if (reset_values || !measure_values) {
-                auto& fifo = transfer_buffer_.getMulticastFIFO();
-                fifo.finishRead(value_consumer_, fifo.getNumReady(value_consumer_));
-            } else {
-                value_panel_.getDisplayPanel().run(transfer_buffer_, value_consumer_);
-            }
+            value_panel_.getDisplayPanel().run(transfer_buffer_, value_consumer_, range,
+                                               measure_values && !reset_values);
         }
     }
 

@@ -15,12 +15,14 @@
 
 #include "../../../../PluginProcessor.hpp"
 #include "../../../../chore/thread/notifier.hpp"
+#include "../../../../chore/thread/tri_buffer.hpp"
 #include "../../../../dsp/analyzer/analyzer_base/fifo_transfer_buffer.hpp"
 #include "../../../../dsp/analyzer/mag_analyzer/magnitude_receiver.hpp"
 #include "../../../../dsp/analyzer/value_analyzer/loudness_receiver.hpp"
 #include "../../../../dsp/analyzer/value_analyzer/stereo_statistics_receiver.hpp"
 #include "../../../../gui/gui.hpp"
 #include "../../../helper/helper.hpp"
+#include "../../mag_db_range.hpp"
 
 namespace zlpanel {
     class ValueDisplayPanel final : public juce::Component {
@@ -32,9 +34,11 @@ namespace zlpanel {
         void reset();
 
         void run(zldsp::analyzer::FIFOTransferBuffer<zlp::Controller::kAnalyzerStreamNum>& transfer_buffer,
-                 size_t consumer_id);
+                 size_t consumer_id, const MagDBRange& db_range, bool measure_values = true);
 
         void paint(juce::Graphics& g) override;
+
+        void resized() override;
 
         void repaintCallBackSlow();
 
@@ -45,6 +49,7 @@ namespace zlpanel {
         };
 
         static constexpr float kUnavailable = std::numeric_limits<float>::quiet_NaN();
+        static constexpr size_t kHistogramBins = 108;
 
         zlgui::UIBase& base_;
         zldsp::analyzer::MagnitudeReceiver magnitude_receiver_;
@@ -56,6 +61,14 @@ namespace zlpanel {
         zlchore::thread::Notifier& reset_requested_;
 
         std::array<std::atomic<float>, kNumValues> values_{};
+
+        std::array<double, kHistogramBins> histogram_{};
+        double histogram_max_{0.0};
+        MagDBRange histogram_db_range_{0.f, 0.f};
+        AtomicBound<float> pending_histogram_bound_;
+        juce::Rectangle<float> histogram_bound_;
+        zlchore::thread::TriBuffer<juce::Path> histogram_path_;
+        bool histogram_dirty_{true};
 
         int callback_counts_{0};
 
@@ -80,6 +93,10 @@ namespace zlpanel {
         AtomicBool lufss_on_;
         AtomicBool lra_on_;
         AtomicBool lufsi_on_;
+
+        void addToHistogram(float momentary);
+
+        void updateHistogramPath();
 
         void mouseDoubleClick(const juce::MouseEvent& event) override;
 
