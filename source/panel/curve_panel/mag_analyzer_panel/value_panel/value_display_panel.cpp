@@ -114,12 +114,8 @@ namespace zlpanel {
     }
 
     void ValueDisplayPanel::paint(juce::Graphics& g) {
-        const auto num_values = static_cast<int>(true_peak_on_.value) + static_cast<int>(corr_on_.value) +
-            static_cast<int>(lufsm_on_.value) + static_cast<int>(lufss_on_.value) +
-            static_cast<int>(lra_on_.value) + static_cast<int>(lufsi_on_.value);
-
         auto bound = getLocalBounds().toFloat();
-        const auto height = .5f * bound.getHeight() / static_cast<float>(num_values);
+        const auto height = bound.getHeight() / 12.f;
 
         g.setFont(base_.getFontSize() * 1.75f);
         g.setColour(base_.getTextColour());

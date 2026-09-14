@@ -13,7 +13,10 @@
 namespace zlpanel {
     ValuePanel::ValuePanel(PluginProcessor& p, zlgui::UIBase& base) :
         base_(base),
-        value_display_panel_(p, base) {
+        value_display_panel_(p, base),
+        value_background_panel_(p, base) {
+        value_background_panel_.setBufferedToImage(true);
+        addAndMakeVisible(value_background_panel_);
         value_display_panel_.setBufferedToImage(true);
         addAndMakeVisible(value_display_panel_);
     }
@@ -27,6 +30,7 @@ namespace zlpanel {
     void ValuePanel::resized() {
         const auto font_size = base_.getFontSize();
         auto bound = getLocalBounds();
+        value_background_panel_.setBounds(getLocalBounds());
         bound.removeFromTop(getTopPanelHeight(font_size));
         value_display_panel_.setBounds(bound);
     }
