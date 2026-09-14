@@ -58,7 +58,7 @@ namespace zlpanel {
         float peak_hold_db_{-240.f};
         float max_short_term_{kUnavailable}, max_momentary_{kUnavailable};
         double weighted_correlation_sum_{0.0}, correlation_weight_sum_{0.0};
-        zlchore::thread::Notifier& reset_requested_;
+        zlchore::thread::Notifier peak_reset_requested_, correlation_reset_requested_, loudness_reset_requested_;
 
         std::array<std::atomic<float>, kNumValues> values_{};
 
@@ -78,8 +78,36 @@ namespace zlpanel {
 
         void updateHistogramPath();
 
-        void mouseDoubleClick(const juce::MouseEvent& event) override;
+        void resetPeak();
+
+        void resetCorrelation();
+
+        void resetLoudness();
+
+        void checkResetRequests();
 
         static std::string formatValue(float value);
+
+        class ValueLabel final : public juce::Component,
+                                 public juce::SettableTooltipClient {
+        public:
+            explicit ValueLabel(zlchore::thread::Notifier& reset_requested, const juce::String tooltip = "") :
+                reset_requested_(reset_requested) {
+                SettableTooltipClient::setTooltip(tooltip);
+            }
+
+        private:
+            zlchore::thread::Notifier& reset_requested_;
+
+            void mouseDoubleClick(const juce::MouseEvent&) override {
+                reset_requested_.signal();
+            }
+        };
+
+        std::array<ValueLabel, 6> value_labels_{
+            ValueLabel(peak_reset_requested_), ValueLabel(correlation_reset_requested_),
+            ValueLabel(loudness_reset_requested_), ValueLabel(loudness_reset_requested_),
+            ValueLabel(loudness_reset_requested_), ValueLabel(loudness_reset_requested_)
+        };
     };
 }

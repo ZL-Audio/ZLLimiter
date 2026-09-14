@@ -49,8 +49,4 @@ namespace zlpanel {
             repaint();
         }
     }
-
-    ValueBackgroundPanel::ValueLabel::ValueLabel(const juce::String tooltip) {
-        SettableTooltipClient::setTooltip(tooltip);
-    }
 }

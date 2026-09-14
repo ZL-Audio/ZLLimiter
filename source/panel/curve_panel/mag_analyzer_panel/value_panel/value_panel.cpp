@@ -48,12 +48,17 @@ namespace zlpanel {
     }
 
     void ValuePanel::repaintCallBackSlow() {
-        const bool to_repaint = true_peak_on_.update() || corr_on_.update() || lufsm_on_.update()
-            || lufss_on_.update() || lra_on_.update() || lufsi_on_.update();
+        bool to_repaint = true_peak_on_.update();
+        to_repaint = corr_on_.update() || to_repaint;
+        to_repaint = lufsm_on_.update() || to_repaint;
+        to_repaint = lufss_on_.update() || to_repaint;
+        to_repaint = lra_on_.update() || to_repaint;
+        to_repaint = lufsi_on_.update() || to_repaint;
         const std::array<bool, 6> value_on{
             true_peak_on_.value, corr_on_.value, lufsm_on_.value,
             lufss_on_.value, lra_on_.value, lufsi_on_.value
         };
+        value_background_panel_.repaintCallBackSlow(value_on, to_repaint);
         value_display_panel_.repaintCallBackSlow(value_on, to_repaint);
     }
 }

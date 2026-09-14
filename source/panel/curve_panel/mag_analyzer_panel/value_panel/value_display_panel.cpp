@@ -10,13 +10,16 @@
 #include "value_display_panel.hpp"
 
 namespace zlpanel {
-    ValueDisplayPanel::ValueDisplayPanel(PluginProcessor& p, zlgui::UIBase& base) :
-        base_(base),
-        reset_requested_(p.getValueResetNotifier()) {
+    ValueDisplayPanel::ValueDisplayPanel(PluginProcessor&, zlgui::UIBase& base) :
+        base_(base) {
+        for (auto& label : value_labels_) {
+            addAndMakeVisible(label);
+        }
         for (auto& path : histogram_path_.getBuffer()) {
             path.preallocateSpace(static_cast<int>(3 * (kHistogramBins + 3)));
         }
-        reset();
+
+        setInterceptsMouseClicks(false, true);
     }
 
     void ValueDisplayPanel::prepare(const double sample_rate, const size_t num_channels) {
@@ -27,23 +30,52 @@ namespace zlpanel {
     }
 
     void ValueDisplayPanel::reset() {
-        magnitude_receiver_.reset();
-        loudness_receiver_.reset();
-        stereo_statistics_receiver_.reset();
+        peak_reset_requested_.check();
+        correlation_reset_requested_.check();
+        loudness_reset_requested_.check();
+        resetPeak();
+        resetCorrelation();
+        resetLoudness();
+    }
 
+    void ValueDisplayPanel::resetPeak() {
+        magnitude_receiver_.reset();
         peak_hold_db_ = kUnavailable;
-        max_short_term_ = kUnavailable;
-        max_momentary_ = kUnavailable;
+        values_[kTruePeak].store(kUnavailable, std::memory_order::relaxed);
+    }
+
+    void ValueDisplayPanel::resetCorrelation() {
+        stereo_statistics_receiver_.reset();
         weighted_correlation_sum_ = 0.0;
         correlation_weight_sum_ = 0.0;
-        for (auto& value : values_) {
-            value.store(kUnavailable, std::memory_order::relaxed);
+        values_[kCorrelation].store(kUnavailable, std::memory_order::relaxed);
+        values_[kAverageCorrelation].store(kUnavailable, std::memory_order::relaxed);
+    }
+
+    void ValueDisplayPanel::resetLoudness() {
+        loudness_receiver_.reset();
+        max_short_term_ = kUnavailable;
+        max_momentary_ = kUnavailable;
+        for (const auto index : {kMomentary, kShortTerm, kLoudnessRange, kIntegrated, kMaxMomentary, kMaxShortTerm}) {
+            values_[index].store(kUnavailable, std::memory_order::relaxed);
         }
         histogram_.fill(0.0);
         histogram_max_ = 0.0;
         histogram_dirty_ = true;
         histogram_path_.getWriter().clear();
         histogram_path_.publish();
+    }
+
+    void ValueDisplayPanel::checkResetRequests() {
+        if (peak_reset_requested_.check()) {
+            resetPeak();
+        }
+        if (correlation_reset_requested_.check()) {
+            resetCorrelation();
+        }
+        if (loudness_reset_requested_.check()) {
+            resetLoudness();
+        }
     }
 
     void ValueDisplayPanel::run(
@@ -60,6 +92,7 @@ namespace zlpanel {
         const auto num_ready = fifo.getNumReady(consumer_id);
         if (!measure_values || num_ready == 0) {
             fifo.finishRead(consumer_id, num_ready);
+            checkResetRequests();
             updateHistogramPath();
             return;
         }
@@ -117,6 +150,8 @@ namespace zlpanel {
                                   std::memory_order::relaxed);
         values_[kLoudnessRange].store(meter.isLoudnessRangeReady() ? meter.getLoudnessRange() : kUnavailable,
                                       std::memory_order::relaxed);
+        // Consume the queued range for every receiver before clearing only the requested histories.
+        checkResetRequests();
         updateHistogramPath();
     }
 
@@ -258,11 +293,24 @@ namespace zlpanel {
 
     void ValueDisplayPanel::resized() {
         auto bound = getLocalBounds().toFloat();
-        pending_histogram_bound_.store(bound.removeFromRight(bound.getWidth() * .5f));
+        pending_histogram_bound_.store(bound.withLeft(bound.getCentreX()));
+
+        const auto height = bound.getHeight() / 12.f;
+        for (size_t i = 0; i < value_labels_.size(); ++i) {
+            auto& label = value_labels_[i];
+            label.setVisible(value_on_[i]);
+            if (value_on_[i]) {
+                bound.removeFromTop(height);
+                label.setBounds(bound.removeFromTop(height).toNearestInt());
+            }
+        }
     }
 
     void ValueDisplayPanel::repaintCallBackSlow(const std::array<bool, 6>& value_on, const bool to_repaint) {
-        value_on_ = value_on;
+        if (to_repaint) {
+            value_on_ = value_on;
+            resized();
+        }
         callback_counts_ += 1;
         if (callback_counts_ == 3) {
             callback_counts_ = 0;
@@ -270,10 +318,6 @@ namespace zlpanel {
         if (callback_counts_ == 0 || to_repaint) {
             repaint();
         }
-    }
-
-    void ValueDisplayPanel::mouseDoubleClick(const juce::MouseEvent&) {
-        reset_requested_.signal();
     }
 
     std::string ValueDisplayPanel::formatValue(const float value) {
