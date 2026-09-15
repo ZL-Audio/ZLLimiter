@@ -52,6 +52,7 @@ namespace zlpanel {
         static constexpr size_t kHistogramBins = 108;
 
         zlgui::UIBase& base_;
+        std::atomic<float>& histogram_on_ref_;
         zldsp::analyzer::MagnitudeReceiver magnitude_receiver_;
         zldsp::analyzer::LoudnessReceiver loudness_receiver_;
         zldsp::analyzer::StereoStatisticsReceiver stereo_statistics_receiver_;
@@ -73,6 +74,7 @@ namespace zlpanel {
         int callback_counts_{0};
 
         std::array<bool, 6> value_on_{true, true, true, true, true, true};
+        bool histogram_on_{zlstate::PValueHistogramON::kDefaultV};
 
         void addToHistogram(float momentary);
 

@@ -228,6 +228,13 @@ namespace zlstate {
         static constexpr auto kDefaultV = true;
     };
 
+    class PValueHistogramON : public BoolParameters<PValueHistogramON> {
+    public:
+        static constexpr auto kID = "value_histogram_on";
+        static constexpr auto kName = "";
+        static constexpr auto kDefaultV = true;
+    };
+
     inline juce::AudioProcessorValueTreeState::ParameterLayout getNAParameterLayout() {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;
         layout.add(PAnalyzerMagType::get(false), PAnalyzerMoveType::get(false),
@@ -235,7 +242,8 @@ namespace zlstate {
                    PPreCurveDisplay::get(false), PPostCurveDisplay::get(false), PDeltaCurveDisplay::get(false),
                    PMeterDisplayON::get(false), PValueDisplayON::get(false),
                    PValueTruePeakON::get(false), PValueStereoCorrON::get(false), PValueLUFSMON::get(false),
-                   PValueLUFSSON::get(false), PValueLRAON::get(false), PValueLUFSION::get(false));
+                   PValueLUFSSON::get(false), PValueLRAON::get(false), PValueLUFSION::get(false),
+                   PValueHistogramON::get(false));
         return layout;
     }
 

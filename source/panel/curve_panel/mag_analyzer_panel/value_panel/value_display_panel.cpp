@@ -10,8 +10,9 @@
 #include "value_display_panel.hpp"
 
 namespace zlpanel {
-    ValueDisplayPanel::ValueDisplayPanel(PluginProcessor&, zlgui::UIBase& base) :
-        base_(base) {
+    ValueDisplayPanel::ValueDisplayPanel(PluginProcessor& p, zlgui::UIBase& base) :
+        base_(base),
+        histogram_on_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueHistogramON::kID)) {
         for (auto& label : value_labels_) {
             addAndMakeVisible(label);
         }
@@ -212,8 +213,10 @@ namespace zlpanel {
 
     void ValueDisplayPanel::paint(juce::Graphics& g) {
         histogram_path_.pull();
-        g.setColour(base_.getColourByIdx(zlgui::ColourIdx::kPostColour).withMultipliedAlpha(.5f));
-        g.fillPath(histogram_path_.getReader());
+        if (histogram_on_) {
+            g.setColour(base_.getColourByIdx(zlgui::ColourIdx::kPostColour).withMultipliedAlpha(.5f));
+            g.fillPath(histogram_path_.getReader());
+        }
 
         auto bound = getLocalBounds().toFloat();
         const auto height = bound.getHeight() / 12.f;
@@ -307,6 +310,9 @@ namespace zlpanel {
     }
 
     void ValueDisplayPanel::repaintCallBackSlow(const std::array<bool, 6>& value_on, const bool to_repaint) {
+        const auto histogram_on = histogram_on_ref_.load(std::memory_order::relaxed) > .5f;
+        const auto histogram_changed = histogram_on != histogram_on_;
+        histogram_on_ = histogram_on;
         if (to_repaint) {
             value_on_ = value_on;
             resized();
@@ -315,7 +321,7 @@ namespace zlpanel {
         if (callback_counts_ == 3) {
             callback_counts_ = 0;
         }
-        if (callback_counts_ == 0 || to_repaint) {
+        if (callback_counts_ == 0 || to_repaint || histogram_changed) {
             repaint();
         }
     }

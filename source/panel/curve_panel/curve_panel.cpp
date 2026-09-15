@@ -21,6 +21,7 @@ namespace zlpanel {
         meter_panel_(p, base),
         value_panel_(p, base),
         analyzer_setting_panel_(p, base),
+        value_setting_panel_(p, base),
         peak_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()),
         meter_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()),
         value_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()) {
@@ -32,6 +33,8 @@ namespace zlpanel {
         addAndMakeVisible(top_panel_);
         analyzer_setting_panel_.setBufferedToImage(true);
         addChildComponent(analyzer_setting_panel_);
+        value_setting_panel_.setBufferedToImage(true);
+        addChildComponent(value_setting_panel_);
         addMouseListener(this, true);
         startThread(juce::Thread::Priority::low);
     }
@@ -63,6 +66,8 @@ namespace zlpanel {
             font_size * 8.f);
         bound.removeFromTop(top_panel_.getIdealHeight());
         analyzer_setting_panel_.setBounds(setting_right - setting_width, bound.getY(), setting_width, setting_height);
+        value_setting_panel_.setBounds(bound.getRight() - value_setting_panel_.getIdealWidth(), bound.getY(),
+                                       value_setting_panel_.getIdealWidth(), value_setting_panel_.getIdealHeight());
     }
 
     void CurvePanel::repaintCallBack(const double time_stamp) {
@@ -79,6 +84,7 @@ namespace zlpanel {
             updateBounds();
         }
         analyzer_setting_panel_.repaintCallBackSlow();
+        value_setting_panel_.repaintCallBackSlow();
         meter_panel_.repaintCallBackSlow();
         peak_panel_.repaintCallBackSlow();
         value_panel_.repaintCallBackSlow();
@@ -159,6 +165,11 @@ namespace zlpanel {
             !top_panel_.isParentOf(event.originalComponent)) {
             base_.setPanelProperty(zlgui::kAnalyzerSettingPanel, 0.f);
         }
+        if (event.originalComponent != &value_setting_panel_ &&
+            !value_setting_panel_.isParentOf(event.originalComponent) &&
+            !value_panel_.isParentOf(event.originalComponent)) {
+            base_.setPanelProperty(zlgui::kValueSettingPanel, 0.f);
+        }
     }
 
     void CurvePanel::updateBounds() {
@@ -166,6 +177,8 @@ namespace zlpanel {
         value_panel_.setVisible(is_value_on_);
         if (is_value_on_) {
             value_panel_.setBounds(bound.removeFromRight(value_panel_.getIdealWidth()));
+        } else {
+            base_.setPanelProperty(zlgui::kValueSettingPanel, 0.f);
         }
         meter_panel_.setVisible(is_meter_on_);
         if (is_meter_on_) {

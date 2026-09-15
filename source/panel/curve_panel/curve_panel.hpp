@@ -13,6 +13,7 @@
 #include "mag_analyzer_panel/meter_panel/meter_panel.hpp"
 #include "mag_analyzer_panel/value_panel/value_panel.hpp"
 #include "analyzer_setting_panel/analyzer_setting_panel.hpp"
+#include "value_setting_panel/value_setting_panel.hpp"
 #include "top_panel/top_panel.hpp"
 
 #include "../multilingual/tooltip_helper.hpp"
@@ -49,6 +50,7 @@ namespace zlpanel {
         MeterPanel meter_panel_;
         ValuePanel value_panel_;
         AnalyzerSettingPanel analyzer_setting_panel_;
+        ValueSettingPanel value_setting_panel_;
         zldsp::analyzer::FIFOTransferBuffer<zlp::Controller::kAnalyzerStreamNum> transfer_buffer_;
         size_t peak_consumer_, meter_consumer_, value_consumer_;
         uint64_t generation_{std::numeric_limits<uint64_t>::max()};
