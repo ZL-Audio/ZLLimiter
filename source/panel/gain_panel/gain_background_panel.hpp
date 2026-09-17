@@ -7,27 +7,26 @@
 //
 // You should have received a copy of the GNU Affero General Public License along with ZLLimiter. If not, see <https://www.gnu.org/licenses/>.
 
+
 #pragma once
 
-#include "../../gui/gui.hpp"
+#include <juce_gui_basics/juce_gui_basics.h>
+
+#include "../../gui/interface_definitions.hpp"
 #include "../helper/helper.hpp"
 
 namespace zlpanel {
-    class ControlBackground final : public juce::Component {
+    class GainBackgroundPanel final : public juce::Component {
     public:
-        /**
-         *
-         * @param base
-         * @param alpha shadow colour alpha
-         */
-        explicit ControlBackground(zlgui::UIBase& base, float alpha = .5f);
+        explicit GainBackgroundPanel(zlgui::UIBase& base);
 
         void paint(juce::Graphics& g) override;
 
+        void setMouseOver(bool is_mouse_over);
+
     private:
         zlgui::UIBase& base_;
-        const float alpha_;
 
-        void drawSplit(juce::Graphics& g, juce::Rectangle<float> bound) const;
+        bool is_mouse_over_{false};
     };
 }

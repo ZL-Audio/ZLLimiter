@@ -18,13 +18,17 @@ namespace zlpanel {
             ),
         curve_panel_(processor, base_, tooltip_helper_),
         control_panel_(processor, base_, tooltip_helper_),
+        gain_panel_(processor, base_, tooltip_helper_),
         preset_browser_(processor, base_),
         ui_setting_panel_(processor, base_),
         tooltipLAF(base_), tooltipWindow(base_, this),
         refresh_handler_(zlstate::PTargetRefreshSpeed::kRates[base_.getRefreshRateID()]) {
         juce::ignoreUnused(base_);
         addAndMakeVisible(curve_panel_);
+        control_panel_.setBufferedToImage(true);
         addAndMakeVisible(control_panel_);
+        gain_panel_.setBufferedToImage(true);
+        addAndMakeVisible(gain_panel_);
         addChildComponent(ui_setting_panel_);
         preset_browser_.setBufferedToImage(true);
         addChildComponent(preset_browser_);
@@ -54,13 +58,19 @@ namespace zlpanel {
             : std::clamp(base_.getStaticFontSize(), max_font_size * .25f, max_font_size * 0.9f);
         base_.setFontSize(font_size);
         const auto main_bound = bound;
+        const auto padding = getPaddingSize(font_size);
+        const auto control_height = control_panel_.getIdealHeight();
+        const auto top_height = getTopPanelHeight(font_size);
 
-        control_panel_.setBounds(0, bound.getBottom() - control_panel_.getIdealHeight(),
-                                 control_panel_.getIdealWidth(), control_panel_.getIdealHeight());
+        control_panel_.setBounds(0, bound.getBottom() - control_height,
+                                 control_panel_.getIdealWidth(), control_height);
+
+        gain_panel_.setBounds(0, top_height,
+                              gain_panel_.getIdealWidth(),
+                              bound.getHeight() - top_height - control_height);
 
         curve_panel_.setBounds(bound);
 
-        const auto padding = getPaddingSize(font_size);
         const auto setting_width = juce::jmax(0, juce::jmin(ui_setting_panel_.getIdealWidth(),
                                                             main_bound.getWidth() - 4 * padding));
         const auto setting_height = juce::jmax(0, juce::jmin(ui_setting_panel_.getIdealHeight(),
@@ -84,6 +94,7 @@ namespace zlpanel {
             if (time_stamp - previous_time_stamp_ > 0.1) {
                 previous_time_stamp_ = time_stamp;
                 control_panel_.repaintCallBackSlow();
+                gain_panel_.repaintCallBackSlow();
                 curve_panel_.repaintCallBackSlow();
             }
 

@@ -11,7 +11,7 @@
 
 namespace zlpanel {
     ControlPanel::ControlPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper&) :
-        base_(base), background_(base, .5f, {false, false, false, false}), label_laf_(base),
+        base_(base), background_(base, .5f), label_laf_(base),
         top_labels_{
             juce::Label{"", "Main"},
             juce::Label{"", "Support"},

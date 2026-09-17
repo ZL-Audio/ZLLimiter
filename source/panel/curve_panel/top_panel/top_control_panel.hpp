@@ -29,10 +29,10 @@ namespace zlpanel {
         zlgui::attachment::ComponentUpdater updater_;
 
         zlgui::label::NameLookAndFeel label_laf_;
-        juce::Label input_label_, ceiling_label_, oversample_label_;
+        juce::Label ceiling_label_, oversample_label_;
 
-        zlgui::slider::CompactLinearSlider<false, false, false> input_slider_, ceiling_slider_;
-        zlgui::attachment::SliderAttachment<true> input_attachment_, ceiling_attachment_;
+        zlgui::slider::CompactLinearSlider<false, false, false> ceiling_slider_;
+        zlgui::attachment::SliderAttachment<true> ceiling_attachment_;
 
         zlgui::combobox::CompactCombobox oversample_box_;
         zlgui::attachment::ComboBoxAttachment<true> oversample_attachment_;

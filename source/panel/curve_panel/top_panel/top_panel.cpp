@@ -35,18 +35,29 @@ namespace zlpanel {
     }
 
     void TopPanel::paint(juce::Graphics& g) {
-        juce::ColourGradient gradient;
-        const auto bound = getLocalBounds().toFloat();
-        gradient.point1 = bound.getTopLeft();
-        gradient.point2 = bound.getBottomLeft();
-        gradient.isRadial = false;
-        gradient.clearColours();
+        {
+            const auto font_size = base_.getFontSize();
+            const auto bound = getLocalBounds().withWidth(getSliderWidth(font_size)).toFloat();
+            juce::ColourGradient gradient;
+            gradient.point1 = bound.getTopLeft();
+            gradient.point2 = bound.getTopRight();
 
-        gradient.addColour(0.0, base_.getBackgroundColour().withAlpha(1.f));
-        gradient.addColour(1.0, base_.getBackgroundColour().withAlpha(0.f));
+            gradient.addColour(0.0, base_.getBackgroundColour());
+            gradient.addColour(1.0, juce::Colours::transparentBlack);
+            g.setGradientFill(gradient);
+            g.fillRect(bound);
+        }
+        {
+            const auto bound = getLocalBounds().toFloat();
+            juce::ColourGradient gradient;
+            gradient.point1 = bound.getTopLeft();
+            gradient.point2 = bound.getBottomLeft();
 
-        g.setGradientFill(gradient);
-        g.fillRect(bound);
+            gradient.addColour(0.0, base_.getBackgroundColour().withAlpha(1.f));
+            gradient.addColour(1.0, juce::Colours::transparentBlack);
+            g.setGradientFill(gradient);
+            g.fillRect(bound);
+        }
     }
 
     int TopPanel::getIdealHeight() const {

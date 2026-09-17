@@ -9,25 +9,26 @@
 
 #pragma once
 
-#include "../../gui/gui.hpp"
-#include "../helper/helper.hpp"
+#include "../multilingual/tooltip_helper.hpp"
+#include "gain_background_panel.hpp"
+#include "gain_footer_panel.hpp"
 
 namespace zlpanel {
-    class ControlBackground final : public juce::Component {
+    class GainPanel final : public juce::Component {
     public:
-        /**
-         *
-         * @param base
-         * @param alpha shadow colour alpha
-         */
-        explicit ControlBackground(zlgui::UIBase& base, float alpha = .5f);
+        explicit GainPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper& helper);
 
-        void paint(juce::Graphics& g) override;
+        int getIdealWidth() const;
+
+        void resized() override;
+
+        void repaintCallBackSlow();
 
     private:
         zlgui::UIBase& base_;
-        const float alpha_;
+        GainBackgroundPanel gain_background_panel;
+        GainFooterPanel gain_footer_panel;
 
-        void drawSplit(juce::Graphics& g, juce::Rectangle<float> bound) const;
+        bool is_mouse_over_{false};
     };
 }

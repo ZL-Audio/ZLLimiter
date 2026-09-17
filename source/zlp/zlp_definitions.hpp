@@ -219,8 +219,16 @@ namespace zlp {
     public:
         static constexpr auto kID = "input_gain";
         static constexpr auto kName = "Input Gain";
-        inline static const auto kRange = juce::NormalisableRange<float>(0.f, 24.f, 0.01f);
+        inline static const auto kRange = juce::NormalisableRange<float>(-6.f, 24.f, 0.01f);
         static constexpr auto kDefaultV = 0.f;
+    };
+
+    class PInputOutputLink : public ChoiceParameters<PInputOutputLink> {
+    public:
+        static constexpr auto kID = "input_output_link";
+        static constexpr auto kName = "Input Output Link";
+        inline static const auto kChoices = juce::StringArray{"Input", "In+Out"};
+        static constexpr auto kDefaultI = 0;
     };
 
     class POutputCeiling : public FloatParameters<POutputCeiling> {
@@ -302,7 +310,7 @@ namespace zlp {
 
     inline juce::AudioProcessorValueTreeState::ParameterLayout getParameterLayout() {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;
-        layout.add(PInputGain::get(), POutputCeiling::get(),
+        layout.add(PInputGain::get(), PInputOutputLink::get(), POutputCeiling::get(),
                    PTruePeak::get(), POversampling::get(),
                    PLookahead::get(), PRecovery::get(), PAttack::get(), PRelease::get(),
                    PChannelDelta::get(),

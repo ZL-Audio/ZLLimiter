@@ -10,36 +10,28 @@
 #include "control_background.hpp"
 
 namespace zlpanel {
-    ControlBackground::ControlBackground(zlgui::UIBase& base, const float alpha,
-                                         const std::array<bool, 4> hide_shadow) :
-        base_(base), alpha_(alpha), hide_shadow_(hide_shadow) {
+    ControlBackground::ControlBackground(zlgui::UIBase& base, const float alpha) :
+        base_(base), alpha_(alpha) {
         setInterceptsMouseClicks(false, false);
         setAlpha(.9f);
     }
 
     void ControlBackground::paint(juce::Graphics& g) {
-        auto original_bound = getLocalBounds();
-        if (hide_shadow_[0] || hide_shadow_[2]) {
-            const auto width = original_bound.getWidth();
-            original_bound.setWidth(original_bound.getWidth() * 2);
-            if (hide_shadow_[0] && hide_shadow_[2]) {
-                original_bound.setX(-width / 2);
-            } else if (hide_shadow_[0]) {
-                original_bound.setX(-width);
-            }
-        }
-        if (hide_shadow_[1] || hide_shadow_[3]) {
-            const auto height = original_bound.getHeight();
-            original_bound.setHeight(original_bound.getHeight() * 2);
-            if (hide_shadow_[1] && hide_shadow_[3]) {
-                original_bound.setY(-height / 2);
-            } else if (hide_shadow_[1]) {
-                original_bound.setY(-height);
-            }
+        {
+            const auto font_size = base_.getFontSize();
+            const auto bound = getLocalBounds().withWidth(getSliderWidth(font_size)).toFloat();
+            juce::ColourGradient gradient;
+            gradient.point1 = bound.getTopLeft();
+            gradient.point2 = bound.getTopRight();
+
+            gradient.addColour(0.0, base_.getBackgroundColour());
+            gradient.addColour(1.0, juce::Colours::transparentBlack);
+            g.setGradientFill(gradient);
+            g.fillRect(bound);
         }
         {
             const auto padding = getPaddingSize(base_.getFontSize());
-            const auto bound = original_bound.reduced(padding);
+            const auto bound = getLocalBounds().reduced(padding);
             juce::Path path;
             path.addRoundedRectangle(bound.toFloat(), static_cast<float>(padding));
 

@@ -13,11 +13,9 @@
 namespace zlpanel {
     TopControlPanel::TopControlPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper&) :
         base_(base), label_laf_(base),
-        input_label_("Input", "Input"), ceiling_label_("Ceiling", "Ceiling"),
+        ceiling_label_("Ceiling", "Ceiling"),
         oversample_label_("Oversample", "Oversample"),
-        input_slider_("", base),
         ceiling_slider_("", base),
-        input_attachment_(input_slider_.getSlider(), p.parameters_, zlp::PInputGain::kID, updater_),
         ceiling_attachment_(ceiling_slider_.getSlider(), p.parameters_, zlp::POutputCeiling::kID, updater_),
         oversample_box_(zlp::POversampling::kChoices, base),
         oversample_attachment_(oversample_box_.getBox(), p.parameters_, zlp::POversampling::kID, updater_),
@@ -31,13 +29,13 @@ namespace zlpanel {
         bypass_button_(base, bypass_icon_.get(), bypass_icon_.get()),
         bypass_attachment_(bypass_button_.getButton(), p.parameters_, zlp::PBypass::kID, updater_) {
         label_laf_.setFontScale(1.5f);
-        for (auto* label : {&input_label_, &ceiling_label_, &oversample_label_}) {
+        for (auto* label : {&ceiling_label_, &oversample_label_}) {
             label->setLookAndFeel(&label_laf_);
             label->setJustificationType(juce::Justification::centredRight);
             label->setBufferedToImage(true);
             addAndMakeVisible(label);
         }
-        for (auto* slider : {&input_slider_, &ceiling_slider_}) {
+        for (auto* slider : {&ceiling_slider_}) {
             slider->setFontScale(1.5f);
             slider->setJustification(juce::Justification::centred);
             slider->setBufferedToImage(true);
@@ -45,7 +43,6 @@ namespace zlpanel {
             slider->getSlider().setSliderSnapsToMousePosition(false);
             addAndMakeVisible(slider);
         }
-        input_slider_.getSlider().setComponentID(zlp::PInputGain::kID);
         ceiling_slider_.getSlider().setComponentID(zlp::POutputCeiling::kID);
 
         oversample_box_.setScrollEnabled(true);
@@ -85,12 +82,8 @@ namespace zlpanel {
         ceiling_slider_.setBounds(bound.removeFromRight(value_width));
         bound.removeFromRight(padding);
         ceiling_label_.setBounds(bound.removeFromRight(getSliderWidth(font_size)));
-        bound.removeFromRight(padding);
-        input_slider_.setBounds(bound.removeFromRight(value_width));
-        bound.removeFromRight(padding);
-        input_label_.setBounds(bound.removeFromRight(getSmallSliderWidth(font_size)));
 
-        for (auto* slider : {&input_slider_, &ceiling_slider_}) {
+        for (auto* slider : {&ceiling_slider_}) {
             slider->setMouseDragSensitivity(getSliderDraggingDistance(font_size));
         }
     }

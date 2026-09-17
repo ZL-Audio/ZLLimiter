@@ -9,25 +9,34 @@
 
 #pragma once
 
+#include <juce_gui_basics/juce_gui_basics.h>
+
+#include "../../PluginProcessor.hpp"
 #include "../../gui/gui.hpp"
+#include "../multilingual/tooltip_helper.hpp"
 #include "../helper/helper.hpp"
 
 namespace zlpanel {
-    class ControlBackground final : public juce::Component {
+    class GainFooterPanel final : public juce::Component {
     public:
-        /**
-         *
-         * @param base
-         * @param alpha shadow colour alpha
-         */
-        explicit ControlBackground(zlgui::UIBase& base, float alpha = .5f);
+        explicit GainFooterPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper&);
 
         void paint(juce::Graphics& g) override;
 
+        int getIdealHeight() const;
+
+        void resized() override;
+
+        void repaintCallBackSlow();
+
     private:
         zlgui::UIBase& base_;
-        const float alpha_;
+        zlgui::attachment::ComponentUpdater updater_;
 
-        void drawSplit(juce::Graphics& g, juce::Rectangle<float> bound) const;
+        zlgui::combobox::CompactCombobox link_box_;
+        zlgui::attachment::ComboBoxAttachment<true> link_attach_;
+
+        zlgui::slider::CompactLinearSlider<false, false, false> input_slider_;
+        zlgui::attachment::SliderAttachment<true> input_attach_;
     };
 }
