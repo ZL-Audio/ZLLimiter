@@ -29,7 +29,9 @@ namespace zlpanel {
         bound.removeFromLeft(padding * .5f);
         bound = bound.removeFromLeft(padding * .5f);
 
-        const auto filled_colour = base_.getTextColour().withAlpha(is_mouse_over_ ? 1.f : .5f);
+        const auto filled_colour = is_mouse_over_
+            ? base_.getTextColour()
+            : base_.getColourBlendedWithBackground(base_.getTextColour(), .5f);
         {
             const auto g_bound = bound.removeFromBottom(padding);
             juce::ColourGradient gradient;
@@ -60,19 +62,19 @@ namespace zlpanel {
         }
         bound.removeFromTop(padding);
         bound.removeFromBottom(padding);
-        if (is_mouse_over_) {
-            static constexpr std::array ps{.2f, .4f, .6f, .8f};
-            static constexpr std::array gains{18, 12, 6, 0};
-            const auto tick_x = bound.getRight();
-            const auto tick_height = .5f * padding;
-            const auto tick_width = 1.5f * padding;
-            const auto text_x = tick_x + 3.f * padding;
-            const auto text_height = 3.f * font_size;
-            g.setColour(filled_colour);
-            g.setFont(1.25f * font_size);
-            for (size_t i = 0; i < ps.size(); ++i) {
-                const auto y = bound.getY() + bound.getHeight() * ps[i];
-                g.fillRect(juce::Rectangle{tick_x, y - tick_height * .5f, tick_width, tick_height});
+        static constexpr std::array ps{.2f, .4f, .6f, .8f};
+        static constexpr std::array gains{18, 12, 6, 0};
+        const auto tick_x = bound.getRight();
+        const auto tick_height = .5f * padding;
+        const auto tick_width = 1.5f * padding;
+        const auto text_x = tick_x + 3.f * padding;
+        const auto text_height = 3.f * font_size;
+        g.setColour(filled_colour);
+        g.setFont(1.25f * font_size);
+        for (size_t i = 0; i < ps.size(); ++i) {
+            const auto y = bound.getY() + bound.getHeight() * ps[i];
+            g.fillRect(juce::Rectangle{tick_x, y - tick_height * .5f, tick_width, tick_height});
+            if (is_mouse_over_) {
                 g.drawText(juce::String(gains[i]),
                            juce::Rectangle{text_x, y - text_height * .5f, text_height, text_height},
                            juce::Justification::centredLeft);
