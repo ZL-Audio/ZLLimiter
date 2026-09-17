@@ -10,6 +10,9 @@
 
 #include "gain_footer_panel.hpp"
 
+#include "../../helper/panel_constants.hpp"
+#include "../../helper/paint_left_shadow.hpp"
+
 namespace zlpanel {
     GainFooterPanel::GainFooterPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper&) :
         base_(base), updater_(),
@@ -23,14 +26,7 @@ namespace zlpanel {
 
     void GainFooterPanel::paint(juce::Graphics& g) {
         const auto bound = getLocalBounds().toFloat();
-        juce::ColourGradient gradient;
-        gradient.point1 = bound.getTopLeft();
-        gradient.point2 = bound.getTopRight();
-
-        gradient.addColour(0.0, base_.getBackgroundColour());
-        gradient.addColour(1.0, juce::Colours::transparentBlack);
-        g.setGradientFill(gradient);
-        g.fillRect(bound);
+        paintLeftShadow(g, bound, base_.getBackgroundColour());
     }
 
     int GainFooterPanel::getIdealHeight() const {

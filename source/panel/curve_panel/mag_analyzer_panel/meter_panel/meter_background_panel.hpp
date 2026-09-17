@@ -11,7 +11,6 @@
 
 #include "../../../../PluginProcessor.hpp"
 #include "../../../../gui/gui.hpp"
-#include "../../../helper/helper.hpp"
 
 namespace zlpanel {
     class MeterBackgroundPanel final : public juce::Component {

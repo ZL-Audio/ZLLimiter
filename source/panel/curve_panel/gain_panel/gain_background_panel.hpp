@@ -7,27 +7,24 @@
 //
 // You should have received a copy of the GNU Affero General Public License along with ZLLimiter. If not, see <https://www.gnu.org/licenses/>.
 
+
 #pragma once
 
-#include "../multilingual/tooltip_helper.hpp"
-#include "gain_background_panel.hpp"
-#include "gain_footer_panel.hpp"
+#include <juce_gui_basics/juce_gui_basics.h>
+
+#include "../../../gui/interface_definitions.hpp"
 
 namespace zlpanel {
-    class GainPanel final : public juce::Component {
+    class GainBackgroundPanel final : public juce::Component {
     public:
-        explicit GainPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper& helper);
+        explicit GainBackgroundPanel(zlgui::UIBase& base);
 
-        int getIdealWidth() const;
+        void paint(juce::Graphics& g) override;
 
-        void resized() override;
-
-        void repaintCallBackSlow();
+        void setMouseOver(bool is_mouse_over);
 
     private:
         zlgui::UIBase& base_;
-        GainBackgroundPanel gain_background_panel;
-        GainFooterPanel gain_footer_panel;
 
         bool is_mouse_over_{false};
     };

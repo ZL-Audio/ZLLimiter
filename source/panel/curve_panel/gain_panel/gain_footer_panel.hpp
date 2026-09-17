@@ -11,10 +11,9 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-#include "../../PluginProcessor.hpp"
-#include "../../gui/gui.hpp"
-#include "../multilingual/tooltip_helper.hpp"
-#include "../helper/helper.hpp"
+#include "../../../PluginProcessor.hpp"
+#include "../../../gui/gui.hpp"
+#include "../../multilingual/tooltip_helper.hpp"
 
 namespace zlpanel {
     class GainFooterPanel final : public juce::Component {

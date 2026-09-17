@@ -10,6 +10,7 @@
 #include "analyzer_setting_panel.hpp"
 
 #include "BinaryData.h"
+#include "../../helper/panel_constants.hpp"
 
 namespace zlpanel {
     AnalyzerSettingPanel::AnalyzerSettingPanel(PluginProcessor& p, zlgui::UIBase& base) :

@@ -52,4 +52,12 @@ namespace zlpanel {
     inline int getTopPanelHeight(const float font_size) {
         return 2 * (getPaddingSize(font_size) / 2) + getButtonSize(font_size);
     }
+
+    inline int getControlPanelHeight(const float font_size) {
+        const auto slider_width = getSliderWidth(font_size);
+        const auto button_height = getButtonSize(font_size);
+        const auto padding = getPaddingSize(font_size);
+
+        return slider_width + 2 * button_height + 3 * padding;
+    }
 }

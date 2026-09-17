@@ -12,7 +12,7 @@
 #include "../../../../PluginProcessor.hpp"
 #include "../../../../chore/thread/notifier.hpp"
 #include "../../../../gui/gui.hpp"
-#include "../../../helper/helper.hpp"
+#include "../../../helper/atomic_bound.hpp"
 #include "../../../../dsp/analyzer/analyzer_base/fifo_transfer_buffer.hpp"
 #include "../../../../dsp/analyzer/mag_analyzer/limit_reduction_receiver.hpp"
 #include "../../../../dsp/analyzer/mag_analyzer/magnitude_receiver.hpp"

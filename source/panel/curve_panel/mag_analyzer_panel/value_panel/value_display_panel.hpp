@@ -21,7 +21,7 @@
 #include "../../../../dsp/analyzer/value_analyzer/loudness_receiver.hpp"
 #include "../../../../dsp/analyzer/value_analyzer/stereo_statistics_receiver.hpp"
 #include "../../../../gui/gui.hpp"
-#include "../../../helper/helper.hpp"
+#include "../../../helper/atomic_bound.hpp"
 #include "../../mag_db_range.hpp"
 
 namespace zlpanel {

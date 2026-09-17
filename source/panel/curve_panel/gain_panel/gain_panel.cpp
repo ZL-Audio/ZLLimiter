@@ -10,6 +10,8 @@
 
 #include "gain_panel.hpp"
 
+#include "../../helper/panel_constants.hpp"
+
 namespace zlpanel {
     GainPanel::GainPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper& helper) :
         base_(base),

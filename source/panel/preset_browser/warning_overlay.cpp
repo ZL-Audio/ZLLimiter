@@ -8,7 +8,7 @@
 // You should have received a copy of the GNU Affero General Public License along with ZLLimiter. If not, see <https://www.gnu.org/licenses/>.
 
 #include "warning_overlay.hpp"
-#include "../helper/helper.hpp"
+#include "../helper/panel_constants.hpp"
 
 namespace zlpanel {
     WarningOverlay::WarningOverlay(zlgui::UIBase& base) :

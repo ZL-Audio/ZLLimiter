@@ -11,7 +11,7 @@
 
 #include "../../../PluginProcessor.hpp"
 #include "../../../gui/gui.hpp"
-#include "../../helper/helper.hpp"
+#include "../../helper/panel_constants.hpp"
 #include "../../multilingual/tooltip_helper.hpp"
 
 namespace zlpanel {

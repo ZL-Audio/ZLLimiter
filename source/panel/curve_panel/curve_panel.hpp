@@ -15,6 +15,7 @@
 #include "analyzer_setting_panel/analyzer_setting_panel.hpp"
 #include "value_setting_panel/value_setting_panel.hpp"
 #include "top_panel/top_panel.hpp"
+#include "gain_panel/gain_panel.hpp"
 
 #include "../multilingual/tooltip_helper.hpp"
 
@@ -49,6 +50,7 @@ namespace zlpanel {
         PeakPanel peak_panel_;
         MeterPanel meter_panel_;
         ValuePanel value_panel_;
+        GainPanel gain_panel_;
         AnalyzerSettingPanel analyzer_setting_panel_;
         ValueSettingPanel value_setting_panel_;
         zldsp::analyzer::FIFOTransferBuffer<zlp::Controller::kAnalyzerStreamNum> transfer_buffer_;

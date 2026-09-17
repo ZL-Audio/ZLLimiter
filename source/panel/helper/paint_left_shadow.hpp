@@ -9,7 +9,18 @@
 
 #pragma once
 
-#include "path_minimizer.hpp"
-#include "atomic_bound.hpp"
-#include "panel_constants.hpp"
-#include "refresh_handler.hpp"
+#include <juce_gui_basics/juce_gui_basics.h>
+
+namespace zlpanel {
+    inline void paintLeftShadow(juce::Graphics& g, const juce::Rectangle<float> bound,
+                                const juce::Colour background_colour) {
+        juce::ColourGradient gradient;
+        gradient.point1 = bound.getTopLeft();
+        gradient.point2 = bound.getTopRight();
+
+        gradient.addColour(0.0, background_colour.withAlpha(.75f));
+        gradient.addColour(1.0, juce::Colours::transparentBlack);
+        g.setGradientFill(gradient);
+        g.fillRect(bound);
+    }
+}

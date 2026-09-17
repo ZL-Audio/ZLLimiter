@@ -9,6 +9,8 @@
 
 #include "control_panel.hpp"
 
+#include "../helper/panel_constants.hpp"
+
 namespace zlpanel {
     ControlPanel::ControlPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper&) :
         base_(base), background_(base, .5f), label_laf_(base),
@@ -76,12 +78,7 @@ namespace zlpanel {
     }
 
     int ControlPanel::getIdealHeight() const {
-        const auto font_size = base_.getFontSize();
-        const auto slider_width = getSliderWidth(font_size);
-        const auto button_height = getButtonSize(font_size);
-        const auto padding = getPaddingSize(font_size);
-
-        return slider_width + 2 * button_height + 3 * padding;
+        return getControlPanelHeight(base_.getFontSize());
     }
 
     void ControlPanel::resized() {

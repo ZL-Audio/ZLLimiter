@@ -10,6 +10,8 @@
 #include "logo_panel.hpp"
 #include "BinaryData.h"
 
+#include "../../helper/panel_constants.hpp"
+
 namespace zlpanel {
     LogoPanel::LogoPanel(PluginProcessor&, zlgui::UIBase& base, multilingual::TooltipHelper&) :
         base_(base),

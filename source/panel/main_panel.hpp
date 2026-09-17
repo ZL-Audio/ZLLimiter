@@ -13,12 +13,10 @@
 
 #include "../PluginProcessor.hpp"
 #include "../gui/gui.hpp"
-#include "../state/state_definitions.hpp"
 #include "helper/refresh_handler.hpp"
 #include "multilingual/tooltip_helper.hpp"
 #include "curve_panel/curve_panel.hpp"
 #include "control_panel/control_panel.hpp"
-#include "gain_panel/gain_panel.hpp"
 #include "preset_browser/preset_browser.hpp"
 #include "ui_setting_panel/ui_setting_panel.hpp"
 
@@ -46,7 +44,6 @@ namespace zlpanel {
 
         CurvePanel curve_panel_;
         ControlPanel control_panel_;
-        GainPanel gain_panel_;
         PresetBrowser preset_browser_;
         UISettingPanel ui_setting_panel_;
 

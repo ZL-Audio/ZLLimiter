@@ -11,7 +11,6 @@
 
 #include "../../../../PluginProcessor.hpp"
 #include "../../../../gui/gui.hpp"
-#include "../../../helper/helper.hpp"
 #include "../../../common/setting_label.hpp"
 
 namespace zlpanel {

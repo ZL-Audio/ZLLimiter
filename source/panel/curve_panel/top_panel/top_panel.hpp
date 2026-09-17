@@ -12,6 +12,7 @@
 #include "logo_panel.hpp"
 #include "top_control_panel.hpp"
 #include "../../common/setting_label.hpp"
+#include "../../helper/paint_left_shadow.hpp"
 
 namespace zlpanel {
     class TopPanel final : public juce::Component {

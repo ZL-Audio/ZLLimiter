@@ -9,6 +9,8 @@
 
 #include "value_setting_panel.hpp"
 
+#include "../../helper/panel_constants.hpp"
+
 namespace zlpanel {
     ValueSettingPanel::ValueSettingPanel(PluginProcessor& p, zlgui::UIBase& base) :
         base_(base), background_(base),

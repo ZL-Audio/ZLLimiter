@@ -8,7 +8,9 @@
 // You should have received a copy of the GNU Affero General Public License along with ZLLimiter. If not, see <https://www.gnu.org/licenses/>.
 
 #include "peak_background_panel.hpp"
+
 #include "../../mag_db_range.hpp"
+#include "../../../helper/panel_constants.hpp"
 
 namespace zlpanel {
     PeakBackgroundPanel::PeakBackgroundPanel(PluginProcessor& p, zlgui::UIBase& base) :

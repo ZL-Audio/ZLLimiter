@@ -10,7 +10,6 @@
 #pragma once
 
 #include "../../gui/gui.hpp"
-#include "../helper/helper.hpp"
 
 namespace zlpanel {
     class ControlBackground final : public juce::Component {

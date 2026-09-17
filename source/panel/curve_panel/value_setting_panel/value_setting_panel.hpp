@@ -12,7 +12,6 @@
 #include "../../../PluginProcessor.hpp"
 #include "../../../gui/gui.hpp"
 #include "../../common/panel_background.hpp"
-#include "../../helper/helper.hpp"
 
 namespace zlpanel {
     class ValueSettingPanel final : public juce::Component, private juce::ValueTree::Listener {

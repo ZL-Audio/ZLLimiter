@@ -38,14 +38,7 @@ namespace zlpanel {
         {
             const auto font_size = base_.getFontSize();
             const auto bound = getLocalBounds().withWidth(getSliderWidth(font_size)).toFloat();
-            juce::ColourGradient gradient;
-            gradient.point1 = bound.getTopLeft();
-            gradient.point2 = bound.getTopRight();
-
-            gradient.addColour(0.0, base_.getBackgroundColour());
-            gradient.addColour(1.0, juce::Colours::transparentBlack);
-            g.setGradientFill(gradient);
-            g.fillRect(bound);
+            paintLeftShadow(g, bound, base_.getBackgroundColour());
         }
         {
             const auto bound = getLocalBounds().toFloat();

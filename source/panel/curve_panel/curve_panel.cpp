@@ -20,6 +20,7 @@ namespace zlpanel {
         peak_panel_(p, base),
         meter_panel_(p, base),
         value_panel_(p, base),
+        gain_panel_(p, base, tooltip_helper),
         analyzer_setting_panel_(p, base),
         value_setting_panel_(p, base),
         peak_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()),
@@ -31,6 +32,8 @@ namespace zlpanel {
         addAndMakeVisible(value_panel_);
         top_panel_.setBufferedToImage(true);
         addAndMakeVisible(top_panel_);
+        gain_panel_.setBufferedToImage(true);
+        addAndMakeVisible(gain_panel_);
         analyzer_setting_panel_.setBufferedToImage(true);
         addChildComponent(analyzer_setting_panel_);
         value_setting_panel_.setBufferedToImage(true);
@@ -60,14 +63,24 @@ namespace zlpanel {
         auto bound = getLocalBounds();
         const auto font_size = base_.getFontSize();
         const auto padding = getPaddingSize(font_size);
-        const auto setting_width = analyzer_setting_panel_.getIdealWidth();
-        const auto setting_height = analyzer_setting_panel_.getIdealHeight();
-        const auto setting_right = getButtonSize(font_size) * 3 + padding * 3 + padding / 2 + juce::roundToInt(
-            font_size * 8.f);
-        bound.removeFromTop(top_panel_.getIdealHeight());
-        analyzer_setting_panel_.setBounds(setting_right - setting_width, bound.getY(), setting_width, setting_height);
-        value_setting_panel_.setBounds(bound.getRight() - value_setting_panel_.getIdealWidth(), bound.getY(),
-                                       value_setting_panel_.getIdealWidth(), value_setting_panel_.getIdealHeight());
+        {
+            const auto control_height = getControlPanelHeight(font_size);
+            const auto top_height = getTopPanelHeight(font_size);
+            gain_panel_.setBounds(0, top_height,
+                                  gain_panel_.getIdealWidth(),
+                                  bound.getHeight() - top_height - control_height);
+        }
+        {
+            const auto setting_width = analyzer_setting_panel_.getIdealWidth();
+            const auto setting_height = analyzer_setting_panel_.getIdealHeight();
+            const auto setting_right = getButtonSize(font_size) * 3 + padding * 3 + padding / 2 + juce::roundToInt(
+                font_size * 8.f);
+            bound.removeFromTop(top_panel_.getIdealHeight());
+            analyzer_setting_panel_.setBounds(setting_right - setting_width, bound.getY(),
+                                              setting_width, setting_height);
+            value_setting_panel_.setBounds(bound.getRight() - value_setting_panel_.getIdealWidth(), bound.getY(),
+                                           value_setting_panel_.getIdealWidth(), value_setting_panel_.getIdealHeight());
+        }
     }
 
     void CurvePanel::repaintCallBack(const double time_stamp) {
@@ -87,6 +100,7 @@ namespace zlpanel {
         value_setting_panel_.repaintCallBackSlow();
         meter_panel_.repaintCallBackSlow();
         peak_panel_.repaintCallBackSlow();
+        gain_panel_.repaintCallBackSlow();
         value_panel_.repaintCallBackSlow();
         top_panel_.repaintCallBackSlow();
     }

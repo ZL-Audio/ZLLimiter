@@ -10,6 +10,9 @@
 
 #include "gain_background_panel.hpp"
 
+#include "../../helper/panel_constants.hpp"
+#include "../../helper/paint_left_shadow.hpp"
+
 namespace zlpanel {
     GainBackgroundPanel::GainBackgroundPanel(zlgui::UIBase& base) :
         base_(base) {
@@ -21,16 +24,7 @@ namespace zlpanel {
         const auto padding = static_cast<float>(getPaddingSize(font_size));
 
         auto bound = getLocalBounds().toFloat();
-        {
-            juce::ColourGradient gradient;
-            gradient.point1 = bound.getTopLeft();
-            gradient.point2 = bound.getTopRight();
-
-            gradient.addColour(0.0, base_.getBackgroundColour());
-            gradient.addColour(1.0, juce::Colours::transparentBlack);
-            g.setGradientFill(gradient);
-            g.fillRect(bound);
-        }
+        paintLeftShadow(g, bound, base_.getBackgroundColour());
 
         bound.removeFromLeft(padding * .5f);
         bound = bound.removeFromLeft(padding * .5f);

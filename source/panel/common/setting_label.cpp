@@ -9,6 +9,8 @@
 
 #include "setting_label.hpp"
 
+#include "../helper/panel_constants.hpp"
+
 namespace zlpanel {
     SettingLabel::SettingLabel(PluginProcessor&, zlgui::UIBase& base,
                                const juce::String label, const zlgui::PanelSettingIdx setting_idx) :

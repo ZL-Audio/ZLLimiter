@@ -9,6 +9,8 @@
 
 #include "peak_display_panel.hpp"
 
+#include "../../../helper/panel_constants.hpp"
+
 namespace {
     constexpr auto kMaxAnalyzerPointNum = 300;
     constexpr auto kMissingDB = -10000.f;

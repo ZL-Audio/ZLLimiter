@@ -9,6 +9,8 @@
 
 #include "meter_background_panel.hpp"
 
+#include "../../../helper/panel_constants.hpp"
+
 namespace zlpanel {
     MeterBackgroundPanel::MeterBackgroundPanel(PluginProcessor&, zlgui::UIBase& base) :
         base_(base) {
