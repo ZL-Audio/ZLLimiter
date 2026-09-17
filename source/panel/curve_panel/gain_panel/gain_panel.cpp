@@ -16,11 +16,14 @@ namespace zlpanel {
     GainPanel::GainPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper& helper) :
         base_(base),
         gain_background_panel(base),
-        gain_footer_panel(p, base, helper) {
+        gain_footer_panel(p, base, helper),
+        gain_display_panel(p, base, helper) {
         gain_background_panel.setBufferedToImage(true);
         addAndMakeVisible(gain_background_panel);
         gain_footer_panel.setBufferedToImage(true);
         addAndMakeVisible(gain_footer_panel);
+        gain_display_panel.setBufferedToImage(true);
+        addAndMakeVisible(gain_display_panel);
     }
 
     int GainPanel::getIdealWidth() const {
@@ -32,6 +35,7 @@ namespace zlpanel {
         auto bound = getLocalBounds();
         gain_footer_panel.setBounds(bound.removeFromBottom(gain_footer_panel.getIdealHeight()));
         gain_background_panel.setBounds(bound);
+        gain_display_panel.setBounds(bound);
     }
 
     void GainPanel::repaintCallBackSlow() {
@@ -40,7 +44,10 @@ namespace zlpanel {
             is_mouse_over_ = is_mouse_over;
             gain_background_panel.setMouseOver(is_mouse_over);
             gain_background_panel.repaint();
+            gain_display_panel.setMouseOver(is_mouse_over_);
+            gain_display_panel.repaint();
         }
         gain_footer_panel.repaintCallBackSlow();
+        gain_display_panel.repaintCallBackSlow();
     }
 }

@@ -12,6 +12,7 @@
 #include "../../multilingual/tooltip_helper.hpp"
 #include "gain_background_panel.hpp"
 #include "gain_footer_panel.hpp"
+#include "gain_display_panel.hpp"
 
 namespace zlpanel {
     class GainPanel final : public juce::Component {
@@ -28,6 +29,7 @@ namespace zlpanel {
         zlgui::UIBase& base_;
         GainBackgroundPanel gain_background_panel;
         GainFooterPanel gain_footer_panel;
+        GainDisplayPanel gain_display_panel;
 
         bool is_mouse_over_{false};
     };
