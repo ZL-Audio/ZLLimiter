@@ -54,7 +54,7 @@ namespace zldsp::limiter {
 
         template <typename FloatType>
         HWY_INLINE FloatType smoothMaximum(const FloatType x, const FloatType y) {
-            static constexpr FloatType kCrossingWidthDb{FloatType(0.1)};
+            static constexpr FloatType kCrossingWidthDb{FloatType(0.5)};
             static constexpr FloatType kTwiceCrossingWidthDb{FloatType(2) * kCrossingWidthDb};
             static constexpr FloatType kInverseFourCrossingWidthDb{FloatType(0.25) / kCrossingWidthDb};
 
