@@ -30,7 +30,7 @@ namespace zlp {
         juce::AudioProcessorValueTreeState& parameters_ref_;
         Controller& controller_ref_;
 
-        static constexpr std::array kIDs{PInputGain::kID, POutputCeiling::kID,
+        static constexpr std::array kIDs{PInputGain::kID, PInputOutputLink::kID, POutputCeiling::kID,
                                          PTruePeak::kID, POversampling::kID,
                                          PLookahead::kID, PAttack::kID, PRelease::kID, PChannelDelta::kID,
                                          PBypass::kID, PDelta::kID, PRecovery::kID,

@@ -165,7 +165,7 @@ namespace zlpanel {
                                       true_peak);
                     limit_reduction_receiver_.run(
                         range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerGainedPreStream],
-                        transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPostStream]);
+                        transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerLimiterPostStream]);
                     pre_db_ = pre_receiver_.getMaxDB();
                     out_db_ = out_receiver_.getMaxDB();
                     reduction_db_ = limit_reduction_receiver_.getMinDB();

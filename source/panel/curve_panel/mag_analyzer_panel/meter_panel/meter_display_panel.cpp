@@ -165,7 +165,7 @@ namespace zlpanel {
         pre_receiver_.run(range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPreStream], true_peak);
         limit_reduction_receiver_.run(
             range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerGainedPreStream],
-            transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPostStream]);
+            transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerLimiterPostStream]);
         out_receiver_.run(range, transfer_buffer.getSampleFIFOs()[zlp::Controller::kAnalyzerPostStream], true_peak);
         fifo.finishRead(consumer_id, num_to_read);
         const auto& pre_dbs = pre_receiver_.getDBs();

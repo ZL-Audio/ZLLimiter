@@ -135,7 +135,7 @@ namespace zlpanel {
                                                            4.0 * static_cast<double>(sender.getMaxNumSamples()) / sender
                                                            .getSampleRate());
                     transfer_buffer_.prepare(sender.getSampleRate(), sender.getMaxNumSamples(),
-                                             {2, 2, 2}, capacity_seconds);
+                                             {2, 2, 2, 2}, capacity_seconds);
                     peak_panel_.getDisplayPanel().reset();
                     meter_panel_.getDisplayPanel().reset();
                     value_sample_rate = sender.getSampleRate();

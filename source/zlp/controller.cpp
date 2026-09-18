@@ -26,16 +26,21 @@ namespace zlp {
         const auto maximum_channels = static_cast<size_t>(p_ref_.getMainBusNumInputChannels());
         prepareLimiters(sample_rate, maximum_block_size, maximum_channels);
         input_gain_.prepare(sample_rate, maximum_block_size, 0.25);
+        output_gain_.prepare(sample_rate, maximum_block_size, 0.25);
 
         dry_buffers_.resize(maximum_channels);
         dry_pointers_.resize(maximum_channels);
         gained_buffers_.resize(maximum_channels);
         gained_pointers_.resize(maximum_channels);
+        limited_buffers_.resize(maximum_channels);
+        limited_pointers_.resize(maximum_channels);
         for (size_t channel = 0; channel < maximum_channels; ++channel) {
             dry_buffers_[channel].resize(maximum_block_size);
             dry_pointers_[channel] = dry_buffers_[channel].data();
             gained_buffers_[channel].resize(maximum_block_size);
             gained_pointers_[channel] = gained_buffers_[channel].data();
+            limited_buffers_[channel].resize(maximum_block_size);
+            limited_pointers_[channel] = limited_buffers_[channel].data();
         }
         const auto maximum_latency = getMaximumLatencySamples();
         const auto maximum_delay_seconds = static_cast<float>(
@@ -46,7 +51,7 @@ namespace zlp {
         gained_delay_needs_warmup_ = false;
         gained_delay_fill_remaining_ = 0;
         analyzer_num_channels_.store(maximum_channels, std::memory_order_release);
-        mag_analyzer_sender_.prepare(sample_rate, maximum_block_size, {2, 2, 2}, 0.5);
+        mag_analyzer_sender_.prepare(sample_rate, maximum_block_size, {2, 2, 2, 2}, 0.5);
         for (size_t stream = 0; stream < kAnalyzerStreamNum; ++stream) {
             mag_analyzer_sender_.setON(stream, true);
         }
@@ -67,8 +72,16 @@ namespace zlp {
             return;
         }
 
-        if (to_update_input_gain_.check()) {
-            input_gain_.setGainDecibels(input_gain_db_.load(std::memory_order_relaxed));
+        const auto update_input_gain = to_update_input_gain_.check();
+        const auto update_link = to_update_input_output_link_.check();
+        if (update_input_gain || update_link) {
+            const auto input_db = input_gain_db_.load(std::memory_order_relaxed);
+            if (update_input_gain) {
+                input_gain_.setGainDecibels(input_db);
+            }
+            const auto linked = input_output_link_.load(std::memory_order_relaxed);
+            const auto output_db = linked ? std::min(0.0f, -input_db) : 0.0f;
+            output_gain_.setGainDecibels(output_db);
         }
 
         if (to_update_output_ceiling_.check()) {
@@ -140,7 +153,9 @@ namespace zlp {
 
         auto gained_buffer = std::span<float*>{gained_pointers_.data(), buffer.size()};
         bool capture_ready = false;
-        if (analyzer_enabled_.load(std::memory_order_acquire)) {
+        const auto analyzer_on = analyzer_enabled_.load(std::memory_order_acquire);
+        const auto needs_gained_delay = analyzer_on || delta_enabled_;
+        if (needs_gained_delay) {
             if (gained_delay_needs_reset_) {
                 const auto latency = getActiveLatencySamples();
                 gained_delay_.setDelayInSamples(static_cast<int>(latency));
@@ -158,13 +173,21 @@ namespace zlp {
         }
 
         processActiveLimiter(buffer, num_samples);
-        if (capture_ready && analyzer_enabled_.load(std::memory_order_acquire)) {
+        if (analyzer_on || delta_enabled_) {
+            for (size_t channel = 0; channel < buffer.size(); ++channel) {
+                zldsp::vector::copy(limited_pointers_[channel], buffer[channel], num_samples);
+            }
+        }
+        output_gain_.process(buffer, num_samples);
+
+        if (capture_ready && analyzer_on) {
             if (static_cast<size_t>(mag_analyzer_sender_.getAbstractFIFO().getNumFree()) >= num_samples) {
                 const auto right = std::min(size_t(1), buffer.size() - 1);
                 std::array<float*, 2> pre{dry_buffer[0], dry_buffer[right]};
                 std::array<float*, 2> gained{gained_buffer[0], gained_buffer[right]};
+                std::array<float*, 2> limited{limited_pointers_[0], limited_pointers_[right]};
                 std::array<float*, 2> post{buffer[0], buffer[right]};
-                mag_analyzer_sender_.process({pre, gained, post}, num_samples);
+                mag_analyzer_sender_.process({pre, gained, limited, post}, num_samples);
             } else {
                 analyzer_generation_.fetch_add(1, std::memory_order_release);
             }
@@ -175,13 +198,14 @@ namespace zlp {
             }
         } else if (delta_enabled_) {
             for (size_t channel = 0; channel < buffer.size(); ++channel) {
-                zldsp::vector::sub(buffer[channel], dry_buffer[channel], buffer[channel], num_samples);
+                zldsp::vector::sub(buffer[channel], gained_buffer[channel], limited_pointers_[channel], num_samples);
             }
         }
     }
 
     void Controller::signalParameterUpdates() {
         to_update_input_gain_.signal();
+        to_update_input_output_link_.signal();
         to_update_output_ceiling_.signal();
         to_update_output_mode_.signal();
         to_update_true_peak_.signal();
@@ -210,6 +234,7 @@ namespace zlp {
         oversampling_index_ = clamped_index;
         resetActiveLimiter();
         input_gain_.reset();
+        output_gain_.reset();
 
         const auto latency = getActiveLatencySamples();
         dry_delay_.setDelayInSamples(static_cast<int>(latency));

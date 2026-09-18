@@ -15,6 +15,7 @@ namespace zlp {
     inline constexpr int kVersionHint = 1;
 
     class PInputGain;
+    class PInputOutputLink;
     class POutputCeiling;
     class PBypass;
     class PDelta;
@@ -227,7 +228,7 @@ namespace zlp {
     public:
         static constexpr auto kID = "input_output_link";
         static constexpr auto kName = "Input Output Link";
-        inline static const auto kChoices = juce::StringArray{"Input", "In+Out"};
+        inline static const auto kChoices = juce::StringArray{"Input", "Linked"};
         static constexpr auto kDefaultI = 0;
     };
 

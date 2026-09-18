@@ -30,8 +30,9 @@ namespace zlp {
     public:
         static constexpr size_t kAnalyzerPreStream = 0;
         static constexpr size_t kAnalyzerGainedPreStream = 1;
-        static constexpr size_t kAnalyzerPostStream = 2;
-        static constexpr size_t kAnalyzerStreamNum = 3;
+        static constexpr size_t kAnalyzerLimiterPostStream = 2;
+        static constexpr size_t kAnalyzerPostStream = 3;
+        static constexpr size_t kAnalyzerStreamNum = 4;
 
         explicit Controller(juce::AudioProcessor& processor);
 
@@ -60,6 +61,12 @@ namespace zlp {
         void setInputGain(const float db) {
             input_gain_db_.store(db, std::memory_order_relaxed);
             to_update_input_gain_.signal();
+            to_update_.signal();
+        }
+
+        void setInputOutputLink(const bool enabled) {
+            input_output_link_.store(enabled, std::memory_order_relaxed);
+            to_update_input_output_link_.signal();
             to_update_.signal();
         }
 
@@ -141,18 +148,22 @@ namespace zlp {
 
         LimiterTuple limiters_{};
         zldsp::gain::Gain<float> input_gain_{};
+        zldsp::gain::Gain<float> output_gain_{};
         zldsp::delay::IntegerDelay<float> dry_delay_{};
         std::vector<zldsp::vector::aligned_vector<float>> dry_buffers_{};
         std::vector<float*> dry_pointers_{};
         zldsp::delay::IntegerDelay<float> gained_delay_{};
         std::vector<zldsp::vector::aligned_vector<float>> gained_buffers_{};
         std::vector<float*> gained_pointers_{};
+        std::vector<zldsp::vector::aligned_vector<float>> limited_buffers_{};
+        std::vector<float*> limited_pointers_{};
         bool gained_delay_needs_reset_{true};
         bool gained_delay_needs_warmup_{false};
         size_t gained_delay_fill_remaining_{0};
 
         zlchore::thread::Notifier to_update_{true};
         zlchore::thread::Notifier to_update_input_gain_{true};
+        zlchore::thread::Notifier to_update_input_output_link_{true};
         zlchore::thread::Notifier to_update_output_ceiling_{true};
         zlchore::thread::Notifier to_update_output_mode_{true};
         zlchore::thread::Notifier to_update_true_peak_{true};
@@ -164,6 +175,7 @@ namespace zlp {
         zlchore::thread::Notifier to_update_recovery_{true};
 
         std::atomic<float> input_gain_db_{PInputGain::kDefaultV};
+        std::atomic<bool> input_output_link_{PInputOutputLink::kDefaultI > 0};
         std::atomic<float> output_ceiling_db_{POutputCeiling::kDefaultV};
         std::atomic<bool> bypass_parameter_{PBypass::kDefaultV};
         std::atomic<bool> delta_parameter_{PDelta::kDefaultV};

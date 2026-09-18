@@ -34,10 +34,12 @@ namespace zlp {
     void LimiterAttach::parameterChanged(const juce::String& parameter_id, const float value) {
         if (parameter_id == PInputGain::kID) {
             controller_ref_.setInputGain(value);
+        } else if (parameter_id == PInputOutputLink::kID) {
+            controller_ref_.setInputOutputLink(value > 0.5f);
         } else if (parameter_id == POutputCeiling::kID) {
             controller_ref_.setOutputCeiling(value);
         } else if (parameter_id == PTruePeak::kID) {
-            controller_ref_.setTruePeakEnabled(value >= 0.5f);
+            controller_ref_.setTruePeakEnabled(value > 0.5f);
         } else if (parameter_id == POversampling::kID) {
             controller_ref_.setOversamplingIndex(static_cast<int>(std::lround(value)));
         } else if (parameter_id == PLookahead::kID) {
