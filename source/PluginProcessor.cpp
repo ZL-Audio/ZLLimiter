@@ -28,8 +28,6 @@ PluginProcessor::PluginProcessor() :
     parameters_NA_(dummy_processor_, nullptr,
                    juce::Identifier(zlstate::schema::kNonAutomatableState),
                    zlstate::getNAParameterLayout()),
-    state_(dummy_processor_, nullptr, juce::Identifier(zlstate::schema::kUISettings),
-           zlstate::getStateParameterLayout()),
     controller_(*this),
     limiter_attach_(*this, parameters_, controller_) {
 }

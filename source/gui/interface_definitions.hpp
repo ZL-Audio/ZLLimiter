@@ -190,8 +190,12 @@ namespace zlgui {
         juce::ReferenceCountedObjectPtr<juce::Typeface> font_;
 
         explicit UIBase(juce::AudioProcessorValueTreeState& apvts)
-            : state(apvts), font_size_{0.f} {
+            : state_(apvts), font_size_{0.f} {
             loadFromAPVTS();
+        }
+
+        auto& getStateAPVTS() const {
+            return state_;
         }
 
         void setFontMode(const size_t font_mode) {
@@ -403,7 +407,7 @@ namespace zlgui {
 
 
     private:
-        juce::AudioProcessorValueTreeState& state;
+        juce::AudioProcessorValueTreeState& state_;
         juce::ValueTree panel_value_tree_{"panel_setting"};
 
         float font_size_{0.f};
@@ -424,11 +428,11 @@ namespace zlgui {
         bool is_editor_showing_{false};
 
         float loadPara(const std::string& id) const {
-            return state.getRawParameterValue(id)->load(std::memory_order::relaxed);
+            return state_.getRawParameterValue(id)->load(std::memory_order::relaxed);
         }
 
         void savePara(const std::string& id, const float x) const {
-            const auto para = state.getParameter(id);
+            const auto para = state_.getParameter(id);
             para->beginChangeGesture();
             para->setValueNotifyingHost(para->convertTo0to1(x));
             para->endChangeGesture();

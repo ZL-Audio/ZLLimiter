@@ -17,7 +17,7 @@ namespace zlpanel {
         meter_top_panel_(base),
         analyzer_mag_type_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PAnalyzerMagType::kID)) {
 
-        const auto target_refresh_id = p.state_.getRawParameterValue(
+        const auto target_refresh_id = base_.getStateAPVTS().getRawParameterValue(
             zlstate::PTargetRefreshSpeed::kID)->load(std::memory_order::relaxed);
         const auto circular_capacity = static_cast<size_t>(
             zlstate::PTargetRefreshSpeed::kRates[static_cast<size_t>(std::round(target_refresh_id))]);

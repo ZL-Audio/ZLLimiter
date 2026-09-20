@@ -38,7 +38,6 @@ namespace zlpanel {
         }
 
     private:
-        PluginProcessor& p_ref_;
         zlgui::UIBase& base_;
         multilingual::TooltipHelper tooltip_helper_;
 

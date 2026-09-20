@@ -260,20 +260,20 @@ namespace zlgui {
         font_scale_ = loadPara(zlstate::PFontScale::kID);
         static_font_size_ = loadPara(zlstate::PStaticFontSize::kID);
         window_size_fix_ = loadPara(zlstate::PWindowSizeFix::kID) > .5f;
-        wheel_sensitivity_[0] = state.getRawParameterValue(zlstate::PWheelSensitivity::kID)->load();
-        wheel_sensitivity_[1] = state.getRawParameterValue(zlstate::PWheelFineSensitivity::kID)->load();
-        wheel_sensitivity_[2] = state.getRawParameterValue(zlstate::PSliderSensitivity::kID)->load();
-        wheel_sensitivity_[3] = state.getRawParameterValue(zlstate::PSliderFineSensitivity::kID)->load();
+        wheel_sensitivity_[0] = state_.getRawParameterValue(zlstate::PWheelSensitivity::kID)->load();
+        wheel_sensitivity_[1] = state_.getRawParameterValue(zlstate::PWheelFineSensitivity::kID)->load();
+        wheel_sensitivity_[2] = state_.getRawParameterValue(zlstate::PSliderSensitivity::kID)->load();
+        wheel_sensitivity_[3] = state_.getRawParameterValue(zlstate::PSliderFineSensitivity::kID)->load();
         wheel_sensitivity_[4] = loadPara(zlstate::PWheelComboboxSensitivity::kID);
-        is_mouse_wheel_shift_reverse_.store(state.getRawParameterValue(zlstate::PWheelShiftReverse::kID)->load() > .5f);
-        rotary_style_id_ = static_cast<size_t>(state.getRawParameterValue(zlstate::PRotaryStyle::kID)->load());
-        rotary_drag_sensitivity_ = state.getRawParameterValue(zlstate::PRotaryDragSensitivity::kID)->load();
+        is_mouse_wheel_shift_reverse_.store(state_.getRawParameterValue(zlstate::PWheelShiftReverse::kID)->load() > .5f);
+        rotary_style_id_ = static_cast<size_t>(state_.getRawParameterValue(zlstate::PRotaryStyle::kID)->load());
+        rotary_drag_sensitivity_ = state_.getRawParameterValue(zlstate::PRotaryDragSensitivity::kID)->load();
         is_slider_double_click_open_editor_.store(loadPara(zlstate::PSliderDoubleClickFunc::kID) > .5f);
         refresh_rate_id_.store(
-            static_cast<size_t>(std::round(state.getRawParameterValue(zlstate::PTargetRefreshSpeed::kID)->load())));
+            static_cast<size_t>(std::round(state_.getRawParameterValue(zlstate::PTargetRefreshSpeed::kID)->load())));
         mag_curve_thickness_.store(loadPara(zlstate::PMagCurveThickness::kID));
         tooltip_lang_id_.store(
-            static_cast<size_t>(std::round(state.getRawParameterValue(zlstate::PTooltipLang::kID)->load())));
+            static_cast<size_t>(std::round(state_.getRawParameterValue(zlstate::PTooltipLang::kID)->load())));
         colour_map1_idx_ = static_cast<size_t>(loadPara(zlstate::PColourMap1Idx::kID));
         colour_map2_idx_ = static_cast<size_t>(loadPara(zlstate::PColourMap2Idx::kID));
     }

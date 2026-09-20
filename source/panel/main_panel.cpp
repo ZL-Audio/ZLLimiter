@@ -11,10 +11,11 @@
 
 namespace zlpanel {
     MainPanel::MainPanel(PluginProcessor& processor, zlgui::UIBase& base) :
-        p_ref_(processor), base_(base),
+        base_(base),
         tooltip_helper_(
             static_cast<multilingual::TooltipLanguage>(std::round(
-                p_ref_.state_.getRawParameterValue(zlstate::PTooltipLang::kID)->load(std::memory_order::relaxed)))
+                base_.getStateAPVTS().getRawParameterValue(
+                    zlstate::PTooltipLang::kID)->load(std::memory_order::relaxed)))
             ),
         curve_panel_(processor, base_, tooltip_helper_),
         control_panel_(processor, base_, tooltip_helper_),
