@@ -19,7 +19,6 @@
 PluginProcessor::PluginProcessor() :
     AudioProcessor(BusesProperties()
         .withInput("Input", juce::AudioChannelSet::stereo(), true)
-        .withInput("Aux", juce::AudioChannelSet::stereo(), true)
         .withOutput("Output", juce::AudioChannelSet::stereo(), true)
         ),
     dummy_processor_(),
@@ -96,17 +95,11 @@ void PluginProcessor::releaseResources() {
 
 bool PluginProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {
     if (layouts.getMainInputChannelSet() == juce::AudioChannelSet::stereo() &&
-        layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo() &&
-        (layouts.getChannelSet(true, 1).isDisabled() ||
-            layouts.getChannelSet(true, 1) == juce::AudioChannelSet::mono() ||
-            layouts.getChannelSet(true, 1) == juce::AudioChannelSet::stereo())) {
+        layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo()) {
         return true;
     }
     if (layouts.getMainInputChannelSet() == juce::AudioChannelSet::mono() &&
-        layouts.getMainOutputChannelSet() == juce::AudioChannelSet::mono() &&
-        (layouts.getChannelSet(true, 1).isDisabled() ||
-            layouts.getChannelSet(true, 1) == juce::AudioChannelSet::mono() ||
-            layouts.getChannelSet(true, 1) == juce::AudioChannelSet::stereo())) {
+        layouts.getMainOutputChannelSet() == juce::AudioChannelSet::mono()) {
         return true;
     }
     return false;
