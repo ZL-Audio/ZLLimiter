@@ -334,16 +334,19 @@ namespace zlpanel {
         }
     }
 
-    std::string ValueDisplayPanel::formatValue(const float value) {
-        std::stringstream ss;
+    std::string ValueDisplayPanel::formatValue(float value) {
         const auto abs_value = std::abs(value);
-        if (abs_value < 10.f) {
-            ss << std::fixed << std::setprecision(2) << value;
-        } else if (abs_value < 100.f) {
-            ss << std::fixed << std::setprecision(1) << value;
-        } else {
-            ss << std::fixed << std::setprecision(0) << value;
+        if (std::round(abs_value * 100.f) == 0.f) {
+            value = 0.0f;
         }
-        return ss.str();
+        char buffer[16];
+        if (std::round(abs_value * 100.f) < 1000.f) {
+            std::snprintf(buffer, sizeof(buffer), "%.2f", value);
+        } else if (std::round(abs_value * 10.f) < 1000.f) {
+            std::snprintf(buffer, sizeof(buffer), "%.1f", value);
+        } else {
+            std::snprintf(buffer, sizeof(buffer), "%.0f", value);
+        }
+        return {buffer};
     }
 }

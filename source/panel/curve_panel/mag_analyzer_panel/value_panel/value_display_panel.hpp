@@ -12,6 +12,8 @@
 #include <array>
 #include <atomic>
 #include <limits>
+#include <cstdio>
+#include <string>
 
 #include "../../../../PluginProcessor.hpp"
 #include "../../../../chore/thread/notifier.hpp"
