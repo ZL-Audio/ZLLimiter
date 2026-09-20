@@ -151,7 +151,8 @@ namespace zlpanel {
                                   std::memory_order::relaxed);
         values_[kLoudnessRange].store(meter.isLoudnessRangeReady() ? meter.getLoudnessRange() : kUnavailable,
                                       std::memory_order::relaxed);
-        // Consume the queued range for every receiver before clearing only the requested histories.
+        is_lra_provisional_.store(meter.isLoudnessRangeProvisional(), std::memory_order::relaxed);
+
         checkResetRequests();
         updateHistogramPath();
     }
@@ -281,9 +282,16 @@ namespace zlpanel {
         if (value_on_[4]) {
             bound.removeFromTop(height);
             const auto v = values_[kLoudnessRange].load(std::memory_order::relaxed);
-            g.drawText(std::isfinite(v) ? formatValue(v) : "--",
-                       bound.removeFromTop(height),
-                       juce::Justification::centred, false);
+            const auto is_lra_provisional = is_lra_provisional_.load(std::memory_order::relaxed);
+            if (std::isfinite(v)) {
+                g.drawText(is_lra_provisional ? "(" + formatValue(v) + ")" : formatValue(v),
+                           bound.removeFromTop(height),
+                           juce::Justification::centred, false);
+            } else {
+                g.drawText("--",
+                           bound.removeFromTop(height),
+                           juce::Justification::centred, false);
+            }
         }
         if (value_on_[5]) {
             bound.removeFromTop(height);

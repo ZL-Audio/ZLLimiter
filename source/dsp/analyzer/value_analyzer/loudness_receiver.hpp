@@ -36,12 +36,10 @@ namespace zldsp::analyzer {
 
         void run(const zldsp::container::FIFORange range,
                  const std::vector<std::vector<float>>& samples) {
-            run(range, samples, [](const auto&) {});
+            run(range, samples, [](const auto&) {
+            });
         }
 
-        /** Reports every completed 400 ms window, including intermediate readings in this range.
-         *  Check the meter's isShortTermReady() before reading short-term loudness.
-         */
         template <typename Callback>
         void run(const zldsp::container::FIFORange range,
                  const std::vector<std::vector<float>>& samples, Callback&& on_update) {

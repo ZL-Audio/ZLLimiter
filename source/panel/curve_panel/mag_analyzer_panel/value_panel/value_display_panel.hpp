@@ -62,6 +62,7 @@ namespace zlpanel {
         zlchore::thread::Notifier peak_reset_requested_, correlation_reset_requested_, loudness_reset_requested_;
 
         std::array<std::atomic<float>, kNumValues> values_{};
+        std::atomic<bool> is_lra_provisional_{true};
 
         std::array<double, kHistogramBins> histogram_{};
         double histogram_max_{0.0};
