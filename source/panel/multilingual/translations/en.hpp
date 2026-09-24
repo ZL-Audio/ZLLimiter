@@ -36,7 +36,7 @@ namespace zlpanel::multilingual::en {
         "Adjusts the maximum output ceiling level.",
         "Selects the oversampling rate to reduce aliasing and inter-sample peaks.",
         "Toggles True Peak limiting to prevent inter-sample clipping.",
-        "Auditions the delta signal (the difference between input and output, isolating what is being limited).",
+        "Toggles delta audition.",
         "Toggles plugin bypass.",
         // input gain controls
         "Selects gain linking mode.\nInput: adjusts input gain only.\nLinked: also attenuates output to match input gain.",
@@ -54,7 +54,7 @@ namespace zlpanel::multilingual::en {
         "Displays current (left) and maximum (right) momentary loudness.",
         "Displays current (left) and maximum (right) short-term loudness.",
         "Displays the loudness range. Brackets indicate a provisional measurement.",
-        "Displays the overall integrated loudness.",
-        ""
+        "Displays the integrated loudness.",
+        " "
     };
 }
