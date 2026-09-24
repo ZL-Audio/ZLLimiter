@@ -42,8 +42,8 @@ namespace zlpanel::multilingual::en {
         "Selects gain linking mode.\nInput: adjusts input gain only.\nLinked: also attenuates output to match input gain.",
         "Adjusts the input gain driving into the limiter.",
         // bottom controls
-        "Adjusts the lookahead time for the main limiter envelope to anticipate transients.",
-        "Adjusts the adaptive recovery speed for the main envelope.",
+        "Adjusts the lookahead time for the main envelope to anticipate transients.",
+        "Adjusts the adaptive recovery time for the main envelope.",
         "Adjusts the attack time of the sustained support envelope.",
         "Adjusts the release time of the sustained support envelope.",
         "Adjusts the maximum allowed gain reduction difference between channels.",
