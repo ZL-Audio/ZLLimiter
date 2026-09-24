@@ -10,5 +10,48 @@
 #pragma once
 
 namespace zlpanel::multilingual {
-    enum TooltipLabel { kLogo, kLabelNum };
+    enum TooltipLabel {
+        kLogo,
+        // preset related
+        kPresetOpen,
+        kPresetFolder,
+        kPresetGroupDelete,
+        kPresetDelete,
+        kPresetClose,
+        // analyzer related
+        kAnalyzerOpen,
+        kAnalyzerMagType,
+        kAnalyzerMoveType,
+        kAnalyzerPre,
+        kAnalyzerPost,
+        kAnalyzerReduction,
+        kAnalyzerTimeLength,
+        kAnalyzerMinDB,
+        kAnalyzerMeter,
+        kAnalyzerValue,
+        // top controls
+        kCeiling,
+        kOversampling,
+        kTruePeak,
+        kDelta,
+        kBypass,
+        // input gain controls
+        kInOutLinkType,
+        kInputGain,
+        // bottom controls
+        kLookahead,
+        kRecovery,
+        kAttack,
+        kRelease,
+        kStereoDelta,
+        // values
+        kValueOpen,
+        kValueTruePeak,
+        kValueCorrelation,
+        kValueLUFSM,
+        kValueLUFSS,
+        kValueLRA,
+        kValueLUFSI,
+        kLabelNum
+    };
 }
