@@ -217,7 +217,7 @@ namespace zlpanel {
             // advance from the last displayed gap
             const auto previous_gap = static_cast<double>(previous_out_[chan]) - previous_pre_[chan];
             const auto target_gap = static_cast<double>(current_out) - current_pre;
-            if (std::abs(target_gap - target_gap_db_[chan]) < 1e-5) {
+            if (std::abs(target_gap - target_gap_db_[chan]) > 1e-5) {
                 target_gap_db_[chan] = target_gap;
                 gap_remaining_seconds_[chan] = kMeterGapConvergenceSeconds;
             }
