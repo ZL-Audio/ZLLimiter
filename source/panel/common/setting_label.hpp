@@ -16,10 +16,12 @@
 
 namespace zlpanel {
     class SettingLabel final : public juce::Component,
+                               public juce::SettableTooltipClient,
                                private juce::ValueTree::Listener {
     public:
         explicit SettingLabel(PluginProcessor&, zlgui::UIBase& base,
-                              juce::String label, zlgui::PanelSettingIdx setting_idx);
+                              juce::String label, zlgui::PanelSettingIdx setting_idx,
+                              const juce::String& tooltip_text = "");
 
         ~SettingLabel() override;
 

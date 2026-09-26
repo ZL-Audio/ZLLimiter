@@ -11,7 +11,7 @@
 
 namespace zlpanel {
     CurvePanel::CurvePanel(PluginProcessor& p, zlgui::UIBase& base,
-                           multilingual::TooltipHelper& tooltip_helper) :
+                           const multilingual::TooltipHelper& tooltip_helper) :
         juce::Thread("ZL Limiter Analyzer"), p_ref_(p), base_(base),
         min_db_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PAnalyzerMinDB::kID)),
         is_meter_on_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PMeterDisplayON::kID)),

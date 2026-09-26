@@ -17,9 +17,11 @@
 
 namespace zlpanel {
     class GainDisplayPanel final : public juce::Component,
-                                   private juce::Slider::Listener {
+                                   private juce::Slider::Listener,
+                                   public juce::SettableTooltipClient {
     public:
-        explicit GainDisplayPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper&);
+        explicit GainDisplayPanel(PluginProcessor& p, zlgui::UIBase& base,
+                                  const multilingual::TooltipHelper& tooltip_helper);
 
         ~GainDisplayPanel() override;
 

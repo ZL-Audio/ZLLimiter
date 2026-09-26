@@ -12,7 +12,8 @@
 #include "../helper/panel_constants.hpp"
 
 namespace zlpanel {
-    ControlPanel::ControlPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper&) :
+    ControlPanel::ControlPanel(PluginProcessor& p, zlgui::UIBase& base,
+                               const multilingual::TooltipHelper& tooltip_helper) :
         base_(base), background_(base, .5f), label_laf_(base),
         top_labels_{
             juce::Label{"", "Main"},
@@ -27,11 +28,16 @@ namespace zlpanel {
             juce::Label{"", "Delta"}
         },
         sliders_{
-            Rotary("", base, "", 1.25f),
-            Rotary("", base, "", 1.25f),
-            Rotary("", base, "", 1.25f),
-            Rotary("", base, "", 1.25f),
-            Rotary("", base, "", 1.25f)
+            Rotary("", base,
+                   tooltip_helper.getToolTipText(multilingual::kLookahead), 1.25f),
+            Rotary("", base,
+                   tooltip_helper.getToolTipText(multilingual::kRecovery), 1.25f),
+            Rotary("", base,
+                   tooltip_helper.getToolTipText(multilingual::kAttack), 1.25f),
+            Rotary("", base,
+                   tooltip_helper.getToolTipText(multilingual::kRelease), 1.25f),
+            Rotary("", base,
+                   tooltip_helper.getToolTipText(multilingual::kStereoDelta), 1.25f)
         } {
         background_.setBufferedToImage(true);
         addAndMakeVisible(background_);

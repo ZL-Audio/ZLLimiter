@@ -17,7 +17,8 @@
 namespace zlpanel {
     class GainPanel final : public juce::Component {
     public:
-        explicit GainPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper& helper);
+        explicit GainPanel(PluginProcessor& p, zlgui::UIBase& base,
+                           const multilingual::TooltipHelper& tooltip_helper);
 
         int getIdealWidth() const;
 

@@ -12,13 +12,15 @@
 
 namespace zlpanel {
     TopPanel::TopPanel(PluginProcessor& p, zlgui::UIBase& base,
-                       multilingual::TooltipHelper& tooltip_helper) :
+                       const multilingual::TooltipHelper& tooltip_helper) :
         base_(base),
         logo_panel_(p, base_, tooltip_helper),
         preset_drawable_(juce::Drawable::createFromImageData(BinaryData::collections_bookmark_svg,
                                                              BinaryData::collections_bookmark_svgSize)),
-        preset_button_(base_, preset_drawable_.get(), nullptr, ""),
-        analyzer_label_(p, base_, "Analyzer", zlgui::PanelSettingIdx::kAnalyzerSettingPanel),
+        preset_button_(base_, preset_drawable_.get(), nullptr,
+                       tooltip_helper.getToolTipText(multilingual::kPresetOpen)),
+        analyzer_label_(p, base_, "Analyzer", zlgui::PanelSettingIdx::kAnalyzerSettingPanel,
+                        tooltip_helper.getToolTipText(multilingual::kAnalyzerOpen)),
         top_control_panel_(p, base_, tooltip_helper) {
         addAndMakeVisible(logo_panel_);
         preset_button_.getButton().onClick = [this]() {

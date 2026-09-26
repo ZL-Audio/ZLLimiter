@@ -19,9 +19,10 @@ namespace zlpanel {
             ),
         curve_panel_(processor, base_, tooltip_helper_),
         control_panel_(processor, base_, tooltip_helper_),
-        preset_browser_(processor, base_),
+        preset_browser_(processor, base_, tooltip_helper_),
         ui_setting_panel_(processor, base_),
-        tooltipLAF(base_), tooltipWindow(base_, this),
+        tooltip_target_(),
+        tooltip_laf_(base_), tooltip_window_(base_, &tooltip_target_),
         refresh_handler_(zlstate::PTargetRefreshSpeed::kRates[base_.getRefreshRateID()]) {
         juce::ignoreUnused(base_);
         addAndMakeVisible(curve_panel_);
@@ -30,11 +31,12 @@ namespace zlpanel {
         addChildComponent(ui_setting_panel_);
         preset_browser_.setBufferedToImage(true);
         addChildComponent(preset_browser_);
-        preset_browser_.toFront(false);
+        tooltip_target_.setInterceptsMouseClicks(false, false);
+        addAndMakeVisible(tooltip_target_);
 
-        tooltipWindow.setLookAndFeel(&tooltipLAF);
-        tooltipWindow.setOpaque(false);
-        tooltipWindow.setBufferedToImage(true);
+        tooltip_window_.setLookAndFeel(&tooltip_laf_);
+        tooltip_window_.setOpaque(false);
+        tooltip_window_.setBufferedToImage(true);
 
         base_.getPanelValueTree().addListener(this);
 
@@ -57,7 +59,10 @@ namespace zlpanel {
         base_.setFontSize(font_size);
         const auto main_bound = bound;
         const auto padding = getPaddingSize(font_size);
+        const auto top_height = getTopPanelHeight(font_size);
         const auto control_height = getControlPanelHeight(font_size);
+
+        tooltip_target_.setBounds(0, top_height, bound.getWidth(), bound.getHeight() - top_height);
 
         control_panel_.setBounds(0, bound.getBottom() - control_height,
                                  control_panel_.getIdealWidth(), control_height);

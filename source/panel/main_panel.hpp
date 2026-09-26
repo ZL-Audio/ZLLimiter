@@ -46,8 +46,9 @@ namespace zlpanel {
         PresetBrowser preset_browser_;
         UISettingPanel ui_setting_panel_;
 
-        zlgui::tooltip::TooltipLookAndFeel tooltipLAF;
-        zlgui::tooltip::TooltipWindow tooltipWindow;
+        juce::Component tooltip_target_;
+        zlgui::tooltip::TooltipLookAndFeel tooltip_laf_;
+        zlgui::tooltip::TooltipWindow tooltip_window_;
 
         RefreshHandler refresh_handler_;
         double previous_time_stamp_{-1.0};

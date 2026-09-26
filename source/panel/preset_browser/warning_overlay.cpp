@@ -19,11 +19,12 @@ namespace zlpanel {
         setWantsKeyboardFocus(true);
 
         addAndMakeVisible(background_);
-        message_laf_.setFontScale(zlgui::kFontHuge);
+        message_laf_.setFontScale(1.5f);
         message_laf_.setMaximumNumberOfLines(3);
         message_label_.setLookAndFeel(&message_laf_);
         message_label_.setJustificationType(juce::Justification::topLeft);
         message_label_.setAlpha(.5f);
+        message_label_.setMinimumHorizontalScale(1.f);
         message_label_.setInterceptsMouseClicks(false, false);
         addAndMakeVisible(message_label_);
 
@@ -100,8 +101,6 @@ namespace zlpanel {
         cancel_button_.setVisible(true);
         confirm_button_.getButton().setButtonText(action);
         setVisible(true);
-        toFront(true);
-        grabKeyboardFocus();
         confirm_button_.getButton().repaint();
     }
 

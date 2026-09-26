@@ -13,7 +13,8 @@
 #include "../../helper/panel_constants.hpp"
 
 namespace zlpanel {
-    GainDisplayPanel::GainDisplayPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper&) :
+    GainDisplayPanel::GainDisplayPanel(PluginProcessor& p, zlgui::UIBase& base,
+                                       const multilingual::TooltipHelper& tooltip_helper) :
         base_(base), updater_(),
         gain_slider_(base, ""),
         gain_slider_attach_(gain_slider_, p.parameters_, zlp::PInputGain::kID, updater_) {
@@ -27,6 +28,8 @@ namespace zlpanel {
         addChildComponent(gain_slider_);
 
         gain_slider_.addListener(this);
+
+        SettableTooltipClient::setTooltip(tooltip_helper.getToolTipText(multilingual::kInputGain));
     }
 
     GainDisplayPanel::~GainDisplayPanel() {

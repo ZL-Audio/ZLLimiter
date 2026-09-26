@@ -13,11 +13,12 @@
 #include "../../helper/panel_constants.hpp"
 
 namespace zlpanel {
-    GainPanel::GainPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper& helper) :
+    GainPanel::GainPanel(PluginProcessor& p, zlgui::UIBase& base,
+                         const multilingual::TooltipHelper& tooltip_helper) :
         base_(base),
         gain_background_panel(base),
-        gain_footer_panel(p, base, helper),
-        gain_display_panel(p, base, helper) {
+        gain_footer_panel(p, base, tooltip_helper),
+        gain_display_panel(p, base, tooltip_helper) {
         gain_background_panel.setBufferedToImage(true);
         addAndMakeVisible(gain_background_panel);
         gain_footer_panel.setBufferedToImage(true);

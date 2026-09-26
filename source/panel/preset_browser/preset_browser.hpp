@@ -13,6 +13,7 @@
 
 #include "../../PluginProcessor.hpp"
 #include "../../gui/gui.hpp"
+#include "../multilingual/tooltip_helper.hpp"
 
 #include "group_list.hpp"
 #include "preset_entry.hpp"
@@ -26,7 +27,8 @@ namespace zlpanel {
     class PresetBrowser final : public juce::Component,
                                 private juce::ValueTree::Listener {
     public:
-        explicit PresetBrowser(PluginProcessor& processor, zlgui::UIBase& base);
+        explicit PresetBrowser(PluginProcessor& p, zlgui::UIBase& base,
+                               const multilingual::TooltipHelper& tooltip_helper);
 
         ~PresetBrowser() override;
 
@@ -45,7 +47,7 @@ namespace zlpanel {
         int getIdealHeight() const;
 
     private:
-        PluginProcessor& processor_;
+        PluginProcessor& p_ref_;
         zlgui::UIBase& base_;
         const juce::File presets_directory_;
 

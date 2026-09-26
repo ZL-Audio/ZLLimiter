@@ -86,8 +86,9 @@ namespace zlpanel {
         }
     }
 
-    PresetBrowser::PresetBrowser(PluginProcessor& processor, zlgui::UIBase& base) :
-        processor_(processor),
+    PresetBrowser::PresetBrowser(PluginProcessor& p, zlgui::UIBase& base,
+                                 const multilingual::TooltipHelper& tooltip_helper) :
+        p_ref_(p),
         base_(base),
         presets_directory_(getPresetsDirectory()),
         background_(base),
@@ -97,10 +98,14 @@ namespace zlpanel {
                                                             BinaryData::close_svgSize)),
         folder_open_drawable_(juce::Drawable::createFromImageData(BinaryData::folder_open_svg,
                                                                   BinaryData::folder_open_svgSize)),
-        delete_group_button_(base, delete_drawable_.get(), nullptr, ""),
-        delete_preset_button_(base, delete_drawable_.get(), nullptr, ""),
-        close_button_(base, close_drawable_.get(), nullptr, ""),
-        folder_open_button_(base, folder_open_drawable_.get(), nullptr, ""),
+        delete_group_button_(base, delete_drawable_.get(), nullptr,
+                             tooltip_helper.getToolTipText(multilingual::kPresetGroupDelete)),
+        delete_preset_button_(base, delete_drawable_.get(), nullptr,
+                              tooltip_helper.getToolTipText(multilingual::kPresetDelete)),
+        close_button_(base, close_drawable_.get(), nullptr,
+                      tooltip_helper.getToolTipText(multilingual::kPresetClose)),
+        folder_open_button_(base, folder_open_drawable_.get(), nullptr,
+                            tooltip_helper.getToolTipText(multilingual::kPresetFolder)),
         group_label_({}, "Groups"),
         preset_label_({}, "Presets"),
         search_editor_(base),
@@ -123,7 +128,9 @@ namespace zlpanel {
         configureEditor(search_editor_, "Search Presets");
         configureEditor(group_name_editor_, "New Group");
         configureEditor(preset_name_editor_, "New Preset (Enter to Save)");
-        search_editor_.onTextChange = [this]() { refreshPresets(); };
+        search_editor_.onTextChange = [this]() {
+            refreshPresets();
+        };
         group_name_editor_.onReturnKey = [this]() {
             createGroup();
             group_name_editor_.giveAwayKeyboardFocus();
@@ -133,9 +140,15 @@ namespace zlpanel {
             preset_name_editor_.giveAwayKeyboardFocus();
         };
 
-        group_list_.onGroupSelected = [this](const auto& group) { selectGroup(group); };
-        preset_list_.onPresetSelected = [this](const auto& file) { selectPreset(file); };
-        preset_list_.onPresetLoad = [this](const auto& file) { loadPreset(file); };
+        group_list_.onGroupSelected = [this](const auto& group) {
+            selectGroup(group);
+        };
+        preset_list_.onPresetSelected = [this](const auto& file) {
+            selectPreset(file);
+        };
+        preset_list_.onPresetLoad = [this](const auto& file) {
+            loadPreset(file);
+        };
         addAndMakeVisible(group_list_);
         addAndMakeVisible(preset_list_);
 
@@ -164,8 +177,6 @@ namespace zlpanel {
         base_.setPanelProperty(zlgui::PanelSettingIdx::kPresetBrowser, 0.f);
 
         applyColours();
-
-        setWantsKeyboardFocus(true);
     }
 
     PresetBrowser::~PresetBrowser() {
@@ -447,12 +458,14 @@ namespace zlpanel {
         }
 
         warning_overlay_.show("A preset named \"" + legal_name + "\" already exists in \"" + group + "\".",
-                              "Replace", true, [this, file]() { writePreset(file); });
+                              "Replace", true, [this, file]() {
+                                  writePreset(file);
+                              });
     }
 
     void PresetBrowser::writePreset(const juce::File& file) {
         juce::MemoryBlock state;
-        processor_.getStateInformation(state);
+        p_ref_.getStateInformation(state);
         if (const auto result = PresetJson::write(file, state); result.failed()) {
             showError("Could not save preset \"" + file.getFileNameWithoutExtension() + "\".");
             return;
@@ -481,8 +494,8 @@ namespace zlpanel {
             return;
         }
 
-        processor_.setStateInformation(state.getData(), static_cast<int>(state.getSize()));
-        processor_.updateHostDisplay(juce::AudioProcessorListener::ChangeDetails()
+        p_ref_.setStateInformation(state.getData(), static_cast<int>(state.getSize()));
+        p_ref_.updateHostDisplay(juce::AudioProcessorListener::ChangeDetails()
             .withNonParameterStateChanged(true));
         selectPreset(file);
     }
@@ -578,9 +591,6 @@ namespace zlpanel {
         const auto should_be_visible = static_cast<float>(
             base_.getPanelProperty(zlgui::PanelSettingIdx::kPresetBrowser)) > .5f;
         setVisible(should_be_visible);
-        if (should_be_visible) {
-            toFront(false);
-        }
     }
 
     const PresetEntry* PresetBrowser::getSelectedPreset() const {

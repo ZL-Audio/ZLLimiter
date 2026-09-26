@@ -18,7 +18,7 @@ namespace zlpanel {
     class TopControlPanel final : public juce::Component {
     public:
         explicit TopControlPanel(PluginProcessor& p, zlgui::UIBase& base,
-                                 multilingual::TooltipHelper& tooltip_helper);
+                                 const multilingual::TooltipHelper& tooltip_helper);
 
         void resized() override;
 

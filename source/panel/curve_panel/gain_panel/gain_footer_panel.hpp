@@ -18,7 +18,8 @@
 namespace zlpanel {
     class GainFooterPanel final : public juce::Component {
     public:
-        explicit GainFooterPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper&);
+        explicit GainFooterPanel(PluginProcessor& p, zlgui::UIBase& base,
+                                 const multilingual::TooltipHelper& tooltip_helper);
 
         void paint(juce::Graphics& g) override;
 

@@ -11,22 +11,28 @@
 #include "BinaryData.h"
 
 namespace zlpanel {
-    TopControlPanel::TopControlPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper&) :
+    TopControlPanel::TopControlPanel(PluginProcessor& p, zlgui::UIBase& base,
+                                     const multilingual::TooltipHelper& tooltip_helper) :
         base_(base), label_laf_(base),
         ceiling_label_("Ceiling", "Ceiling"),
         oversample_label_("Oversample", "Oversample"),
-        ceiling_slider_("", base),
+        ceiling_slider_("", base,
+                        tooltip_helper.getToolTipText(multilingual::kCeiling)),
         ceiling_attachment_(ceiling_slider_.getSlider(), p.parameters_, zlp::POutputCeiling::kID, updater_),
-        oversample_box_(zlp::POversampling::kChoices, base),
+        oversample_box_(zlp::POversampling::kChoices, base,
+                        tooltip_helper.getToolTipText(multilingual::kOversampling)),
         oversample_attachment_(oversample_box_.getBox(), p.parameters_, zlp::POversampling::kID, updater_),
         true_peak_icon_(juce::Drawable::createFromImageData(BinaryData::dline_tp_svg, BinaryData::dline_tp_svgSize)),
-        true_peak_button_(base, true_peak_icon_.get(), true_peak_icon_.get()),
+        true_peak_button_(base, true_peak_icon_.get(), true_peak_icon_.get(),
+                          tooltip_helper.getToolTipText(multilingual::kTruePeak)),
         true_peak_attachment_(true_peak_button_.getButton(), p.parameters_, zlp::PTruePeak::kID, updater_),
         delta_icon_(juce::Drawable::createFromImageData(BinaryData::delta_svg, BinaryData::delta_svgSize)),
-        delta_button_(base, delta_icon_.get(), delta_icon_.get()),
+        delta_button_(base, delta_icon_.get(), delta_icon_.get(),
+                      tooltip_helper.getToolTipText(multilingual::kDelta)),
         delta_attachment_(delta_button_.getButton(), p.parameters_, zlp::PDelta::kID, updater_),
         bypass_icon_(juce::Drawable::createFromImageData(BinaryData::bypass_svg, BinaryData::bypass_svgSize)),
-        bypass_button_(base, bypass_icon_.get(), bypass_icon_.get()),
+        bypass_button_(base, bypass_icon_.get(), bypass_icon_.get(),
+                       tooltip_helper.getToolTipText(multilingual::kBypass)),
         bypass_attachment_(bypass_button_.getButton(), p.parameters_, zlp::PBypass::kID, updater_) {
         label_laf_.setFontScale(1.5f);
         for (auto* label : {&ceiling_label_, &oversample_label_}) {

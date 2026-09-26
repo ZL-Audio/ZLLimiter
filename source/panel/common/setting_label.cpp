@@ -13,11 +13,14 @@
 
 namespace zlpanel {
     SettingLabel::SettingLabel(PluginProcessor&, zlgui::UIBase& base,
-                               const juce::String label, const zlgui::PanelSettingIdx setting_idx) :
+                               const juce::String label, const zlgui::PanelSettingIdx setting_idx,
+                               const juce::String& tooltip_text) :
         base_(base), setting_idx_(setting_idx),
         control_background_(base),
         label_laf_(base),
         setting_label_("", label) {
+        SettableTooltipClient::setTooltip(tooltip_text);
+
         control_background_.setInterceptsMouseClicks(false, false);
         addChildComponent(control_background_);
 

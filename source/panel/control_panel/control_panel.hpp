@@ -17,7 +17,8 @@
 namespace zlpanel {
     class ControlPanel final : public juce::Component {
     public:
-        ControlPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper&);
+        ControlPanel(PluginProcessor& p, zlgui::UIBase& base,
+                     const multilingual::TooltipHelper& tooltip_helper);
 
         void resized() override;
 

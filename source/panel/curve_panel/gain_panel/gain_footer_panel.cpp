@@ -14,11 +14,14 @@
 #include "../../helper/paint_left_shadow.hpp"
 
 namespace zlpanel {
-    GainFooterPanel::GainFooterPanel(PluginProcessor& p, zlgui::UIBase& base, multilingual::TooltipHelper&) :
+    GainFooterPanel::GainFooterPanel(PluginProcessor& p, zlgui::UIBase& base,
+                                     const multilingual::TooltipHelper& tooltip_helper) :
         base_(base), updater_(),
-        link_box_(zlp::PInputOutputLink::kChoices, base),
+        link_box_(zlp::PInputOutputLink::kChoices, base,
+                  tooltip_helper.getToolTipText(multilingual::kInOutLinkType)),
         link_attach_(link_box_.getBox(), p.parameters_, zlp::PInputOutputLink::kID, updater_),
-        input_slider_("", base),
+        input_slider_("", base,
+                      tooltip_helper.getToolTipText(multilingual::kInputGain)),
         input_attach_(input_slider_.getSlider(), p.parameters_, zlp::PInputGain::kID, updater_) {
         addAndMakeVisible(link_box_);
         addAndMakeVisible(input_slider_);

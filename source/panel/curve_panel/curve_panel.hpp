@@ -23,7 +23,7 @@ namespace zlpanel {
     class CurvePanel final : public juce::Component, private juce::Thread {
     public:
         CurvePanel(PluginProcessor& p, zlgui::UIBase& base,
-                   multilingual::TooltipHelper& tooltip_helper);
+                   const multilingual::TooltipHelper& tooltip_helper);
 
         ~CurvePanel() override;
 

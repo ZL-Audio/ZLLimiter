@@ -152,7 +152,7 @@ namespace zlp {
         input_gain_.process(buffer, num_samples);
 
         auto gained_buffer = std::span<float*>{gained_pointers_.data(), buffer.size()};
-        bool capture_ready = false;
+        bool gained_delay_ready = false;
         const auto analyzer_on = analyzer_enabled_.load(std::memory_order_acquire);
         const auto needs_gained_delay = analyzer_on || delta_enabled_;
         if (needs_gained_delay) {
@@ -165,7 +165,7 @@ namespace zlp {
                 gained_delay_needs_warmup_ = false;
             }
             gained_delay_.process(buffer, gained_buffer, num_samples);
-            capture_ready = gained_delay_fill_remaining_ == 0;
+            gained_delay_ready = gained_delay_fill_remaining_ == 0;
             gained_delay_fill_remaining_ -= std::min(gained_delay_fill_remaining_, num_samples);
         } else {
             gained_delay_needs_reset_ = true;
@@ -180,7 +180,7 @@ namespace zlp {
         }
         output_gain_.process(buffer, num_samples);
 
-        if (capture_ready && analyzer_on) {
+        if (gained_delay_ready && analyzer_on) {
             if (static_cast<size_t>(mag_analyzer_sender_.getAbstractFIFO().getNumFree()) >= num_samples) {
                 const auto right = std::min(size_t(1), buffer.size() - 1);
                 std::array<float*, 2> pre{dry_buffer[0], dry_buffer[right]};
@@ -196,7 +196,7 @@ namespace zlp {
             for (size_t channel = 0; channel < buffer.size(); ++channel) {
                 zldsp::vector::copy(buffer[channel], dry_buffer[channel], num_samples);
             }
-        } else if (delta_enabled_) {
+        } else if (delta_enabled_ && gained_delay_ready) {
             for (size_t channel = 0; channel < buffer.size(); ++channel) {
                 zldsp::vector::sub(buffer[channel], gained_buffer[channel], limited_pointers_[channel], num_samples);
             }
