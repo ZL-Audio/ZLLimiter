@@ -12,7 +12,6 @@
 
 namespace zlpanel {
     UISettingTabBar::UISettingTabBar(zlgui::UIBase& base) : base_(base) {
-        setMouseCursor(juce::MouseCursor::PointingHandCursor);
         setWantsKeyboardFocus(true);
     }
 

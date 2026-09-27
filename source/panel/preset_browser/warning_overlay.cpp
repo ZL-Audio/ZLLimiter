@@ -32,7 +32,6 @@ namespace zlpanel {
                                              const bool is_confirm) {
             button.getLAF().setFontScale(zlgui::kFontHuge);
             button.getLAF().setJustification(juce::Justification::centred);
-            button.getButton().setMouseCursor(juce::MouseCursor::PointingHandCursor);
             button.setBackgroundPainter([this, is_confirm](juce::Graphics& g,
                                                             juce::Button& painted_button,
                                                             const bool highlighted,

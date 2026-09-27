@@ -18,7 +18,6 @@ namespace zlgui::scrolling {
         row_height_ = juce::roundToInt(base_.getFontSize() * 1.9f);
         scroll_bar_.addListener(this);
         addAndMakeVisible(scroll_bar_);
-        setMouseCursor(juce::MouseCursor::PointingHandCursor);
         setOpaque(false);
     }
 
