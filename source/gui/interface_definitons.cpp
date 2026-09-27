@@ -271,6 +271,7 @@ namespace zlgui {
         is_slider_double_click_open_editor_.store(loadPara(zlstate::PSliderDoubleClickFunc::kID) > .5f);
         refresh_rate_id_.store(
             static_cast<size_t>(std::round(state_.getRawParameterValue(zlstate::PTargetRefreshSpeed::kID)->load())));
+        combobox_alignment_.store(static_cast<size_t>(std::round(loadPara(zlstate::PComboboxAlignment::kID))));
         mag_curve_thickness_.store(loadPara(zlstate::PMagCurveThickness::kID));
         tooltip_lang_id_.store(
             static_cast<size_t>(std::round(state_.getRawParameterValue(zlstate::PTooltipLang::kID)->load())));
@@ -313,6 +314,8 @@ namespace zlgui {
                  static_cast<float>(is_slider_double_click_open_editor_.load(std::memory_order::relaxed)));
         savePara(zlstate::PTargetRefreshSpeed::kID,
                  static_cast<float>(refresh_rate_id_.load(std::memory_order::relaxed)));
+        savePara(zlstate::PComboboxAlignment::kID,
+                 static_cast<float>(combobox_alignment_.load(std::memory_order::relaxed)));
         savePara(zlstate::PMagCurveThickness::kID, mag_curve_thickness_.load(std::memory_order::relaxed));
         savePara(zlstate::PTooltipLang::kID, static_cast<float>(tooltip_lang_id_));
         savePara(zlstate::PColourMap1Idx::kID, static_cast<float>(colour_map1_idx_));

@@ -11,6 +11,7 @@
 
 #include "BinaryData.h"
 #include "../../helper/panel_constants.hpp"
+#include "../../helper/combobox_helper.hpp"
 
 namespace zlpanel {
     AnalyzerSettingPanel::AnalyzerSettingPanel(PluginProcessor& p, zlgui::UIBase& base,
@@ -55,6 +56,11 @@ namespace zlpanel {
         addAndMakeVisible(background_);
         constexpr std::array box_ids{zlstate::PAnalyzerMagType::kID, zlstate::PAnalyzerMoveType::kID,
                                      zlstate::PAnalyzerTimeLength::kID, zlstate::PAnalyzerMinDB::kID};
+        const auto box_alignment = combobox_helper::getAlignment(base_.getComboboxAlignment());
+        boxes_[0].getLAF().setItemAlignment(box_alignment);
+        boxes_[1].getLAF().setItemAlignment(box_alignment);
+        boxes_[2].getLAF().setAlignment(zlgui::combobox::Alignment::kRight);
+        boxes_[3].getLAF().setAlignment(zlgui::combobox::Alignment::kRight);
         for (size_t i = 0; i < boxes_.size(); ++i) {
             boxes_[i].setScrollEnabled(true);
             boxes_[i].getBox().setComponentID(box_ids[i]);

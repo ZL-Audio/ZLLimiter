@@ -51,6 +51,7 @@ namespace zlpanel {
         }
         ceiling_slider_.getSlider().setComponentID(zlp::POutputCeiling::kID);
 
+        oversample_box_.getLAF().setAlignment(zlgui::combobox::Alignment::kRight);
         oversample_box_.setScrollEnabled(true);
         oversample_box_.getLAF().setFontScale(1.5f);
         oversample_box_.setBufferedToImage(true);
@@ -71,6 +72,7 @@ namespace zlpanel {
         const auto button_width = getButtonSize(font_size);
         const auto label_width = juce::roundToInt(font_size * kSliderWidthScale * 1.25f);
         const auto value_width = juce::roundToInt(font_size * kSmallSliderWidthScale * .75f);
+
         bypass_button_.setBounds(bound.removeFromRight(button_width));
         bound.removeFromRight(padding);
 
@@ -79,12 +81,13 @@ namespace zlpanel {
         bound.removeFromRight(padding);
 
         true_peak_button_.setBounds(bound.removeFromRight(button_width));
-        bound.removeFromRight(padding);
+        bound.removeFromRight(5 * padding);
 
-        oversample_box_.setBounds(bound.removeFromRight(value_width));
+        oversample_box_.setBounds(bound.removeFromRight(value_width - padding));
         bound.removeFromRight(padding);
         oversample_label_.setBounds(bound.removeFromRight(label_width));
-        bound.removeFromRight(padding);
+        bound.removeFromRight(3 * padding);
+
         ceiling_slider_.setBounds(bound.removeFromRight(value_width));
         bound.removeFromRight(padding);
         ceiling_label_.setBounds(bound.removeFromRight(getSliderWidth(font_size)));

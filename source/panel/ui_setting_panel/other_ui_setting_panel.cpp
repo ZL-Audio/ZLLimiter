@@ -14,6 +14,7 @@ namespace zlpanel {
         : p_ref_(p),
           base_(base), name_laf_(base),
           refresh_rate_box_(zlstate::PTargetRefreshSpeed::kChoices, base),
+          combobox_alignment_box_(zlstate::PComboboxAlignment::kChoices, base),
           mag_curve_slider_("Mag", base),
           tooltip_box_(zlstate::PTooltipLang::kChoices, base),
           font_mode_box_(zlstate::PFontMode::kChoices, base),
@@ -29,6 +30,11 @@ namespace zlpanel {
         addAndMakeVisible(refresh_rate_label_);
         addAndMakeVisible(refresh_rate_box_);
 
+        combobox_alignment_label_.setText("Combobox Alignment", juce::dontSendNotification);
+        combobox_alignment_label_.setJustificationType(juce::Justification::centredRight);
+        combobox_alignment_label_.setLookAndFeel(&name_laf_);
+        addAndMakeVisible(combobox_alignment_label_);
+        addAndMakeVisible(combobox_alignment_box_);
 
         curve_thick_label_.setText("Curve Thickness", juce::dontSendNotification);
         curve_thick_label_.setJustificationType(juce::Justification::centredRight);
@@ -65,6 +71,7 @@ namespace zlpanel {
 
     void OtherUISettingPanel::loadSetting() {
         refresh_rate_box_.getBox().setSelectedItemIndex(static_cast<int>(base_.getRefreshRateID()));
+        combobox_alignment_box_.getBox().setSelectedItemIndex(static_cast<int>(base_.getComboboxAlignment()));
         mag_curve_slider_.getSlider().setValue(base_.getMagCurveThickness());
         tooltip_box_.getBox().setSelectedItemIndex(static_cast<int>(base_.getTooltipLangID()));
         font_mode_box_.getBox().setSelectedItemIndex(static_cast<int>(base_.getFontMode()), juce::sendNotificationSync);
@@ -76,6 +83,7 @@ namespace zlpanel {
 
     void OtherUISettingPanel::saveSetting() {
         base_.setRefreshRateID(static_cast<size_t>(refresh_rate_box_.getBox().getSelectedItemIndex()));
+        base_.setComboboxAlignment(static_cast<size_t>(combobox_alignment_box_.getBox().getSelectedItemIndex()));
         base_.setMagCurveThickness(static_cast<float>(mag_curve_slider_.getSlider().getValue()));
         base_.setTooltipLandID(static_cast<size_t>(tooltip_box_.getBox().getSelectedItemIndex()));
         base_.setFontMode(static_cast<size_t>(font_mode_box_.getBox().getSelectedItemIndex()));
@@ -87,6 +95,7 @@ namespace zlpanel {
 
     void OtherUISettingPanel::resetSetting() {
         refresh_rate_box_.getBox().setSelectedItemIndex(zlstate::PTargetRefreshSpeed::kDefaultI);
+        combobox_alignment_box_.getBox().setSelectedItemIndex(zlstate::PComboboxAlignment::kDefaultI);
         mag_curve_slider_.getSlider().setValue(zlstate::PMagCurveThickness::kDefaultV);
         tooltip_box_.getBox().setSelectedItemIndex(zlstate::PTooltipLang::kDefaultI);
         font_mode_box_.getBox().setSelectedItemIndex(zlstate::PFontMode::kDefaultI);
@@ -100,7 +109,7 @@ namespace zlpanel {
         const auto padding = juce::roundToInt(base_.getFontSize() * kPaddingScale * 3.f);
         const auto slider_height = juce::roundToInt(base_.getFontSize() * kSliderHeightScale);
 
-        return padding * 6 + slider_height * 5;
+        return padding * 7 + slider_height * 6;
     }
 
     void OtherUISettingPanel::resized() {
@@ -115,6 +124,13 @@ namespace zlpanel {
             refresh_rate_label_.setBounds(local_bound.removeFromLeft(slider_width * 2));
             local_bound.removeFromLeft(padding);
             refresh_rate_box_.setBounds(local_bound.removeFromLeft(slider_width).reduced(0, padding / 3));
+        }
+        {
+            bound.removeFromTop(padding);
+            auto local_bound = bound.removeFromTop(slider_height);
+            combobox_alignment_label_.setBounds(local_bound.removeFromLeft(slider_width * 2));
+            local_bound.removeFromLeft(padding);
+            combobox_alignment_box_.setBounds(local_bound.removeFromLeft(slider_width).reduced(0, padding / 3));
         }
         {
             bound.removeFromTop(padding);

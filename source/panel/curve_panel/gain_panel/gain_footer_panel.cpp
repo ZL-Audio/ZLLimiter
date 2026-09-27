@@ -12,6 +12,7 @@
 
 #include "../../helper/panel_constants.hpp"
 #include "../../helper/paint_left_shadow.hpp"
+#include "../../helper/combobox_helper.hpp"
 
 namespace zlpanel {
     GainFooterPanel::GainFooterPanel(PluginProcessor& p, zlgui::UIBase& base,
@@ -23,6 +24,8 @@ namespace zlpanel {
         input_slider_("", base,
                       tooltip_helper.getToolTipText(multilingual::kInputGain)),
         input_attach_(input_slider_.getSlider(), p.parameters_, zlp::PInputGain::kID, updater_) {
+        const auto box_alignment = combobox_helper::getAlignment(base_.getComboboxAlignment());
+        link_box_.getLAF().setItemAlignment(box_alignment);
         addAndMakeVisible(link_box_);
         addAndMakeVisible(input_slider_);
     }

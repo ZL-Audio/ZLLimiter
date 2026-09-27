@@ -420,6 +420,15 @@ namespace zlstate {
 #endif
     };
 
+    class PComboboxAlignment : public ChoiceParameters<PComboboxAlignment> {
+    public:
+        static constexpr auto kID = "combobox_alignment";
+        static constexpr auto kName = "";
+        inline static const auto kChoices = juce::StringArray{"Left", "Center", "Right"};
+        enum { kLeft, kCenter, kRight };
+        static constexpr int kDefaultI = kCenter;
+    };
+
     class PMagCurveThickness : public FloatParameters<PMagCurveThickness> {
     public:
         static constexpr auto kID = "mag_curve_thickness";
@@ -538,6 +547,7 @@ namespace zlstate {
                    PRotaryStyle::get(), PRotaryDragSensitivity::get(),
                    PSliderDoubleClickFunc::get(),
                    PTargetRefreshSpeed::get(),
+                   PComboboxAlignment::get(),
                    PMagCurveThickness::get(), PTooltipLang::get());
 
         for (size_t i = 0; i < kColourNames.size(); ++i) {
