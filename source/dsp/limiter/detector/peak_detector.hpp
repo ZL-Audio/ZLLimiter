@@ -57,6 +57,11 @@ namespace zldsp::limiter {
 
     /**
      * conservatively pool processing-rate magnitudes into control intervals
+     * @tparam ProcessingFactor
+     * @tparam FloatType
+     * @param input
+     * @param output
+     * @param control_samples
      */
     template <size_t ProcessingFactor, typename FloatType>
     HWY_INLINE void poolPeaks(const FloatType* input, FloatType* output, const size_t control_samples) {

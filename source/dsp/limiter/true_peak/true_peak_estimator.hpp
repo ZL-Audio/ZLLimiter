@@ -26,6 +26,7 @@ namespace zldsp::limiter {
 
     /**
      * 16x windowed-sinc peak estimation
+     * @tparam FloatType
      */
     template <typename FloatType>
     class TruePeakEstimator {
@@ -65,7 +66,8 @@ namespace zldsp::limiter {
             if (num_samples >= kHistorySamples) {
                 vector::copy(history.data(), input + num_samples - kHistorySamples, kHistorySamples);
             } else {
-                std::memmove(history.data(), history.data() + num_samples, (kHistorySamples - num_samples) * sizeof(FloatType));
+                std::memmove(history.data(), history.data() + num_samples,
+                             (kHistorySamples - num_samples) * sizeof(FloatType));
                 vector::copy(history.data() + (kHistorySamples - num_samples), input, num_samples);
             }
         }
@@ -110,7 +112,8 @@ namespace zldsp::limiter {
             for (size_t phase = 0; phase < kNumPairs; ++phase) {
                 for (size_t tap = 0; tap < kTapsPerPhase; ++tap) {
                     if (std::bit_cast<uint64_t>(true_peak_coefficients::kTable[phase][tap]) !=
-                        std::bit_cast<uint64_t>(true_peak_coefficients::kTable[kNumPhases - 1 - phase][kHistorySamples - tap])) {
+                        std::bit_cast<uint64_t>(
+                            true_peak_coefficients::kTable[kNumPhases - 1 - phase][kHistorySamples - tap])) {
                         return false;
                     }
                 }

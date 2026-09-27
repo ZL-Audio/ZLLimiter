@@ -20,7 +20,7 @@ namespace zldsp::limiter {
 
     /**
      * a fixed-latency, future-weighted maximum envelope
-     * @tparam FloatType the audio sample type
+     * @tparam FloatType
      */
     template <typename FloatType>
     class LookaheadEnvelope {
@@ -33,7 +33,8 @@ namespace zldsp::limiter {
             weights_.resize(capacity_);
             weights_ready_ = false;
             reset();
-            setLookaheadSeconds(std::min(current_lookahead_seconds_, static_cast<double>(maximum_delay_) / sample_rate_));
+            setLookaheadSeconds(
+                std::min(current_lookahead_seconds_, static_cast<double>(maximum_delay_) / sample_rate_));
         }
 
         void prepare(const double sample_rate, const double maximum_lookahead_seconds) {

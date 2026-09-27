@@ -123,7 +123,7 @@ namespace zldsp::limiter {
 
     /**
      * one causal 16x true-peak correction pass
-     * @tparam FloatType the audio sample type
+     * @tparam FloatType
      */
     template <typename FloatType>
     class TruePeakCorrectionStage {
@@ -213,15 +213,15 @@ namespace zldsp::limiter {
                 return false;
             }
             switch (mode_) {
-                case StageMode::kTruePeak:
-                    if (needs_prime_) {
-                        primeDetector();
-                    }
-                    return processTruePeak(buffer, num_samples);
-                case StageMode::kSamplePeak:
-                    return processSamplePeak(buffer, num_samples);
-                case StageMode::kBypassed:
-                    return processBypassed(buffer, num_samples);
+            case StageMode::kTruePeak:
+                if (needs_prime_) {
+                    primeDetector();
+                }
+                return processTruePeak(buffer, num_samples);
+            case StageMode::kSamplePeak:
+                return processSamplePeak(buffer, num_samples);
+            case StageMode::kBypassed:
+                return processBypassed(buffer, num_samples);
             }
             return false;
         }

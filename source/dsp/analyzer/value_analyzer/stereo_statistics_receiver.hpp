@@ -41,10 +41,17 @@ namespace zldsp::analyzer {
 
         void run(const zldsp::container::FIFORange range,
                  const std::vector<std::vector<float>>& samples) {
-            run(range, samples, [](float, double) {});
+            run(range, samples, [](float, double) {
+            });
         }
 
-        /** Reports correlation and its unweighted energy weight for every complete 400 ms window. */
+        /**
+         *
+         * @tparam Callback
+         * @param range
+         * @param samples
+         * @param on_update
+         */
         template <typename Callback>
         void run(const zldsp::container::FIFORange range,
                  const std::vector<std::vector<float>>& samples, Callback&& on_update) {
@@ -132,8 +139,6 @@ namespace zldsp::analyzer {
                                                 / (std::sqrt(total.left_energy)
                                                     * std::sqrt(total.right_energy)), -1.0, 1.0))
                 : std::numeric_limits<float>::quiet_NaN();
-            // Power times hop length is proportional to RMS^2 * elapsed time.
-            // The common 1/sample_rate factor cancels in the weighted mean between resets.
             on_update(correlation_, mean_square * static_cast<double>(block_.num_samples));
         }
     };

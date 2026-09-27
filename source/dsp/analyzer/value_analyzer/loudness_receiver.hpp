@@ -40,6 +40,13 @@ namespace zldsp::analyzer {
             });
         }
 
+        /**
+         *
+         * @tparam Callback
+         * @param range
+         * @param samples
+         * @param on_update
+         */
         template <typename Callback>
         void run(const zldsp::container::FIFORange range,
                  const std::vector<std::vector<float>>& samples, Callback&& on_update) {

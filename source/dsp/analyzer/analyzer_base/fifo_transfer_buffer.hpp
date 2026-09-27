@@ -29,6 +29,7 @@ namespace zldsp::analyzer {
         /**
          *
          * @param sample_rate
+         * @param max_num_samples
          * @param num_channels
          * @param fifo_size_second
          */

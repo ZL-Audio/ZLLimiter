@@ -22,7 +22,7 @@
 namespace zldsp::limiter {
     /**
      * a common-channel residual clipping-control limiter
-     * @tparam FloatType the audio sample type
+     * @tparam FloatType
      */
     template <typename FloatType>
     class SafetyGuardian {

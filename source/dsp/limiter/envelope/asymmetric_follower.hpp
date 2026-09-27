@@ -15,7 +15,7 @@
 namespace zldsp::limiter {
     /**
      * an asymmetric one-pole envelope follower
-     * @tparam FloatType the audio sample type
+     * @tparam FloatType
      */
     template <typename FloatType>
     class AsymmetricFollower {

@@ -49,7 +49,7 @@ namespace zlpanel {
     }
 
     void MainPanel::resized() {
-        auto bound = getLocalBounds();
+        const auto bound = getLocalBounds();
 
         const auto max_font_size = std::min(static_cast<float>(bound.getWidth()) * kFontSizeOverWidth,
                                             static_cast<float>(bound.getHeight()) / 16.f);

@@ -20,7 +20,7 @@ namespace zldsp::limiter {
 
     /**
      * a conservative interpolator from control-rate dB attenuation to linear gain
-     * @tparam FloatType the audio sample type
+     * @tparam FloatType
      */
     template <typename FloatType>
     class AttenuationInterpolator {
@@ -85,8 +85,9 @@ namespace zldsp::limiter {
             size_t i = 0;
             for (; i + lanes <= num_samples; i += lanes) {
                 const auto current = hn::LoadU(d, attenuation_db + i);
-                const auto previous = i == 0 ? hn::InsertLane(hn::Slide1Up(d, current), 0, previous_attenuation_db_)
-                                             : hn::LoadU(d, attenuation_db + i - 1);
+                const auto previous = i == 0
+                    ? hn::InsertLane(hn::Slide1Up(d, current), 0, previous_attenuation_db_)
+                    : hn::LoadU(d, attenuation_db + i - 1);
                 const auto end = hn::Max(previous, current);
                 const auto start = hn::InsertLane(hn::Slide1Up(d, end), 0, previous_endpoint);
                 previous_endpoint = hn::ExtractLane(end, lanes - 1);

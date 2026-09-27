@@ -61,7 +61,7 @@ namespace zldsp::limiter {
             const auto maximum = std::max(x, y);
             const auto limited_sum = std::min(x + y, kTwiceCrossingWidthDb);
             const auto transition_width = limited_sum -
-                                          limited_sum * limited_sum * kInverseFourCrossingWidthDb;
+                limited_sum * limited_sum * kInverseFourCrossingWidthDb;
             const auto transition = transition_width - std::abs(x - y);
             if (transition <= FloatType(0)) {
                 return maximum;
@@ -159,8 +159,7 @@ namespace zldsp::limiter {
                 for (size_t channel = 0; channel < num_channels; ++channel) {
                     const auto planned = fast_[channel];
                     auto& state = fast_state_[channel];
-                    state = planned >= state ? planned :
-                            std::max(planned, state + release_step * (planned - state));
+                    state = planned >= state ? planned : std::max(planned, state + release_step * (planned - state));
                     fast_[channel] = state;
                     maximum_fast = std::max(maximum_fast, fast_[channel]);
                 }
