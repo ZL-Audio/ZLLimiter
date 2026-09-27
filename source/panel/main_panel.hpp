@@ -52,7 +52,6 @@ namespace zlpanel {
 
         RefreshHandler refresh_handler_;
         double previous_time_stamp_{-1.0};
-        double target_refresh_rate_{-1.0};
 
         void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier& property) override;
 

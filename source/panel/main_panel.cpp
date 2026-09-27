@@ -83,11 +83,6 @@ namespace zlpanel {
     }
 
     void MainPanel::repaintCallBack(const double time_stamp) {
-        const auto target = zlstate::PTargetRefreshSpeed::kRates[base_.getRefreshRateID()];
-        if (std::abs(target - target_refresh_rate_) > .01) {
-            target_refresh_rate_ = target;
-            refresh_handler_ = RefreshHandler(target);
-        }
         if (refresh_handler_.tick(time_stamp)) {
             if (time_stamp - previous_time_stamp_ > 0.1) {
                 previous_time_stamp_ = time_stamp;
