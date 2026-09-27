@@ -13,9 +13,10 @@
 #include "../../../helper/panel_constants.hpp"
 
 namespace zlpanel {
-    ValuePanel::ValuePanel(PluginProcessor& p, zlgui::UIBase& base) :
+    ValuePanel::ValuePanel(PluginProcessor& p, zlgui::UIBase& base,
+                           const multilingual::TooltipHelper& tooltip_helper) :
         base_(base),
-        value_display_panel_(p, base),
+        value_display_panel_(p, base, tooltip_helper),
         value_background_panel_(p, base),
         true_peak_on_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueTruePeakON::kID),
                       zlstate::PValueTruePeakON::kDefaultV),

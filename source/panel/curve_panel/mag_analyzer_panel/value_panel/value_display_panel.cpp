@@ -10,9 +10,24 @@
 #include "value_display_panel.hpp"
 
 namespace zlpanel {
-    ValueDisplayPanel::ValueDisplayPanel(PluginProcessor& p, zlgui::UIBase& base) :
+    ValueDisplayPanel::ValueDisplayPanel(PluginProcessor& p, zlgui::UIBase& base,
+                                         const multilingual::TooltipHelper& tooltip_helper) :
         base_(base),
-        histogram_on_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueHistogramON::kID)) {
+        histogram_on_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueHistogramON::kID)),
+        value_labels_{
+            ValueLabel(peak_reset_requested_,
+                       tooltip_helper.getToolTipText(multilingual::kValueTruePeak)),
+            ValueLabel(correlation_reset_requested_,
+                       tooltip_helper.getToolTipText(multilingual::kValueCorrelation)),
+            ValueLabel(loudness_reset_requested_,
+                       tooltip_helper.getToolTipText(multilingual::kValueLUFSM)),
+            ValueLabel(loudness_reset_requested_,
+                       tooltip_helper.getToolTipText(multilingual::kValueLUFSS)),
+            ValueLabel(loudness_reset_requested_,
+                       tooltip_helper.getToolTipText(multilingual::kValueLRA)),
+            ValueLabel(loudness_reset_requested_,
+                       tooltip_helper.getToolTipText(multilingual::kValueLUFSI))
+        } {
         for (auto& label : value_labels_) {
             addAndMakeVisible(label);
         }
@@ -221,7 +236,7 @@ namespace zlpanel {
 
         auto bound = getLocalBounds().toFloat();
         const auto height = bound.getHeight() / 12.f;
-        g.setFont(base_.getFontSize() * 1.75f);
+        g.setFont(base_.getFontSize() * 1.5f);
         g.setColour(base_.getTextColour());
 
         if (value_on_[0]) {
@@ -306,12 +321,11 @@ namespace zlpanel {
         auto bound = getLocalBounds().toFloat();
         pending_histogram_bound_.store(bound.withLeft(bound.getCentreX()));
 
-        const auto height = bound.getHeight() / 12.f;
+        const auto height = bound.getHeight() / 6.f;
         for (size_t i = 0; i < value_labels_.size(); ++i) {
             auto& label = value_labels_[i];
             label.setVisible(value_on_[i]);
             if (value_on_[i]) {
-                bound.removeFromTop(height);
                 label.setBounds(bound.removeFromTop(height).toNearestInt());
             }
         }

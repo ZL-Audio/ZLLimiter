@@ -28,7 +28,7 @@ namespace zlgui::tooltip {
             const auto w = static_cast<int>(std::ceil(tl.getWidth() + base_.getFontSize() * .25f));
             const auto h = static_cast<int>(std::ceil(tl.getHeight() + base_.getFontSize() * .25f));
             const auto padding = 2 * static_cast<int>(std::round(base_.getFontSize() * kPaddingScale));
-            if (screen_pos.x > parent_area.getCentreX() && screen_pos.y < parent_area.getCentreY()) {
+            if (screen_pos.x > parent_area.getCentreX()) {
                 return {
                     parent_area.getX(),
                     parent_area.getY(),

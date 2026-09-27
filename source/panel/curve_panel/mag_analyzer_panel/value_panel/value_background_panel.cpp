@@ -35,7 +35,7 @@ namespace zlpanel {
         }
 
         const auto height = bound.getHeight() / 12.f;
-        g.setFont(base_.getFontSize() * 1.75f);
+        g.setFont(base_.getFontSize() * 1.5f);
         g.setColour(base_.getTextColour());
 
         const std::array<juce::String, 6> labels = {

@@ -12,11 +12,13 @@
 #include "../../../PluginProcessor.hpp"
 #include "../../../gui/gui.hpp"
 #include "../../common/panel_background.hpp"
+#include "../../multilingual/tooltip_helper.hpp"
 
 namespace zlpanel {
     class AnalyzerSettingPanel final : public juce::Component, private juce::ValueTree::Listener {
     public:
-        AnalyzerSettingPanel(PluginProcessor& p, zlgui::UIBase& base);
+        AnalyzerSettingPanel(PluginProcessor& p, zlgui::UIBase& base,
+                             const multilingual::TooltipHelper& tooltip_helper);
 
         ~AnalyzerSettingPanel() override;
 

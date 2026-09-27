@@ -16,7 +16,8 @@
 namespace zlpanel {
     class ValuePanel final : public juce::Component {
     public:
-        explicit ValuePanel(PluginProcessor& p, zlgui::UIBase& base);
+        explicit ValuePanel(PluginProcessor& p, zlgui::UIBase& base,
+                            const multilingual::TooltipHelper& tooltip_helper);
 
         ~ValuePanel() override;
 
