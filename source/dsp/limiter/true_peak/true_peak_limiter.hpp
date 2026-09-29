@@ -21,6 +21,7 @@
 #include "../../vector/vector.hpp"
 #include "../envelope/asymmetric_follower.hpp"
 #include "../envelope/lookahead_envelope.hpp"
+#include "../gain/attenuation_to_gain.hpp"
 #include "true_peak_estimator.hpp"
 
 namespace zldsp::limiter {
@@ -100,24 +101,6 @@ namespace zldsp::limiter {
                 max_demand = std::max(max_demand, peaks[i]);
             }
             return max_demand > FloatType(0);
-        }
-
-        template <typename FloatType>
-        HWY_INLINE void attenuationToGain(FloatType* HWY_RESTRICT attenuation, const size_t num_samples) {
-            static constexpr hn::ScalableTag<FloatType> d;
-            static constexpr size_t lanes = hn::MaxLanes(d);
-            static constexpr auto kDbToLogGain = static_cast<FloatType>(-0.1151292546497022842);
-            const auto scale = hn::Set(d, kDbToLogGain);
-
-            size_t i = 0;
-            for (; i + lanes <= num_samples; i += lanes) {
-                const auto value = hn::LoadU(d, attenuation + i);
-                hn::StoreU(hn::Exp(d, hn::Mul(value, scale)), d, attenuation + i);
-            }
-            for (; i < num_samples; ++i) {
-                attenuation[i] = static_cast<FloatType>(
-                    std::exp(static_cast<double>(attenuation[i]) * static_cast<double>(kDbToLogGain)));
-            }
         }
     }
 
@@ -297,7 +280,7 @@ namespace zldsp::limiter {
             if (release_.getCurrent() <= kUnityAttenuationDb) {
                 release_.reset();
             }
-            true_peak_detail::attenuationToGain(gains_.data(), num_samples);
+            attenuationToGain(gains_.data(), num_samples);
 
             delay_.process(buffer, num_samples);
             for (auto* channel : buffer) {
@@ -331,7 +314,7 @@ namespace zldsp::limiter {
             if (release_.getCurrent() <= kUnityAttenuationDb) {
                 release_.reset();
             }
-            true_peak_detail::attenuationToGain(gains_.data(), num_samples);
+            attenuationToGain(gains_.data(), num_samples);
 
             delay_.process(buffer, num_samples);
             for (auto* channel : buffer) {
@@ -358,7 +341,7 @@ namespace zldsp::limiter {
                 }
                 gains_[i] = attenuation_db;
             }
-            true_peak_detail::attenuationToGain(gains_.data(), num_samples);
+            attenuationToGain(gains_.data(), num_samples);
 
             delay_.process(buffer, num_samples);
             for (auto* channel : buffer) {
