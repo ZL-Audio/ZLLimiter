@@ -230,7 +230,7 @@ namespace zlpanel {
     void ValueDisplayPanel::paint(juce::Graphics& g) {
         histogram_path_.pull();
         if (histogram_on_) {
-            g.setColour(base_.getColourByIdx(zlgui::ColourIdx::kPostColour).withMultipliedAlpha(.5f));
+            g.setColour(base_.getColourByIdx(zlgui::ColourIdx::kPostColour).withAlpha(.25f));
             g.fillPath(histogram_path_.getReader());
         }
 
