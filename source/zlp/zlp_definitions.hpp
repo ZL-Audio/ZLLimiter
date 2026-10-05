@@ -266,7 +266,7 @@ namespace zlp {
         static constexpr auto kID = "oversampling";
         static constexpr auto kName = "Oversampling";
         inline static const auto kChoices = juce::StringArray{"Off", "2x", "4x", "8x", "16x", "32x"};
-        static constexpr auto kDefaultI = 2;
+        static constexpr auto kDefaultI = 0;
     };
 
     class PLookahead : public FloatParameters<PLookahead> {
