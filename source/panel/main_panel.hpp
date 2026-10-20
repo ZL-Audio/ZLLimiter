@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../state/ui_state.hpp"
+
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "../PluginProcessor.hpp"
@@ -24,7 +26,7 @@ namespace zlpanel {
     class MainPanel final : public juce::Component,
                             private juce::ValueTree::Listener {
     public:
-        explicit MainPanel(PluginProcessor& processor, zlgui::UIBase& base);
+        explicit MainPanel(PluginProcessor& processor, zlgui::UIState& base);
 
         ~MainPanel() override;
 
@@ -37,7 +39,7 @@ namespace zlpanel {
         }
 
     private:
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         multilingual::TooltipHelper tooltip_helper_;
 
         CurvePanel curve_panel_;

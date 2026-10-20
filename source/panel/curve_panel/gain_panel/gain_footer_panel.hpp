@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../../../state/ui_state.hpp"
+
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "../../../PluginProcessor.hpp"
@@ -18,7 +20,7 @@
 namespace zlpanel {
     class GainFooterPanel final : public juce::Component {
     public:
-        explicit GainFooterPanel(PluginProcessor& p, zlgui::UIBase& base,
+        explicit GainFooterPanel(PluginProcessor& p, zlgui::UIState& base,
                                  const multilingual::TooltipHelper& tooltip_helper);
 
         void paint(juce::Graphics& g) override;
@@ -30,7 +32,7 @@ namespace zlpanel {
         void repaintCallBackSlow();
 
     private:
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         zlgui::attachment::ComponentUpdater updater_;
 
         zlgui::combobox::CompactCombobox link_box_;

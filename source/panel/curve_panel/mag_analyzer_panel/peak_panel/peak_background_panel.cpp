@@ -13,7 +13,7 @@
 #include "../../../helper/panel_constants.hpp"
 
 namespace zlpanel {
-    PeakBackgroundPanel::PeakBackgroundPanel(PluginProcessor& p, zlgui::UIBase& base) :
+    PeakBackgroundPanel::PeakBackgroundPanel(PluginProcessor& p, zlgui::UIState& base) :
         base_(base),
         mag_min_db_id_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PAnalyzerMinDB::kID)) {
         setInterceptsMouseClicks(false, false);
@@ -21,22 +21,22 @@ namespace zlpanel {
 
     void PeakBackgroundPanel::paint(juce::Graphics& g) {
         auto bound = getLocalBounds().toFloat();
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         bound.removeFromTop(static_cast<float>(getTopPanelHeight(font_size)));
 
-        const auto thickness = base_.getFontSize() * 0.125f;
-        g.setColour(base_.getTextColour().withAlpha(.1f));
+        const auto thickness = base_.gui.getFontSize() * 0.125f;
+        g.setColour(base_.gui.getTextColour().withAlpha(.1f));
         for (const auto scale : {0.f, 1.f, 2.f, 3.f, 4.f, 5.f}) {
             const auto y = bound.getHeight() * scale / 6.f + bound.getY() - thickness * .5f;
             const auto rect = juce::Rectangle<float>({bound.getX(), y, bound.getWidth(), thickness});
             g.fillRect(rect);
         }
 
-        const auto text_height = static_cast<float>(juce::roundToInt(base_.getFontSize() * 1.75f));
-        const auto text_width = static_cast<float>(juce::roundToInt(base_.getFontSize() * 2.6f));
-        const auto right_padding = static_cast<float>(juce::roundToInt(base_.getFontSize() * kPaddingScale) / 2);
-        g.setColour(base_.getTextColour().withAlpha(.5f));
-        g.setFont(base_.getFontSize() * 1.25f);
+        const auto text_height = static_cast<float>(juce::roundToInt(base_.gui.getFontSize() * 1.75f));
+        const auto text_width = static_cast<float>(juce::roundToInt(base_.gui.getFontSize() * 2.6f));
+        const auto right_padding = static_cast<float>(juce::roundToInt(base_.gui.getFontSize() * kPaddingScale) / 2);
+        g.setColour(base_.gui.getTextColour().withAlpha(.5f));
+        g.setFont(base_.gui.getFontSize() * 1.25f);
         const MagDBRange db_range{0.f, mag_range_db_};
         for (const auto scale : {1.f, 2.f, 3.f, 4.f, 5.f, 6.f}) {
             const auto y = bound.getHeight() * scale / 6.f + bound.getY();

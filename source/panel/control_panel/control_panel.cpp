@@ -12,9 +12,9 @@
 #include "../helper/panel_constants.hpp"
 
 namespace zlpanel {
-    ControlPanel::ControlPanel(PluginProcessor& p, zlgui::UIBase& base,
+    ControlPanel::ControlPanel(PluginProcessor& p, zlgui::UIState& base,
                                const multilingual::TooltipHelper& tooltip_helper) :
-        base_(base), background_(base, .5f), label_laf_(base),
+        base_(base), background_(base, .5f), label_laf_(base.gui),
         top_labels_{
             juce::Label{"", "Main"},
             juce::Label{"", "Support"},
@@ -28,15 +28,15 @@ namespace zlpanel {
             juce::Label{"", "Delta"}
         },
         sliders_{
-            Rotary("", base,
+            Rotary("", base.gui,
                    tooltip_helper.getToolTipText(multilingual::kLookahead), 1.25f),
-            Rotary("", base,
+            Rotary("", base.gui,
                    tooltip_helper.getToolTipText(multilingual::kRecovery), 1.25f),
-            Rotary("", base,
+            Rotary("", base.gui,
                    tooltip_helper.getToolTipText(multilingual::kAttack), 1.25f),
-            Rotary("", base,
+            Rotary("", base.gui,
                    tooltip_helper.getToolTipText(multilingual::kRelease), 1.25f),
-            Rotary("", base,
+            Rotary("", base.gui,
                    tooltip_helper.getToolTipText(multilingual::kStereoDelta), 1.25f)
         } {
         background_.setBufferedToImage(true);
@@ -76,7 +76,7 @@ namespace zlpanel {
     }
 
     int ControlPanel::getIdealWidth() const {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         const auto padding = getPaddingSize(font_size);
         const auto slider_width = getSliderWidth(font_size);
 
@@ -84,11 +84,11 @@ namespace zlpanel {
     }
 
     int ControlPanel::getIdealHeight() const {
-        return getControlPanelHeight(base_.getFontSize());
+        return getControlPanelHeight(base_.gui.getFontSize());
     }
 
     void ControlPanel::resized() {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         const auto padding = getPaddingSize(font_size);
         auto bound = getLocalBounds();
         background_.setBounds(bound);

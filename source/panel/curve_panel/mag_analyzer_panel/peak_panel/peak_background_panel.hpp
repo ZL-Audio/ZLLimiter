@@ -9,20 +9,22 @@
 
 #pragma once
 
+#include "../../../../state/ui_state.hpp"
+
 #include "../../../../PluginProcessor.hpp"
 #include "../../../../gui/gui.hpp"
 
 namespace zlpanel {
     class PeakBackgroundPanel final : public juce::Component {
     public:
-        explicit PeakBackgroundPanel(PluginProcessor& p, zlgui::UIBase& base);
+        explicit PeakBackgroundPanel(PluginProcessor& p, zlgui::UIState& base);
 
         void paint(juce::Graphics& g) override;
 
         void repaintCallBackSlow();
 
     private:
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         std::atomic<float>& mag_min_db_id_ref_;
         float mag_min_db_id_{-1.f};
         float mag_range_db_{-54.f};

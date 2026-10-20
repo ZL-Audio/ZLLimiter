@@ -15,16 +15,16 @@
 #include "../../helper/combobox_helper.hpp"
 
 namespace zlpanel {
-    GainFooterPanel::GainFooterPanel(PluginProcessor& p, zlgui::UIBase& base,
+    GainFooterPanel::GainFooterPanel(PluginProcessor& p, zlgui::UIState& base,
                                      const multilingual::TooltipHelper& tooltip_helper) :
         base_(base), updater_(),
-        link_box_(zlp::PInputOutputLink::kChoices, base,
+        link_box_(zlp::PInputOutputLink::kChoices, base.gui,
                   tooltip_helper.getToolTipText(multilingual::kInOutLinkType)),
         link_attach_(link_box_.getBox(), p.parameters_, zlp::PInputOutputLink::kID, updater_),
-        input_slider_("", base,
+        input_slider_("", base.gui,
                       tooltip_helper.getToolTipText(multilingual::kInputGain)),
         input_attach_(input_slider_.getSlider(), p.parameters_, zlp::PInputGain::kID, updater_) {
-        const auto box_alignment = combobox_helper::getAlignment(base_.getComboboxAlignment());
+        const auto box_alignment = combobox_helper::getAlignment(base_.gui.getComboboxAlignment());
         link_box_.getLAF().setItemAlignment(box_alignment);
         addAndMakeVisible(link_box_);
         addAndMakeVisible(input_slider_);
@@ -32,18 +32,18 @@ namespace zlpanel {
 
     void GainFooterPanel::paint(juce::Graphics& g) {
         const auto bound = getLocalBounds().toFloat();
-        paintLeftShadow(g, bound, base_.getBackgroundColour());
+        paintLeftShadow(g, bound, base_.gui.getBackgroundColour());
     }
 
     int GainFooterPanel::getIdealHeight() const {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         const auto button_height = getButtonSize(font_size);
         const auto padding = getPaddingSize(font_size);
         return 2 * button_height + padding;
     }
 
     void GainFooterPanel::resized() {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         const auto button_height = getButtonSize(font_size);
         const auto padding = getPaddingSize(font_size);
 

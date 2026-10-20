@@ -77,7 +77,7 @@ namespace zlgui::slider {
             void paint(juce::Graphics& g) override {
                 g.saveState();
                 g.reduceClipRegion(mask_);
-                g.setColour(base_.getTextHideColour());
+                g.setColour(base_.getTextColour().withAlpha(0.25f));
                 g.fillPath(filling1_);
                 // fill the pie segment between two values
                 if constexpr (kUseSecondSlider) {

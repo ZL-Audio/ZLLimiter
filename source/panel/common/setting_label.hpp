@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../../state/ui_state.hpp"
+
 #include "../../PluginProcessor.hpp"
 #include "../../gui/gui.hpp"
 #include "../multilingual/tooltip_helper.hpp"
@@ -19,7 +21,7 @@ namespace zlpanel {
                                public juce::SettableTooltipClient,
                                private juce::ValueTree::Listener {
     public:
-        explicit SettingLabel(PluginProcessor&, zlgui::UIBase& base,
+        explicit SettingLabel(PluginProcessor&, zlgui::UIState& base,
                               juce::String label, zlgui::PanelSettingIdx setting_idx,
                               const juce::String& tooltip_text = "");
 
@@ -28,7 +30,7 @@ namespace zlpanel {
         void resized() override;
 
     private:
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         zlgui::PanelSettingIdx setting_idx_;
 
         PanelBackground control_background_;

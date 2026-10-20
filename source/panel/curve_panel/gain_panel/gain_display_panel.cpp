@@ -13,13 +13,13 @@
 #include "../../helper/panel_constants.hpp"
 
 namespace zlpanel {
-    GainDisplayPanel::GainDisplayPanel(PluginProcessor& p, zlgui::UIBase& base,
+    GainDisplayPanel::GainDisplayPanel(PluginProcessor& p, zlgui::UIState& base,
                                        const multilingual::TooltipHelper& tooltip_helper) :
         base_(base), updater_(),
-        gain_slider_(base, ""),
+        gain_slider_(base.gui, ""),
         gain_slider_attach_(gain_slider_, p.parameters_, zlp::PInputGain::kID, updater_) {
         for (auto const s : {&gain_slider_}) {
-            s->setSliderStyle(base_.getRotaryStyle());
+            s->setSliderStyle(base_.gui.getRotaryStyle());
             s->setTextBoxStyle(juce::Slider::TextEntryBoxPosition::NoTextBox, true, 0, 0);
             s->setDoubleClickReturnValue(true, 0.0);
             s->setScrollWheelEnabled(true);
@@ -37,7 +37,7 @@ namespace zlpanel {
     }
 
     void GainDisplayPanel::paint(juce::Graphics& g) {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         const auto padding = static_cast<float>(getPaddingSize(font_size));
 
         auto bound = getLocalBounds().toFloat();
@@ -48,7 +48,7 @@ namespace zlpanel {
 
         const auto p = gain_slider_.getNormalisableRange().convertTo0to1(gain_slider_.getValue());
         const auto y = bound.getY() + static_cast<float>(1.0 - p) * bound.getHeight();
-        const auto filled_colour = base_.getTextColour().withAlpha(is_mouse_over_ ? 1.f : .5f);
+        const auto filled_colour = base_.gui.getTextColour().withAlpha(is_mouse_over_ ? 1.f : .5f);
         g.setColour(filled_colour);
 
         juce::Path path;
@@ -61,7 +61,7 @@ namespace zlpanel {
         const auto bound = getLocalBounds();
         gain_slider_.setBounds(bound);
 
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         const auto padding = getPaddingSize(font_size);
         drag_distance_ = bound.getHeight() - 2 * padding;
     }
@@ -111,11 +111,11 @@ namespace zlpanel {
         int actual_drag_distance;
         if (is_shift_pressed) {
             actual_drag_distance = juce::roundToInt(
-                static_cast<float>(drag_distance_) * 10.f / base_.getSensitivity(
+                static_cast<float>(drag_distance_) * 10.f / base_.gui.getSensitivity(
                     zlgui::SensitivityIdx::kMouseSliderFine));
         } else {
             actual_drag_distance = juce::roundToInt(
-                static_cast<float>(drag_distance_) / base_.getSensitivity(zlgui::SensitivityIdx::kMouseSlider));
+                static_cast<float>(drag_distance_) / base_.gui.getSensitivity(zlgui::SensitivityIdx::kMouseSlider));
         }
         actual_drag_distance = std::max(actual_drag_distance, 1);
         gain_slider_.setMouseDragSensitivity(actual_drag_distance);

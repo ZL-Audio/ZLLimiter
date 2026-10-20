@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../../../../state/ui_state.hpp"
+
 #include "../../../../PluginProcessor.hpp"
 #include "../../../../chore/thread/notifier.hpp"
 #include "../../../../gui/gui.hpp"
@@ -23,7 +25,7 @@
 namespace zlpanel {
     class MeterDisplayPanel final : public juce::Component {
     public:
-        explicit MeterDisplayPanel(PluginProcessor& p, zlgui::UIBase& base);
+        explicit MeterDisplayPanel(PluginProcessor& p, zlgui::UIState& base);
 
         ~MeterDisplayPanel() override;
 
@@ -43,7 +45,7 @@ namespace zlpanel {
         static constexpr float kReductionDecayPerSecond = 16.f;
         static constexpr float kMeterDecayPerSecond = 2.f;
         static constexpr double kMeterGapConvergenceSeconds = 1.0;
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         MeterTopPanel meter_top_panel_;
 
         std::atomic<float>& analyzer_mag_type_ref_;

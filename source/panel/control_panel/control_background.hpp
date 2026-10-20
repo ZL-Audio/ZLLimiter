@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../../state/ui_state.hpp"
+
 #include "../../gui/gui.hpp"
 
 namespace zlpanel {
@@ -19,12 +21,12 @@ namespace zlpanel {
          * @param base
          * @param alpha shadow colour alpha
          */
-        explicit ControlBackground(zlgui::UIBase& base, float alpha = .5f);
+        explicit ControlBackground(zlgui::UIState& base, float alpha = .5f);
 
         void paint(juce::Graphics& g) override;
 
     private:
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         const float alpha_;
 
         void drawSplit(juce::Graphics& g, juce::Rectangle<float> bound) const;

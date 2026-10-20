@@ -10,7 +10,7 @@
 #include "value_display_panel.hpp"
 
 namespace zlpanel {
-    ValueDisplayPanel::ValueDisplayPanel(PluginProcessor& p, zlgui::UIBase& base,
+    ValueDisplayPanel::ValueDisplayPanel(PluginProcessor& p, zlgui::UIState& base,
                                          const multilingual::TooltipHelper& tooltip_helper) :
         base_(base),
         histogram_on_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PValueHistogramON::kID)),
@@ -236,8 +236,8 @@ namespace zlpanel {
 
         auto bound = getLocalBounds().toFloat();
         const auto height = bound.getHeight() / 12.f;
-        g.setFont(base_.getFontSize() * 1.5f);
-        g.setColour(base_.getTextColour());
+        g.setFont(base_.gui.getFontSize() * 1.5f);
+        g.setColour(base_.gui.getTextColour());
 
         if (value_on_[0]) {
             bound.removeFromTop(height);

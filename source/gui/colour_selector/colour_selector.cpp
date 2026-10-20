@@ -56,7 +56,6 @@ namespace zlgui::colour_selector {
             active_selector_ = nullptr;
         }
         if (auto* box = callout_box_.getComponent()) {
-            // JUCE deletes the popup asynchronously; detach all editor state first.
             box->exitModalState(0);
             box->setVisible(false);
             if (auto* parent = box->getParentComponent()) {

@@ -20,13 +20,13 @@ PluginEditor::PluginEditor(PluginProcessor& p) :
     main_panel_(p, base_) {
     // set font
 #if defined(JUCE_WINDOWS)
-    base_.font_ = juce::Typeface::createSystemTypefaceFor(
+    base_.gui.font_ = juce::Typeface::createSystemTypefaceFor(
         BinaryData::InterSubsetMediumNoHinting_ttf, BinaryData::InterSubsetMediumNoHinting_ttfSize);
 #else
-    base_.font_ = juce::Typeface::createSystemTypefaceFor(
+    base_.gui.font_ = juce::Typeface::createSystemTypefaceFor(
         BinaryData::InterSubsetMedium_ttf, BinaryData::InterSubsetMedium_ttfSize);
 #endif
-    juce::LookAndFeel::getDefaultLookAndFeel().setDefaultSansSerifTypeface(base_.font_);
+    juce::LookAndFeel::getDefaultLookAndFeel().setDefaultSansSerifTypeface(base_.gui.font_);
 
     // add the main panel
     addAndMakeVisible(main_panel_);
@@ -39,7 +39,7 @@ PluginEditor::PluginEditor(PluginProcessor& p) :
                     static_cast<int>(zlstate::PWindowH::kMaxV));
     setResizable(true, p.wrapperType != PluginProcessor::wrapperType_AudioUnitv3);
 
-    this->resizableCorner = std::make_unique<zlgui::ResizeCorner>(base_, this, getConstrainer(),
+    this->resizableCorner = std::make_unique<zlgui::ResizeCorner>(base_.gui, this, getConstrainer(),
                                                                   zlgui::ResizeCorner::kScaleWithWidth, 0.025f);
     addChildComponent(this->resizableCorner.get());
     this->resizableCorner->setAlwaysOnTop(true);

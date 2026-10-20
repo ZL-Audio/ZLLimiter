@@ -9,20 +9,22 @@
 
 #pragma once
 
+#include "../../state/ui_state.hpp"
+
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../../gui/gui.hpp"
 
 namespace zlpanel {
     class CreditPanel final : public juce::Component {
     public:
-        explicit CreditPanel(zlgui::UIBase& base);
+        explicit CreditPanel(zlgui::UIState& base);
 
         void paint(juce::Graphics& g) override;
 
         int getIdealHeight() const;
 
     private:
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
 
         static constexpr auto kText =
             "ZL Limiter is Free and Open-source. ZL Limiter is licensed under AGPLv3, except for the logo of ZL Audio and the logo of ZL Limiter. You can obtain the corresponding source code at https://github.com/ZL-Audio/ZLLimiter or https://gitee.com/ZL-Audio/ZLLimiter.\n\n"
@@ -38,7 +40,7 @@ namespace zlpanel {
                                                         const float w, const float h) const {
             juce::AttributedString s;
             s.setJustification(juce::Justification::topLeft);
-            s.append(text, juce::FontOptions(base_.getFontSize() * 1.5f), base_.getTextColour());
+            s.append(text, juce::FontOptions(base_.gui.getFontSize() * 1.5f), base_.gui.getTextColour());
             juce::TextLayout tl;
             tl.createLayout(s, w, h);
             return tl;

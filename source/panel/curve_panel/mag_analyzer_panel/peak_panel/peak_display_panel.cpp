@@ -34,7 +34,7 @@ namespace {
 }
 
 namespace zlpanel {
-    PeakDisplayPanel::PeakDisplayPanel(PluginProcessor& p, zlgui::UIBase& base) :
+    PeakDisplayPanel::PeakDisplayPanel(PluginProcessor& p, zlgui::UIState& base) :
         base_(base),
         pre_curve_display_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PPreCurveDisplay::kID)),
         post_curve_display_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PPostCurveDisplay::kID)),
@@ -97,7 +97,7 @@ namespace zlpanel {
 
     void PeakDisplayPanel::resized() {
         auto bound = getLocalBounds();
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         bound.removeFromTop(getTopPanelHeight(font_size));
         atomic_bound_.store(bound.toFloat());
         lookAndFeelChanged();
@@ -346,6 +346,6 @@ namespace zlpanel {
     }
 
     void PeakDisplayPanel::lookAndFeelChanged() {
-        curve_thickness_ = base_.getFontSize() * .2f * base_.getMagCurveThickness();
+        curve_thickness_ = base_.gui.getFontSize() * .2f * base_.getMagCurveThickness();
     }
 }

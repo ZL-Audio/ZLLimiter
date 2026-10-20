@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "../../../state/ui_state.hpp"
+
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "../../../gui/interface_definitions.hpp"
@@ -17,14 +19,14 @@
 namespace zlpanel {
     class GainBackgroundPanel final : public juce::Component {
     public:
-        explicit GainBackgroundPanel(zlgui::UIBase& base);
+        explicit GainBackgroundPanel(zlgui::UIState& base);
 
         void paint(juce::Graphics& g) override;
 
         void setMouseOver(bool is_mouse_over);
 
     private:
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
 
         bool is_mouse_over_{false};
     };

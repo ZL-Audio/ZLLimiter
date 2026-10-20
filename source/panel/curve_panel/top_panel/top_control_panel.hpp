@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../../../state/ui_state.hpp"
+
 #include "../../../PluginProcessor.hpp"
 #include "../../../gui/gui.hpp"
 #include "../../helper/panel_constants.hpp"
@@ -17,7 +19,7 @@
 namespace zlpanel {
     class TopControlPanel final : public juce::Component {
     public:
-        explicit TopControlPanel(PluginProcessor& p, zlgui::UIBase& base,
+        explicit TopControlPanel(PluginProcessor& p, zlgui::UIState& base,
                                  const multilingual::TooltipHelper& tooltip_helper);
 
         void resized() override;
@@ -25,7 +27,7 @@ namespace zlpanel {
         void repaintCallBackSlow();
 
     private:
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         zlgui::attachment::ComponentUpdater updater_;
 
         zlgui::label::NameLookAndFeel label_laf_;
@@ -37,15 +39,12 @@ namespace zlpanel {
         zlgui::combobox::CompactCombobox oversample_box_;
         zlgui::attachment::ComboBoxAttachment<true> oversample_attachment_;
 
-        std::unique_ptr<juce::Drawable> true_peak_icon_;
         zlgui::button::ClickButton true_peak_button_;
         zlgui::attachment::ButtonAttachment<true> true_peak_attachment_;
 
-        std::unique_ptr<juce::Drawable> delta_icon_;
         zlgui::button::ClickButton delta_button_;
         zlgui::attachment::ButtonAttachment<true> delta_attachment_;
 
-        std::unique_ptr<juce::Drawable> bypass_icon_;
         zlgui::button::ClickButton bypass_button_;
         zlgui::attachment::ButtonAttachment<true> bypass_attachment_;
     };

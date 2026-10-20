@@ -13,7 +13,7 @@
 #include "../../../helper/panel_constants.hpp"
 
 namespace zlpanel {
-    ValuePanel::ValuePanel(PluginProcessor& p, zlgui::UIBase& base,
+    ValuePanel::ValuePanel(PluginProcessor& p, zlgui::UIState& base,
                            const multilingual::TooltipHelper& tooltip_helper) :
         base_(base),
         value_display_panel_(p, base, tooltip_helper),
@@ -41,11 +41,11 @@ namespace zlpanel {
     ValuePanel::~ValuePanel() = default;
 
     int ValuePanel::getIdealWidth() const {
-        return juce::roundToInt(base_.getFontSize() * 10.f);
+        return juce::roundToInt(base_.gui.getFontSize() * 10.f);
     }
 
     void ValuePanel::resized() {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         auto bound = getLocalBounds();
         value_background_panel_.setBounds(getLocalBounds());
         bound.removeFromTop(getTopPanelHeight(font_size));

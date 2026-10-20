@@ -86,33 +86,32 @@ namespace zlpanel {
         }
     }
 
-    PresetBrowser::PresetBrowser(PluginProcessor& p, zlgui::UIBase& base,
+    PresetBrowser::PresetBrowser(PluginProcessor& p, zlgui::UIState& base,
                                  const multilingual::TooltipHelper& tooltip_helper) :
         p_ref_(p),
         base_(base),
         presets_directory_(getPresetsDirectory()),
         background_(base),
-        delete_drawable_(juce::Drawable::createFromImageData(BinaryData::trash_svg,
-                                                             BinaryData::trash_svgSize)),
-        close_drawable_(juce::Drawable::createFromImageData(BinaryData::close_svg,
-                                                            BinaryData::close_svgSize)),
-        folder_open_drawable_(juce::Drawable::createFromImageData(BinaryData::folder_open_svg,
-                                                                  BinaryData::folder_open_svgSize)),
-        delete_group_button_(base, delete_drawable_.get(), nullptr,
-                             tooltip_helper.getToolTipText(multilingual::kPresetGroupDelete)),
-        delete_preset_button_(base, delete_drawable_.get(), nullptr,
-                              tooltip_helper.getToolTipText(multilingual::kPresetDelete)),
-        close_button_(base, close_drawable_.get(), nullptr,
-                      tooltip_helper.getToolTipText(multilingual::kPresetClose)),
-        folder_open_button_(base, folder_open_drawable_.get(), nullptr,
-                            tooltip_helper.getToolTipText(multilingual::kPresetFolder)),
+        delete_group_button_(base.gui,
+                             juce::Drawable::createFromImageData(BinaryData::trash_svg, BinaryData::trash_svgSize),
+                             false, tooltip_helper.getToolTipText(multilingual::kPresetGroupDelete)),
+        delete_preset_button_(base.gui,
+                              juce::Drawable::createFromImageData(BinaryData::trash_svg, BinaryData::trash_svgSize),
+                              false, tooltip_helper.getToolTipText(multilingual::kPresetDelete)),
+        close_button_(base.gui,
+                      juce::Drawable::createFromImageData(BinaryData::close_svg, BinaryData::close_svgSize),
+                      false, tooltip_helper.getToolTipText(multilingual::kPresetClose)),
+        folder_open_button_(base.gui,
+                            juce::Drawable::createFromImageData(
+                                BinaryData::folder_open_svg, BinaryData::folder_open_svgSize),
+                            false, tooltip_helper.getToolTipText(multilingual::kPresetFolder)),
         group_label_({}, "Groups"),
         preset_label_({}, "Presets"),
         search_editor_(base),
         group_name_editor_(base),
         preset_name_editor_(base),
-        group_list_(base),
-        preset_list_(base),
+        group_list_(base.gui),
+        preset_list_(base.gui),
         warning_overlay_(base) {
         setOpaque(false);
         setInterceptsMouseClicks(true, true);
@@ -184,7 +183,7 @@ namespace zlpanel {
     }
 
     void PresetBrowser::resized() {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         const auto padding = juce::roundToInt(font_size * .72f);
         const auto button_size = juce::roundToInt(font_size * 2.f);
         const auto row_height = juce::roundToInt(font_size * 1.9f);
@@ -290,11 +289,11 @@ namespace zlpanel {
     }
 
     int PresetBrowser::getIdealWidth() const {
-        return juce::roundToInt(base_.getFontSize() * 48.f);
+        return juce::roundToInt(base_.gui.getFontSize() * 48.f);
     }
 
     int PresetBrowser::getIdealHeight() const {
-        return juce::roundToInt(base_.getFontSize() * 31.f);
+        return juce::roundToInt(base_.gui.getFontSize() * 31.f);
     }
 
     bool PresetBrowser::ensurePresetDirectory() {
@@ -549,7 +548,7 @@ namespace zlpanel {
     }
 
     void PresetBrowser::configureEditor(RoundedTextEditor& editor, const juce::String& placeholder) {
-        editor.setTextToShowWhenEmpty(placeholder, base_.getTextInactiveColour());
+        editor.setTextToShowWhenEmpty(placeholder, base_.gui.getTextColour().withAlpha(0.5f));
         editor.setJustification(juce::Justification::centredLeft);
         editor.setSelectAllWhenFocused(false);
         addAndMakeVisible(editor);
@@ -557,12 +556,12 @@ namespace zlpanel {
 
     void PresetBrowser::applyColours() {
         for (auto* label : {&group_label_, &preset_label_}) {
-            label->setColour(juce::Label::textColourId, base_.getTextColour().withAlpha(.82f));
+            label->setColour(juce::Label::textColourId, base_.gui.getTextColour().withAlpha(.82f));
         }
         for (auto* editor : {&search_editor_, &group_name_editor_, &preset_name_editor_}) {
-            editor->setColour(juce::TextEditor::textColourId, base_.getTextColour());
-            editor->setColour(juce::TextEditor::highlightColourId, base_.getTextColour().withAlpha(.22f));
-            editor->setColour(juce::TextEditor::highlightedTextColourId, base_.getTextColour());
+            editor->setColour(juce::TextEditor::textColourId, base_.gui.getTextColour());
+            editor->setColour(juce::TextEditor::highlightColourId, base_.gui.getTextColour().withAlpha(.22f));
+            editor->setColour(juce::TextEditor::highlightedTextColourId, base_.gui.getTextColour());
             editor->setColour(juce::TextEditor::backgroundColourId, juce::Colours::transparentBlack);
             editor->setColour(juce::TextEditor::outlineColourId, juce::Colours::transparentBlack);
             editor->setColour(juce::TextEditor::focusedOutlineColourId, juce::Colours::transparentBlack);

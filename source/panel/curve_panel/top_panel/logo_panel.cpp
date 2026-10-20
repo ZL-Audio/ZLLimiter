@@ -13,7 +13,7 @@
 #include "../../helper/panel_constants.hpp"
 
 namespace zlpanel {
-    LogoPanel::LogoPanel(PluginProcessor&, zlgui::UIBase& base,
+    LogoPanel::LogoPanel(PluginProcessor&, zlgui::UIState& base,
                          const multilingual::TooltipHelper& tooltip_helper) :
         base_(base),
         brand_drawable_(juce::Drawable::createFromImageData(BinaryData::zlaudio_svg, BinaryData::zlaudio_svgSize)),
@@ -26,13 +26,13 @@ namespace zlpanel {
     void LogoPanel::paint(juce::Graphics& g) {
         const auto temp_brand = brand_drawable_->createCopy();
         const auto temp_logo = logo_drawable_->createCopy();
-        temp_brand->replaceColour(juce::Colours::black, base_.getTextColour());
-        temp_logo->replaceColour(juce::Colours::black, base_.getTextColour());
-        temp_logo->replaceColour(juce::Colour::fromRGBA(0, 0, 0, 127), base_.getTextColour().withMultipliedAlpha(.5f));
-        temp_logo->replaceColour(juce::Colour::fromRGBA(0, 0, 0, 63), base_.getTextColour().withMultipliedAlpha(.25f));
-        temp_logo->replaceColour(juce::Colour::fromRGBA(0, 0, 0, 191), base_.getTextColour().withMultipliedAlpha(.75f));
+        temp_brand->replaceColour(juce::Colours::black, base_.gui.getTextColour());
+        temp_logo->replaceColour(juce::Colours::black, base_.gui.getTextColour());
+        temp_logo->replaceColour(juce::Colour::fromRGBA(0, 0, 0, 127), base_.gui.getTextColour().withMultipliedAlpha(.5f));
+        temp_logo->replaceColour(juce::Colour::fromRGBA(0, 0, 0, 63), base_.gui.getTextColour().withMultipliedAlpha(.25f));
+        temp_logo->replaceColour(juce::Colour::fromRGBA(0, 0, 0, 191), base_.gui.getTextColour().withMultipliedAlpha(.75f));
 
-        const auto padding = getPaddingSize(base_.getFontSize());
+        const auto padding = getPaddingSize(base_.gui.getFontSize());
 
         auto bound = getLocalBounds();
 

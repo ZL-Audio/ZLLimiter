@@ -9,13 +9,15 @@
 
 #pragma once
 
+#include "../../../../state/ui_state.hpp"
+
 #include "peak_background_panel.hpp"
 #include "peak_display_panel.hpp"
 
 namespace zlpanel {
     class PeakPanel final : public juce::Component {
     public:
-        explicit PeakPanel(PluginProcessor& p, zlgui::UIBase& base);
+        explicit PeakPanel(PluginProcessor& p, zlgui::UIState& base);
 
         auto& getDisplayPanel() {
             return peak_display_panel_;

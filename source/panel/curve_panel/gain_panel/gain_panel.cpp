@@ -13,7 +13,7 @@
 #include "../../helper/panel_constants.hpp"
 
 namespace zlpanel {
-    GainPanel::GainPanel(PluginProcessor& p, zlgui::UIBase& base,
+    GainPanel::GainPanel(PluginProcessor& p, zlgui::UIState& base,
                          const multilingual::TooltipHelper& tooltip_helper) :
         base_(base),
         gain_background_panel(base),
@@ -28,7 +28,7 @@ namespace zlpanel {
     }
 
     int GainPanel::getIdealWidth() const {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         return getSliderWidth(font_size);
     }
 

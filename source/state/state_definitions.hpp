@@ -345,6 +345,22 @@ namespace zlstate {
         static constexpr auto kDefaultV = .25f;
     };
 
+    class PDraggerSensitivity : public FloatParameters<PDraggerSensitivity> {
+    public:
+        static constexpr auto kID = "dragger_sensitivity";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(0.01f, 1.f, 0.01f);
+        static constexpr auto kDefaultV = 1.f;
+    };
+
+    class PDraggerFineSensitivity : public FloatParameters<PDraggerFineSensitivity> {
+    public:
+        static constexpr auto kID = "dragger_fine_sensitivity";
+        static constexpr auto kName = "";
+        inline static const auto kRange = juce::NormalisableRange<float>(0.01f, 1.f, 0.01f);
+        static constexpr auto kDefaultV = .25f;
+    };
+
     class PWheelComboboxSensitivity : public FloatParameters<PWheelComboboxSensitivity> {
     public:
         static constexpr auto kID = "wheel_combobox_sensitivity";
@@ -543,6 +559,7 @@ namespace zlstate {
                    PFontMode::get(), PFontScale::get(), PStaticFontSize::get(),
                    PWheelSensitivity::get(), PWheelFineSensitivity::get(), PWheelShiftReverse::get(),
                    PSliderSensitivity::get(), PSliderFineSensitivity::get(),
+                   PDraggerSensitivity::get(), PDraggerFineSensitivity::get(),
                    PWheelComboboxSensitivity::get(),
                    PRotaryStyle::get(), PRotaryDragSensitivity::get(),
                    PSliderDoubleClickFunc::get(),

@@ -8,7 +8,6 @@
 // You should have received a copy of the GNU Affero General Public License along with ZLLimiter. If not, see <https://www.gnu.org/licenses/>.
 
 #include "interface_definitions.hpp"
-#include "../state/state_definitions.hpp"
 
 namespace zlgui {
     juce::Rectangle<float> UIBase::getRoundedShadowRectangleArea(juce::Rectangle<float> box_bounds, float corner_size,
@@ -100,8 +99,7 @@ namespace zlgui {
             juce::DropShadow bright_shadow(args.bright_shadow_color, radius,
                                            {offset, offset});
             bright_shadow.drawForPath(g, mask);
-        }
-        else {
+        } else {
             juce::DropShadow bright_shadow(args.dark_shadow_color, radius,
                                            {offset, offset});
             bright_shadow.drawForPath(g, mask);
@@ -174,8 +172,7 @@ namespace zlgui {
                                                {-offset, -offset});
                 bright_shadow.drawForPath(g, path);
             }
-        }
-        else {
+        } else {
             if (args.draw_dark) {
                 juce::DropShadow dark_shadow(args.dark_shadow_color, radius,
                                              {-offset, -offset});
@@ -229,8 +226,7 @@ namespace zlgui {
             juce::DropShadow bright_shadow(args.bright_shadow_color, radius,
                                            {offset, offset});
             bright_shadow.drawForPath(g, mask);
-        }
-        else {
+        } else {
             juce::DropShadow bright_shadow(args.dark_shadow_color, radius,
                                            {offset, offset});
             bright_shadow.drawForPath(g, mask);
@@ -247,79 +243,4 @@ namespace zlgui {
         g.restoreState();
         return box_bounds;
     }
-
-    void UIBase::loadFromAPVTS() {
-        for (size_t i = 0; i < kColourNum; ++i) {
-            const auto r = static_cast<juce::uint8>(std::round(loadPara(std::string(kColourNames[i]) + "_r")));
-            const auto g = static_cast<juce::uint8>(std::round(loadPara(std::string(kColourNames[i]) + "_g")));
-            const auto b = static_cast<juce::uint8>(std::round(loadPara(std::string(kColourNames[i]) + "_b")));
-            const auto o = loadPara(std::string(kColourNames[i]) + "_o");
-            custom_colours_[i] = juce::Colour(r, g, b, o);
-        }
-        font_mode_ = static_cast<size_t>(std::round(loadPara(zlstate::PFontMode::kID)));
-        font_scale_ = loadPara(zlstate::PFontScale::kID);
-        static_font_size_ = loadPara(zlstate::PStaticFontSize::kID);
-        window_size_fix_ = loadPara(zlstate::PWindowSizeFix::kID) > .5f;
-        wheel_sensitivity_[0] = state_.getRawParameterValue(zlstate::PWheelSensitivity::kID)->load();
-        wheel_sensitivity_[1] = state_.getRawParameterValue(zlstate::PWheelFineSensitivity::kID)->load();
-        wheel_sensitivity_[2] = state_.getRawParameterValue(zlstate::PSliderSensitivity::kID)->load();
-        wheel_sensitivity_[3] = state_.getRawParameterValue(zlstate::PSliderFineSensitivity::kID)->load();
-        wheel_sensitivity_[4] = loadPara(zlstate::PWheelComboboxSensitivity::kID);
-        is_mouse_wheel_shift_reverse_.store(state_.getRawParameterValue(zlstate::PWheelShiftReverse::kID)->load() > .5f);
-        rotary_style_id_ = static_cast<size_t>(state_.getRawParameterValue(zlstate::PRotaryStyle::kID)->load());
-        rotary_drag_sensitivity_ = state_.getRawParameterValue(zlstate::PRotaryDragSensitivity::kID)->load();
-        is_slider_double_click_open_editor_.store(loadPara(zlstate::PSliderDoubleClickFunc::kID) > .5f);
-        refresh_rate_id_.store(
-            static_cast<size_t>(std::round(state_.getRawParameterValue(zlstate::PTargetRefreshSpeed::kID)->load())));
-        combobox_alignment_.store(static_cast<size_t>(std::round(loadPara(zlstate::PComboboxAlignment::kID))));
-        mag_curve_thickness_.store(loadPara(zlstate::PMagCurveThickness::kID));
-        tooltip_lang_id_.store(
-            static_cast<size_t>(std::round(state_.getRawParameterValue(zlstate::PTooltipLang::kID)->load())));
-        colour_map1_idx_ = static_cast<size_t>(loadPara(zlstate::PColourMap1Idx::kID));
-        colour_map2_idx_ = static_cast<size_t>(loadPara(zlstate::PColourMap2Idx::kID));
-    }
-
-    void UIBase::saveToAPVTS() const {
-        for (size_t i = 0; i < kColourNum; ++i) {
-            const std::array<float, 4> rgbo = {
-                static_cast<float>(custom_colours_[i].getRed()),
-                static_cast<float>(custom_colours_[i].getGreen()),
-                static_cast<float>(custom_colours_[i].getBlue()),
-                custom_colours_[i].getFloatAlpha()
-            };
-            const std::array<std::string, 4> ID{
-                std::string(kColourNames[i]) + "_r",
-                std::string(kColourNames[i]) + "_g",
-                std::string(kColourNames[i]) + "_b",
-                std::string(kColourNames[i]) + "_o"
-            };
-            for (size_t j = 0; j < 4; ++j) {
-                savePara(ID[j], rgbo[j]);
-            }
-        }
-        savePara(zlstate::PFontMode::kID, static_cast<float>(font_mode_));
-        savePara(zlstate::PFontScale::kID, font_scale_);
-        savePara(zlstate::PStaticFontSize::kID, static_font_size_);
-        savePara(zlstate::PWindowSizeFix::kID, window_size_fix_);
-        savePara(zlstate::PWheelSensitivity::kID, wheel_sensitivity_[0]);
-        savePara(zlstate::PWheelFineSensitivity::kID, wheel_sensitivity_[1]);
-        savePara(zlstate::PSliderSensitivity::kID, wheel_sensitivity_[2]);
-        savePara(zlstate::PSliderFineSensitivity::kID, wheel_sensitivity_[3]);
-        savePara(zlstate::PWheelComboboxSensitivity::kID, wheel_sensitivity_[4]);
-        savePara(zlstate::PWheelShiftReverse::kID,
-                 static_cast<float>(is_mouse_wheel_shift_reverse_.load(std::memory_order::relaxed)));
-        savePara(zlstate::PRotaryStyle::kID, static_cast<float>(rotary_style_id_));
-        savePara(zlstate::PRotaryDragSensitivity::kID, rotary_drag_sensitivity_);
-        savePara(zlstate::PSliderDoubleClickFunc::kID,
-                 static_cast<float>(is_slider_double_click_open_editor_.load(std::memory_order::relaxed)));
-        savePara(zlstate::PTargetRefreshSpeed::kID,
-                 static_cast<float>(refresh_rate_id_.load(std::memory_order::relaxed)));
-        savePara(zlstate::PComboboxAlignment::kID,
-                 static_cast<float>(combobox_alignment_.load(std::memory_order::relaxed)));
-        savePara(zlstate::PMagCurveThickness::kID, mag_curve_thickness_.load(std::memory_order::relaxed));
-        savePara(zlstate::PTooltipLang::kID, static_cast<float>(tooltip_lang_id_));
-        savePara(zlstate::PColourMap1Idx::kID, static_cast<float>(colour_map1_idx_));
-        savePara(zlstate::PColourMap2Idx::kID, static_cast<float>(colour_map2_idx_));
-    }
-
 }

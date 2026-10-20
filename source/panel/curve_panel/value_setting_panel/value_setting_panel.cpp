@@ -12,16 +12,16 @@
 #include "../../helper/panel_constants.hpp"
 
 namespace zlpanel {
-    ValueSettingPanel::ValueSettingPanel(PluginProcessor& p, zlgui::UIBase& base) :
+    ValueSettingPanel::ValueSettingPanel(PluginProcessor& p, zlgui::UIState& base) :
         base_(base), background_(base),
         click_buttons_{
-            zlgui::button::ClickTextButton(base, "True Peak"),
-            zlgui::button::ClickTextButton(base, "Correlation"),
-            zlgui::button::ClickTextButton(base, "LUFS-M"),
-            zlgui::button::ClickTextButton(base, "Histogram"),
-            zlgui::button::ClickTextButton(base, "LUFS-S"),
-            zlgui::button::ClickTextButton(base, "LRA"),
-            zlgui::button::ClickTextButton(base, "LUFS-I")
+            zlgui::button::ClickTextButton(base.gui, "True Peak"),
+            zlgui::button::ClickTextButton(base.gui, "Correlation"),
+            zlgui::button::ClickTextButton(base.gui, "LUFS-M"),
+            zlgui::button::ClickTextButton(base.gui, "Histogram"),
+            zlgui::button::ClickTextButton(base.gui, "LUFS-S"),
+            zlgui::button::ClickTextButton(base.gui, "LRA"),
+            zlgui::button::ClickTextButton(base.gui, "LUFS-I")
         } {
         background_.setInterceptsMouseClicks(false, false);
         background_.setBufferedToImage(true);
@@ -51,20 +51,20 @@ namespace zlpanel {
     }
 
     int ValueSettingPanel::getIdealWidth() const {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         return 4 * getPaddingSize(font_size) + 5 * getSliderWidth(font_size) / 2;
     }
 
     int ValueSettingPanel::getIdealHeight() const {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         return 4 * getPaddingSize(font_size) + 3 * getButtonSize(font_size);
     }
 
     void ValueSettingPanel::resized() {
         background_.setBounds(getLocalBounds());
-        const auto padding = getPaddingSize(base_.getFontSize());
+        const auto padding = getPaddingSize(base_.gui.getFontSize());
         auto bound = getLocalBounds().reduced(2 * padding, padding);
-        const auto height = getButtonSize(base_.getFontSize());
+        const auto height = getButtonSize(base_.gui.getFontSize());
         size_t button_index = 0;
         for (const auto num_buttons : {2, 2, 3}) {
             auto row = bound.removeFromTop(height);

@@ -9,17 +9,19 @@
 
 #pragma once
 
+#include "../../../../state/ui_state.hpp"
+
 #include "../../../../PluginProcessor.hpp"
 #include "../../../../gui/gui.hpp"
 
 namespace zlpanel {
     class MeterBackgroundPanel final : public juce::Component {
     public:
-        explicit MeterBackgroundPanel(PluginProcessor& p, zlgui::UIBase& base);
+        explicit MeterBackgroundPanel(PluginProcessor& p, zlgui::UIState& base);
 
         void paint(juce::Graphics& g) override;
 
     private:
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
     };
 }

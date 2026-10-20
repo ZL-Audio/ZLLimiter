@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../../state/ui_state.hpp"
+
 #include <vector>
 
 #include "../../PluginProcessor.hpp"
@@ -27,7 +29,7 @@ namespace zlpanel {
     class PresetBrowser final : public juce::Component,
                                 private juce::ValueTree::Listener {
     public:
-        explicit PresetBrowser(PluginProcessor& p, zlgui::UIBase& base,
+        explicit PresetBrowser(PluginProcessor& p, zlgui::UIState& base,
                                const multilingual::TooltipHelper& tooltip_helper);
 
         ~PresetBrowser() override;
@@ -48,14 +50,11 @@ namespace zlpanel {
 
     private:
         PluginProcessor& p_ref_;
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         const juce::File presets_directory_;
 
         PanelBackground background_;
 
-        std::unique_ptr<juce::Drawable> delete_drawable_;
-        std::unique_ptr<juce::Drawable> close_drawable_;
-        std::unique_ptr<juce::Drawable> folder_open_drawable_;
         zlgui::button::ClickButton delete_group_button_;
         zlgui::button::ClickButton delete_preset_button_;
         zlgui::button::ClickButton close_button_;

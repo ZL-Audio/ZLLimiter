@@ -12,12 +12,12 @@
 #include "../helper/panel_constants.hpp"
 
 namespace zlpanel {
-    SettingLabel::SettingLabel(PluginProcessor&, zlgui::UIBase& base,
+    SettingLabel::SettingLabel(PluginProcessor&, zlgui::UIState& base,
                                const juce::String label, const zlgui::PanelSettingIdx setting_idx,
                                const juce::String& tooltip_text) :
         base_(base), setting_idx_(setting_idx),
         control_background_(base),
-        label_laf_(base),
+        label_laf_(base.gui),
         setting_label_("", label) {
         SettableTooltipClient::setTooltip(tooltip_text);
 
@@ -45,7 +45,7 @@ namespace zlpanel {
     }
 
     void SettingLabel::resized() {
-        const auto padding = 2 * getPaddingSize(base_.getFontSize());
+        const auto padding = 2 * getPaddingSize(base_.gui.getFontSize());
         const auto bound = getLocalBounds();
         control_background_.setBounds(0, -padding, bound.getWidth(), bound.getHeight() + padding + padding / 4);
         setting_label_.setBounds(bound);

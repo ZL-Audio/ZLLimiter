@@ -12,7 +12,7 @@
 #include "../../../helper/panel_constants.hpp"
 
 namespace zlpanel {
-    ValueBackgroundPanel::ValueBackgroundPanel(PluginProcessor& p, zlgui::UIBase& base) :
+    ValueBackgroundPanel::ValueBackgroundPanel(PluginProcessor& p, zlgui::UIState& base) :
         base_(base),
         label_(p, base, "Value", zlgui::PanelSettingIdx::kValueSettingPanel) {
         label_.setBufferedToImage(true);
@@ -23,11 +23,11 @@ namespace zlpanel {
 
     void ValueBackgroundPanel::paint(juce::Graphics& g) {
         auto bound = getLocalBounds().toFloat();
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         bound.removeFromTop(static_cast<float>(getTopPanelHeight(font_size)));
 
-        const auto thickness = base_.getFontSize() * 0.125f;
-        g.setColour(base_.getTextColour().withAlpha(.1f));
+        const auto thickness = base_.gui.getFontSize() * 0.125f;
+        g.setColour(base_.gui.getTextColour().withAlpha(.1f));
         for (const auto scale : {0.f, 1.f, 2.f, 3.f, 4.f, 5.f}) {
             const auto y = bound.getHeight() * scale / 6.f + bound.getY() - thickness * .5f;
             const auto rect = juce::Rectangle<float>({bound.getX(), y, bound.getWidth(), thickness});
@@ -35,8 +35,8 @@ namespace zlpanel {
         }
 
         const auto height = bound.getHeight() / 12.f;
-        g.setFont(base_.getFontSize() * 1.5f);
-        g.setColour(base_.getTextColour());
+        g.setFont(base_.gui.getFontSize() * 1.5f);
+        g.setColour(base_.gui.getTextColour());
 
         const std::array<juce::String, 6> labels = {
             "True Peak", "Correlation", "LUFS-M", "LUFS-S", "LRA", "LUFS-I"
@@ -57,7 +57,7 @@ namespace zlpanel {
     }
 
     void ValueBackgroundPanel::resized() {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         const auto padding = getPaddingSize(font_size);
         const auto bound = getLocalBounds().removeFromTop(getTopPanelHeight(font_size));
 

@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../../../../state/ui_state.hpp"
+
 #include "../../../../PluginProcessor.hpp"
 #include "../../../../gui/gui.hpp"
 #include "../../../common/setting_label.hpp"
@@ -16,7 +18,7 @@
 namespace zlpanel {
     class ValueBackgroundPanel final : public juce::Component {
     public:
-        explicit ValueBackgroundPanel(PluginProcessor& p, zlgui::UIBase& base);
+        explicit ValueBackgroundPanel(PluginProcessor& p, zlgui::UIState& base);
 
         void paint(juce::Graphics& g) override;
 
@@ -25,7 +27,7 @@ namespace zlpanel {
         void resized() override;
 
     private:
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         SettingLabel label_;
 
         std::array<bool, 6> value_on_{true, true, true, true, true, true};

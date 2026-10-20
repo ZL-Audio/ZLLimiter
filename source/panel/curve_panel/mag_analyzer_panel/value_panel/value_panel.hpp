@@ -10,13 +10,15 @@
 
 #pragma once
 
+#include "../../../../state/ui_state.hpp"
+
 #include "value_display_panel.hpp"
 #include "value_background_panel.hpp"
 
 namespace zlpanel {
     class ValuePanel final : public juce::Component {
     public:
-        explicit ValuePanel(PluginProcessor& p, zlgui::UIBase& base,
+        explicit ValuePanel(PluginProcessor& p, zlgui::UIState& base,
                             const multilingual::TooltipHelper& tooltip_helper);
 
         ~ValuePanel() override;
@@ -32,7 +34,7 @@ namespace zlpanel {
         void repaintCallBackSlow();
 
     private:
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         ValueDisplayPanel value_display_panel_;
         ValueBackgroundPanel value_background_panel_;
 

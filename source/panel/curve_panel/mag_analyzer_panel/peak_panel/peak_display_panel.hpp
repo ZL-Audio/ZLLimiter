@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../../../../state/ui_state.hpp"
+
 #include "../../../../PluginProcessor.hpp"
 #include "../../../../chore/thread/tri_buffer.hpp"
 #include "../../../../gui/gui.hpp"
@@ -21,7 +23,7 @@
 namespace zlpanel {
     class PeakDisplayPanel final : public juce::Component {
     public:
-        explicit PeakDisplayPanel(PluginProcessor& p, zlgui::UIBase& base);
+        explicit PeakDisplayPanel(PluginProcessor& p, zlgui::UIState& base);
 
         ~PeakDisplayPanel() override;
 
@@ -39,7 +41,7 @@ namespace zlpanel {
         static constexpr std::array<int, 4> kNumPointsPerSecond{40, 30, 20, 15};
         static constexpr int kPausedThreshold = 6;
         static constexpr int kTooMuchResetThreshold = 64;
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
 
         std::atomic<float>& pre_curve_display_ref_;
         std::atomic<float>& post_curve_display_ref_;

@@ -11,14 +11,14 @@
 #include "BinaryData.h"
 
 namespace zlpanel {
-    TopPanel::TopPanel(PluginProcessor& p, zlgui::UIBase& base,
+    TopPanel::TopPanel(PluginProcessor& p, zlgui::UIState& base,
                        const multilingual::TooltipHelper& tooltip_helper) :
         base_(base),
         logo_panel_(p, base_, tooltip_helper),
-        preset_drawable_(juce::Drawable::createFromImageData(BinaryData::collections_bookmark_svg,
-                                                             BinaryData::collections_bookmark_svgSize)),
-        preset_button_(base_, preset_drawable_.get(), nullptr,
-                       tooltip_helper.getToolTipText(multilingual::kPresetOpen)),
+        preset_button_(base_.gui,
+                       juce::Drawable::createFromImageData(
+                           BinaryData::collections_bookmark_svg, BinaryData::collections_bookmark_svgSize),
+                       false, tooltip_helper.getToolTipText(multilingual::kPresetOpen)),
         analyzer_label_(p, base_, "Analyzer", zlgui::PanelSettingIdx::kAnalyzerSettingPanel,
                         tooltip_helper.getToolTipText(multilingual::kAnalyzerOpen)),
         top_control_panel_(p, base_, tooltip_helper) {
@@ -38,9 +38,9 @@ namespace zlpanel {
 
     void TopPanel::paint(juce::Graphics& g) {
         {
-            const auto font_size = base_.getFontSize();
+            const auto font_size = base_.gui.getFontSize();
             const auto bound = getLocalBounds().withWidth(getSliderWidth(font_size)).toFloat();
-            paintLeftShadow(g, bound, base_.getBackgroundColour());
+            paintLeftShadow(g, bound, base_.gui.getBackgroundColour());
         }
         {
             const auto bound = getLocalBounds().toFloat();
@@ -48,7 +48,7 @@ namespace zlpanel {
             gradient.point1 = bound.getTopLeft();
             gradient.point2 = bound.getBottomLeft();
 
-            gradient.addColour(0.0, base_.getBackgroundColour().withAlpha(1.f));
+            gradient.addColour(0.0, base_.gui.getBackgroundColour().withAlpha(1.f));
             gradient.addColour(1.0, juce::Colours::transparentBlack);
             g.setGradientFill(gradient);
             g.fillRect(bound);
@@ -56,12 +56,12 @@ namespace zlpanel {
     }
 
     int TopPanel::getIdealHeight() const {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         return getTopPanelHeight(font_size);
     }
 
     void TopPanel::resized() {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         const auto padding = getPaddingSize(font_size);
         auto bound = getLocalBounds();
         bound.reduce(padding / 2, padding / 2);

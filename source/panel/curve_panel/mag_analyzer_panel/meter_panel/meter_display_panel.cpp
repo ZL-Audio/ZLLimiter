@@ -12,7 +12,7 @@
 #include "../../../helper/panel_constants.hpp"
 
 namespace zlpanel {
-    MeterDisplayPanel::MeterDisplayPanel(PluginProcessor& p, zlgui::UIBase& base) :
+    MeterDisplayPanel::MeterDisplayPanel(PluginProcessor& p, zlgui::UIState& base) :
         base_(base),
         meter_top_panel_(base),
         analyzer_mag_type_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PAnalyzerMagType::kID)) {
@@ -51,8 +51,8 @@ namespace zlpanel {
     }
 
     void MeterDisplayPanel::paint(juce::Graphics& g) {
-        g.setFont(base_.getFontSize());
-        const auto text_height = base_.getFontSize() * 1.25f;
+        g.setFont(base_.gui.getFontSize());
+        const auto text_height = base_.gui.getFontSize() * 1.25f;
         g.setColour(base_.getColourByIdx(zlgui::ColourIdx::kReductionColour));
         for (auto& a_bound : reduction_rect_) {
             g.fillRect(a_bound.load());
@@ -62,7 +62,7 @@ namespace zlpanel {
             g.fillRect(reduction_max_rect);
 
             const auto reduction_max = reduction_max_value_.load(std::memory_order::relaxed);
-            g.setColour(base_.getTextColour());
+            g.setColour(base_.gui.getTextColour());
             g.drawText(formatValue(std::abs(reduction_max)),
                        juce::Rectangle<float>{reduction_max_rect.getX(),
                                               reduction_max_rect.getY(),
@@ -84,7 +84,7 @@ namespace zlpanel {
 
     void MeterDisplayPanel::resized() {
         auto bound = getLocalBounds();
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         const auto padding = getPaddingSize(font_size);
         meter_top_panel_.setBounds(bound.removeFromTop(getTopPanelHeight(font_size) - padding / 2));
         bound.removeFromTop(padding / 2);
@@ -284,7 +284,7 @@ namespace zlpanel {
     }
 
     void MeterDisplayPanel::lookAndFeelChanged() {
-        pending_thickness_.store(base_.getFontSize() * .2f * base_.getMagCurveThickness(), std::memory_order::relaxed);
+        pending_thickness_.store(base_.gui.getFontSize() * .2f * base_.getMagCurveThickness(), std::memory_order::relaxed);
         size_changed_.signal();
     }
 }

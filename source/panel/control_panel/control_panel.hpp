@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../../state/ui_state.hpp"
+
 #include "../../PluginProcessor.hpp"
 #include "../../gui/gui.hpp"
 #include "../multilingual/tooltip_helper.hpp"
@@ -17,7 +19,7 @@
 namespace zlpanel {
     class ControlPanel final : public juce::Component {
     public:
-        ControlPanel(PluginProcessor& p, zlgui::UIBase& base,
+        ControlPanel(PluginProcessor& p, zlgui::UIState& base,
                      const multilingual::TooltipHelper& tooltip_helper);
 
         void resized() override;
@@ -30,7 +32,7 @@ namespace zlpanel {
 
     private:
         using Rotary = zlgui::slider::TwoValueRotarySlider<false, false, false>;
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         zlgui::attachment::ComponentUpdater updater_;
         ControlBackground background_;
         zlgui::label::NameLookAndFeel label_laf_;

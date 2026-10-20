@@ -13,7 +13,7 @@
 #include "../helper/paint_left_shadow.hpp"
 
 namespace zlpanel {
-    ControlBackground::ControlBackground(zlgui::UIBase& base, const float alpha) :
+    ControlBackground::ControlBackground(zlgui::UIState& base, const float alpha) :
         base_(base), alpha_(alpha) {
         setInterceptsMouseClicks(false, false);
         setAlpha(.9f);
@@ -21,23 +21,23 @@ namespace zlpanel {
 
     void ControlBackground::paint(juce::Graphics& g) {
         {
-            const auto font_size = base_.getFontSize();
+            const auto font_size = base_.gui.getFontSize();
             const auto bound = getLocalBounds().withWidth(getSliderWidth(font_size)).toFloat();
-            paintLeftShadow(g, bound, base_.getBackgroundColour());
+            paintLeftShadow(g, bound, base_.gui.getBackgroundColour());
         }
         {
-            const auto padding = getPaddingSize(base_.getFontSize());
+            const auto padding = getPaddingSize(base_.gui.getFontSize());
             const auto bound = getLocalBounds().reduced(padding);
             juce::Path path;
             path.addRoundedRectangle(bound.toFloat(), static_cast<float>(padding));
 
-            const juce::DropShadow shadow{base_.getTextColour().withAlpha(alpha_), padding, {0, 0}};
+            const juce::DropShadow shadow{base_.gui.getTextColour().withAlpha(alpha_), padding, {0, 0}};
             shadow.drawForPath(g, path);
-            g.setColour(base_.getBackgroundColour());
+            g.setColour(base_.gui.getBackgroundColour());
             g.fillPath(path);
         }
         {
-            const auto font_size = base_.getFontSize();
+            const auto font_size = base_.gui.getFontSize();
             const auto padding = getPaddingSize(font_size);
             const auto width = getSliderWidth(font_size);
 
@@ -52,9 +52,9 @@ namespace zlpanel {
     }
 
     void ControlBackground::drawSplit(juce::Graphics& g, juce::Rectangle<float> bound) const {
-        const auto split_colour = base_.getTextColour().withMultipliedAlpha(.25f);
+        const auto split_colour = base_.gui.getTextColour().withMultipliedAlpha(.25f);
 
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         const auto tb_padding = font_size * kPaddingScale * 2.f;
         const auto lr_padding = font_size * kPaddingScale * .3f;
 

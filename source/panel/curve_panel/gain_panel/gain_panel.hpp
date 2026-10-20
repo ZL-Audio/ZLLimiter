@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../../../state/ui_state.hpp"
+
 #include "../../multilingual/tooltip_helper.hpp"
 #include "gain_background_panel.hpp"
 #include "gain_footer_panel.hpp"
@@ -17,7 +19,7 @@
 namespace zlpanel {
     class GainPanel final : public juce::Component {
     public:
-        explicit GainPanel(PluginProcessor& p, zlgui::UIBase& base,
+        explicit GainPanel(PluginProcessor& p, zlgui::UIState& base,
                            const multilingual::TooltipHelper& tooltip_helper);
 
         int getIdealWidth() const;
@@ -27,7 +29,7 @@ namespace zlpanel {
         void repaintCallBackSlow();
 
     private:
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         GainBackgroundPanel gain_background_panel;
         GainFooterPanel gain_footer_panel;
         GainDisplayPanel gain_display_panel;

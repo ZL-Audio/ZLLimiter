@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../../../../state/ui_state.hpp"
+
 #include <array>
 #include <atomic>
 #include <limits>
@@ -30,7 +32,7 @@
 namespace zlpanel {
     class ValueDisplayPanel final : public juce::Component {
     public:
-        explicit ValueDisplayPanel(PluginProcessor& p, zlgui::UIBase& base,
+        explicit ValueDisplayPanel(PluginProcessor& p, zlgui::UIState& base,
                                    const multilingual::TooltipHelper& tooltip_helper);
 
         void prepare(double sample_rate, size_t num_channels);
@@ -55,7 +57,7 @@ namespace zlpanel {
         static constexpr float kUnavailable = std::numeric_limits<float>::quiet_NaN();
         static constexpr size_t kHistogramBins = 108;
 
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         std::atomic<float>& histogram_on_ref_;
         zldsp::analyzer::MagnitudeReceiver magnitude_receiver_;
         zldsp::analyzer::LoudnessReceiver loudness_receiver_;

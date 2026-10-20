@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../../../state/ui_state.hpp"
+
 #include "../../../PluginProcessor.hpp"
 #include "../../../gui/gui.hpp"
 #include "../../common/panel_background.hpp"
@@ -16,7 +18,7 @@
 namespace zlpanel {
     class ValueSettingPanel final : public juce::Component, private juce::ValueTree::Listener {
     public:
-        ValueSettingPanel(PluginProcessor& p, zlgui::UIBase& base);
+        ValueSettingPanel(PluginProcessor& p, zlgui::UIState& base);
 
         ~ValueSettingPanel() override;
 
@@ -29,7 +31,7 @@ namespace zlpanel {
         void repaintCallBackSlow();
 
     private:
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         zlgui::attachment::ComponentUpdater updater_;
         PanelBackground background_;
         std::array<zlgui::button::ClickTextButton, 7> click_buttons_;

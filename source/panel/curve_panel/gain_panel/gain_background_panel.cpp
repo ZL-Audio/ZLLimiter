@@ -14,24 +14,24 @@
 #include "../../helper/paint_left_shadow.hpp"
 
 namespace zlpanel {
-    GainBackgroundPanel::GainBackgroundPanel(zlgui::UIBase& base) :
+    GainBackgroundPanel::GainBackgroundPanel(zlgui::UIState& base) :
         base_(base) {
         setInterceptsMouseClicks(false, false);
     }
 
     void GainBackgroundPanel::paint(juce::Graphics& g) {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         const auto padding = static_cast<float>(getPaddingSize(font_size));
 
         auto bound = getLocalBounds().toFloat();
-        paintLeftShadow(g, bound, base_.getBackgroundColour());
+        paintLeftShadow(g, bound, base_.gui.getBackgroundColour());
 
         bound.removeFromLeft(padding * .5f);
         bound = bound.removeFromLeft(padding * .5f);
 
         const auto filled_colour = is_mouse_over_
-            ? base_.getTextColour()
-            : base_.getColourBlendedWithBackground(base_.getTextColour(), .5f);
+            ? base_.gui.getTextColour()
+            : base_.gui.getColourBlendedWithBackground(base_.gui.getTextColour(), .5f);
         {
             const auto g_bound = bound.removeFromBottom(padding);
             juce::ColourGradient gradient;

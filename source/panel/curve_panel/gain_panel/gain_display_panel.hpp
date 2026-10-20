@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../../../state/ui_state.hpp"
+
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "../../../PluginProcessor.hpp"
@@ -20,7 +22,7 @@ namespace zlpanel {
                                    private juce::Slider::Listener,
                                    public juce::SettableTooltipClient {
     public:
-        explicit GainDisplayPanel(PluginProcessor& p, zlgui::UIBase& base,
+        explicit GainDisplayPanel(PluginProcessor& p, zlgui::UIState& base,
                                   const multilingual::TooltipHelper& tooltip_helper);
 
         ~GainDisplayPanel() override;
@@ -48,7 +50,7 @@ namespace zlpanel {
         void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
 
     private:
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         zlgui::attachment::ComponentUpdater updater_;
 
         zlgui::slider::SnappingSlider gain_slider_;

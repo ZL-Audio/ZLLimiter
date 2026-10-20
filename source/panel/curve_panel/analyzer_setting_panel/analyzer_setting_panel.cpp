@@ -14,15 +14,15 @@
 #include "../../helper/combobox_helper.hpp"
 
 namespace zlpanel {
-    AnalyzerSettingPanel::AnalyzerSettingPanel(PluginProcessor& p, zlgui::UIBase& base,
+    AnalyzerSettingPanel::AnalyzerSettingPanel(PluginProcessor& p, zlgui::UIState& base,
                                                const multilingual::TooltipHelper& tooltip_helper) :
         base_(base), background_(base),
         boxes_{
-            zlgui::combobox::CompactCombobox(zlstate::PAnalyzerMagType::kChoices, base,
+            zlgui::combobox::CompactCombobox(zlstate::PAnalyzerMagType::kChoices, base.gui,
                                              tooltip_helper.getToolTipText(multilingual::kAnalyzerMagType)),
-            zlgui::combobox::CompactCombobox(zlstate::PAnalyzerMoveType::kChoices, base,
+            zlgui::combobox::CompactCombobox(zlstate::PAnalyzerMoveType::kChoices, base.gui,
                                              tooltip_helper.getToolTipText(multilingual::kAnalyzerMoveType)),
-            zlgui::combobox::CompactCombobox(zlstate::PAnalyzerTimeLength::kChoices, base,
+            zlgui::combobox::CompactCombobox(zlstate::PAnalyzerTimeLength::kChoices, base.gui,
                                              tooltip_helper.getToolTipText(multilingual::kAnalyzerTimeLength)),
             zlgui::combobox::CompactCombobox([] {
                                                  auto choices = zlstate::PAnalyzerMinDB::kChoices;
@@ -30,33 +30,33 @@ namespace zlpanel {
                                                      choice += " dB";
                                                  }
                                                  return choices;
-                                             }(), base,
+                                             }(), base.gui,
                                              tooltip_helper.getToolTipText(multilingual::kAnalyzerMinDB))
         },
         click_buttons_{
-            zlgui::button::ClickTextButton(base, "Pre",
+            zlgui::button::ClickTextButton(base.gui, "Pre",
                                            tooltip_helper.getToolTipText(multilingual::kAnalyzerPre)),
-            zlgui::button::ClickTextButton(base, "Post",
+            zlgui::button::ClickTextButton(base.gui, "Post",
                                            tooltip_helper.getToolTipText(multilingual::kAnalyzerPost)),
-            zlgui::button::ClickTextButton(base, "Delta",
+            zlgui::button::ClickTextButton(base.gui, "Delta",
                                            tooltip_helper.getToolTipText(multilingual::kAnalyzerReduction))
         },
-        drawables_{
-            juce::Drawable::createFromImageData(BinaryData::dline_meter_svg, BinaryData::dline_meter_svgSize),
-            juce::Drawable::createFromImageData(BinaryData::dline_123_svg, BinaryData::dline_123_svgSize)
-        },
         buttons_{
-            zlgui::button::ClickButton{base_, drawables_[0].get(), drawables_[0].get(),
-                                       tooltip_helper.getToolTipText(multilingual::kAnalyzerMeter)},
-            zlgui::button::ClickButton{base_, drawables_[1].get(), drawables_[1].get(),
-                                       tooltip_helper.getToolTipText(multilingual::kAnalyzerValue)}
+            zlgui::button::ClickButton{base_.gui,
+                                      juce::Drawable::createFromImageData(
+                                          BinaryData::dline_meter_svg, BinaryData::dline_meter_svgSize),
+                                      true, tooltip_helper.getToolTipText(multilingual::kAnalyzerMeter)},
+            zlgui::button::ClickButton{base_.gui,
+                                      juce::Drawable::createFromImageData(
+                                          BinaryData::dline_123_svg, BinaryData::dline_123_svgSize),
+                                      true, tooltip_helper.getToolTipText(multilingual::kAnalyzerValue)}
         } {
         background_.setInterceptsMouseClicks(false, false);
         background_.setBufferedToImage(true);
         addAndMakeVisible(background_);
         constexpr std::array box_ids{zlstate::PAnalyzerMagType::kID, zlstate::PAnalyzerMoveType::kID,
                                      zlstate::PAnalyzerTimeLength::kID, zlstate::PAnalyzerMinDB::kID};
-        const auto box_alignment = combobox_helper::getAlignment(base_.getComboboxAlignment());
+        const auto box_alignment = combobox_helper::getAlignment(base_.gui.getComboboxAlignment());
         boxes_[0].getLAF().setItemAlignment(box_alignment);
         boxes_[1].getLAF().setItemAlignment(box_alignment);
         boxes_[2].getLAF().setAlignment(zlgui::combobox::Alignment::kRight);
@@ -100,7 +100,7 @@ namespace zlpanel {
     }
 
     int AnalyzerSettingPanel::getIdealWidth() const {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         const auto padding = getPaddingSize(font_size);
         const auto slider_width = getSliderWidth(font_size);
 
@@ -108,7 +108,7 @@ namespace zlpanel {
     }
 
     int AnalyzerSettingPanel::getIdealHeight() const {
-        const auto font_size = base_.getFontSize();
+        const auto font_size = base_.gui.getFontSize();
         const auto padding = getPaddingSize(font_size);
         const auto button_height = getButtonSize(font_size);
 
@@ -117,9 +117,9 @@ namespace zlpanel {
 
     void AnalyzerSettingPanel::resized() {
         background_.setBounds(getLocalBounds());
-        const auto padding = getPaddingSize(base_.getFontSize());
+        const auto padding = getPaddingSize(base_.gui.getFontSize());
         auto bound = getLocalBounds().reduced(2 * padding, padding);
-        const auto height = getButtonSize(base_.getFontSize());
+        const auto height = getButtonSize(base_.gui.getFontSize());
         {
             auto row = bound.removeFromTop(height);
             boxes_[0].setBounds(row.removeFromLeft(row.getWidth() / 2 + 2 * padding));

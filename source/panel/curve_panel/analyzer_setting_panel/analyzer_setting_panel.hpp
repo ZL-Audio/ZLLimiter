@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../../../state/ui_state.hpp"
+
 #include "../../../PluginProcessor.hpp"
 #include "../../../gui/gui.hpp"
 #include "../../common/panel_background.hpp"
@@ -17,7 +19,7 @@
 namespace zlpanel {
     class AnalyzerSettingPanel final : public juce::Component, private juce::ValueTree::Listener {
     public:
-        AnalyzerSettingPanel(PluginProcessor& p, zlgui::UIBase& base,
+        AnalyzerSettingPanel(PluginProcessor& p, zlgui::UIState& base,
                              const multilingual::TooltipHelper& tooltip_helper);
 
         ~AnalyzerSettingPanel() override;
@@ -31,7 +33,7 @@ namespace zlpanel {
         void repaintCallBackSlow();
 
     private:
-        zlgui::UIBase& base_;
+        zlgui::UIState& base_;
         zlgui::attachment::ComponentUpdater updater_;
         PanelBackground background_;
         std::array<zlgui::combobox::CompactCombobox, 4> boxes_;
@@ -40,7 +42,6 @@ namespace zlpanel {
         std::array<zlgui::button::ClickTextButton, 3> click_buttons_;
         std::array<std::unique_ptr<zlgui::attachment::ButtonAttachment<true>>, 3> click_button_attachments_;
 
-        const std::array<std::unique_ptr<juce::Drawable>, 2> drawables_;
         std::array<zlgui::button::ClickButton, 2> buttons_;
         std::array<std::unique_ptr<zlgui::attachment::ButtonAttachment<true>>, 2> button_attachments_;
 

@@ -10,7 +10,7 @@
 #include "peak_panel.hpp"
 
 namespace zlpanel {
-    PeakPanel::PeakPanel(PluginProcessor& p, zlgui::UIBase& base) :
+    PeakPanel::PeakPanel(PluginProcessor& p, zlgui::UIState& base) :
         peak_background_panel_(p, base),
         peak_display_panel_(p, base) {
         peak_background_panel_.setBufferedToImage(true);

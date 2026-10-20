@@ -53,7 +53,7 @@ namespace zlgui::slider {
                 bound = bound.withWidth(value_ * bound.getWidth());
                 g.saveState();
                 g.reduceClipRegion(mask_);
-                g.setColour(base_.getTextHideColour());
+                g.setColour(base_.getTextColour().withAlpha(0.25f));
                 g.fillRect(bound);
                 g.restoreState();
             }
