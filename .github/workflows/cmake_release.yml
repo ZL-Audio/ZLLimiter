@@ -42,12 +42,12 @@ jobs:
             cmake_extra_flags: -DCMAKE_C_COMPILER=clang-21 -DCMAKE_CXX_COMPILER=clang++-21 -DZL_JUCE_FORMATS="VST3;LV2" -DZL_HWY_STATIC_TARGET="NEON"
             have_aax: false
           - name: macOS-x86-64
-            os: macos-26
+            os: xcode-27
             app_suffix: ".app"
             cmake_extra_flags: -DCMAKE_OSX_ARCHITECTURES="x86_64" -DZL_JUCE_FORMATS="VST3;AU" -DZL_HWY_STATIC_TARGET="SSE4"
             have_aax: false
           - name: macOS-arm64
-            os: macos-26
+            os: xcode-27
             app_suffix: ".app"
             cmake_extra_flags: -DCMAKE_OSX_ARCHITECTURES="arm64" -DZL_JUCE_FORMATS="VST3;AU" -DZL_HWY_STATIC_TARGET="NEON"
             have_aax: false
