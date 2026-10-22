@@ -523,11 +523,11 @@ namespace zlgui::slider {
             }
 
             if (l == &label1_) {
-                slider1_.setValue(actual_value, juce::sendNotificationAsync);
+                slider1_.setValueWithGesture(actual_value);
             }
             if constexpr (kUseSecondSlider) {
                 if (l == &label2_) {
-                    slider2_.setValue(actual_value, juce::sendNotificationAsync);
+                    slider2_.setValueWithGesture(actual_value);
                 }
             }
             if constexpr (kUseName) {
