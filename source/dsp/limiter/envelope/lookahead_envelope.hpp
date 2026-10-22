@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cmath>
 #include <numbers>
+#include <span>
 
 #include "../../vector/vector.hpp"
 
@@ -27,14 +28,21 @@ namespace zldsp::limiter {
     public:
         void prepareSamples(const size_t maximum_delay_samples, const double sample_rate = 48000.0) {
             sample_rate_ = std::max(sample_rate, 1.0);
+            prepareHistory(maximum_delay_samples);
+            weights_.resize(capacity_);
+            weights_ready_ = false;
+            setLookaheadSeconds(
+                std::min(current_lookahead_seconds_, static_cast<double>(maximum_delay_) / sample_rate_));
+        }
+
+        /**
+         * prepare channel history for processSample(demand, weights) with externally owned weights
+         */
+        void prepareHistory(const size_t maximum_delay_samples) {
             maximum_delay_ = maximum_delay_samples;
             capacity_ = maximum_delay_ + 1;
             history_.resize(capacity_ * 2);
-            weights_.resize(capacity_);
-            weights_ready_ = false;
             reset();
-            setLookaheadSeconds(
-                std::min(current_lookahead_seconds_, static_cast<double>(maximum_delay_) / sample_rate_));
         }
 
         void prepare(const double sample_rate, const double maximum_lookahead_seconds) {
@@ -81,24 +89,23 @@ namespace zldsp::limiter {
         }
 
         FloatType processSample(const FloatType demand) {
-            const bool is_new_nonzero = (demand > FloatType(0));
-            const bool was_old_nonzero = (history_[write_position_] > FloatType(0));
-            non_zero_count_ += static_cast<int>(is_new_nonzero) - static_cast<int>(was_old_nonzero);
-            if (non_zero_count_ < 0) {
-                non_zero_count_ = 0;
-            }
+            return processSample(demand, getWeights());
+        }
 
-            history_[write_position_] = demand;
-            history_[write_position_ + capacity_] = demand;
-            write_position_ += 1;
-            if (write_position_ == capacity_) {
-                write_position_ = 0;
-            }
+        /**
+         * process with shared weights from getWeights() on an envelope with the same maximum delay
+         */
+        FloatType processSample(const FloatType demand, const std::span<const FloatType> weights) {
+            pushSample(demand);
             if (non_zero_count_ == 0) {
                 return FloatType(0);
             }
             const auto window_start = write_position_;
-            return weightedMaximum(history_.data() + window_start, weights_.data(), lookahead_ + 1);
+            return weightedMaximum(history_.data() + window_start, weights.data(), weights.size());
+        }
+
+        [[nodiscard]] std::span<const FloatType> getWeights() const {
+            return {weights_.data(), lookahead_ + 1};
         }
 
         [[nodiscard]] size_t getMaximumDelaySamples() const {
@@ -122,7 +129,7 @@ namespace zldsp::limiter {
                 return;
             }
             for (size_t i = 0; i < num_samples; ++i) {
-                processSample(FloatType(0));
+                pushSample(FloatType(0));
             }
         }
 
@@ -139,6 +146,22 @@ namespace zldsp::limiter {
         bool weights_ready_{false};
         vector::aligned_vector<FloatType> history_{};
         vector::aligned_vector<FloatType> weights_{};
+
+        void pushSample(const FloatType demand) {
+            const bool is_new_nonzero = (demand > FloatType(0));
+            const bool was_old_nonzero = (history_[write_position_] > FloatType(0));
+            non_zero_count_ += static_cast<int>(is_new_nonzero) - static_cast<int>(was_old_nonzero);
+            if (non_zero_count_ < 0) {
+                non_zero_count_ = 0;
+            }
+
+            history_[write_position_] = demand;
+            history_[write_position_ + capacity_] = demand;
+            write_position_ += 1;
+            if (write_position_ == capacity_) {
+                write_position_ = 0;
+            }
+        }
 
         static FloatType weightedMaximum(const FloatType* values, const FloatType* weights, const size_t size) {
             static constexpr hn::ScalableTag<FloatType> d;

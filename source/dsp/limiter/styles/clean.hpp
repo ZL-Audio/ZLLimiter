@@ -87,8 +87,12 @@ namespace zldsp::limiter {
             lookahead_.resize(maximum_channels);
             fast_state_.resize(maximum_channels);
             fast_.resize(maximum_channels);
-            for (size_t channel = 0; channel < maximum_channels; ++channel) {
-                lookahead_[channel].prepare(sample_rate_, maximum_lookahead);
+            if (!lookahead_.empty()) {
+                // the first channel owns the weights shared by all channel histories
+                lookahead_.front().prepare(sample_rate_, maximum_lookahead);
+                for (size_t channel = 1; channel < maximum_channels; ++channel) {
+                    lookahead_[channel].prepareHistory(lookahead_.front().getMaximumDelaySamples());
+                }
             }
             recovery_.prepare(sample_rate_);
             common_support_.prepare(sample_rate_);
@@ -112,8 +116,8 @@ namespace zldsp::limiter {
         void setLookaheadMilliseconds(const FloatType milliseconds) {
             lookahead_ms_ = static_cast<FloatType>(std::clamp(
                 static_cast<double>(milliseconds), 0.0, maximum_lookahead_ms_));
-            for (auto& envelope : lookahead_) {
-                envelope.setLookaheadSeconds(static_cast<double>(lookahead_ms_) * 0.001);
+            if (!lookahead_.empty()) {
+                lookahead_.front().setLookaheadSeconds(static_cast<double>(lookahead_ms_) * 0.001);
             }
         }
 
@@ -143,6 +147,10 @@ namespace zldsp::limiter {
                      std::span<FloatType* const> attenuation_buffers,
                      const size_t num_samples) {
             const auto num_channels = peak_buffers.size();
+            if (num_channels == 0) {
+                return;
+            }
+            const auto weights = lookahead_.front().getWeights();
             for (size_t channel = 0; channel < num_channels; ++channel) {
                 clean_detail::calculateRequired(
                     peak_buffers[channel], attenuation_buffers[channel], num_samples, ceiling_db_);
@@ -151,7 +159,7 @@ namespace zldsp::limiter {
             for (size_t i = 0; i < num_samples; ++i) {
                 FloatType maximum_planned{0};
                 for (size_t channel = 0; channel < num_channels; ++channel) {
-                    fast_[channel] = lookahead_[channel].processSample(attenuation_buffers[channel][i]);
+                    fast_[channel] = lookahead_[channel].processSample(attenuation_buffers[channel][i], weights);
                     maximum_planned = std::max(maximum_planned, fast_[channel]);
                 }
                 const auto release_step = recovery_.processSample(maximum_planned);

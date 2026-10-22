@@ -84,62 +84,54 @@ namespace zlp {
             output_gain_.setGainDecibels(output_db);
         }
 
-        if (to_update_output_ceiling_.check()) {
-            const auto db = output_ceiling_db_.load(std::memory_order_relaxed);
-            std::apply([&](auto&... limiter) {
-                (limiter.setOutputCeilingDecibels(db), ...);
-            }, limiters_);
-        }
-
         if (to_update_output_mode_.check()) {
             bypass_enabled_ = bypass_parameter_.load(std::memory_order_relaxed);
             delta_enabled_ = delta_parameter_.load(std::memory_order_relaxed);
         }
 
-        if (to_update_true_peak_.check()) {
-            const auto enabled = true_peak_enabled_.load(std::memory_order_relaxed);
-            std::apply([&](auto&... limiter) {
-                (limiter.setTruePeakEnabled(enabled), ...);
-            }, limiters_);
-        }
-
-        if (to_update_lookahead_.check()) {
-            const auto milliseconds = lookahead_ms_.load(std::memory_order_relaxed);
-            std::apply([&](auto&... limiter) {
-                (limiter.setLookaheadMilliseconds(milliseconds), ...);
-            }, limiters_);
-        }
-        if (to_update_attack_.check()) {
-            const auto milliseconds = attack_ms_.load(std::memory_order_relaxed);
-            std::apply([&](auto&... limiter) {
-                (limiter.setAttackMilliseconds(milliseconds), ...);
-            }, limiters_);
-        }
-        if (to_update_release_.check()) {
-            const auto milliseconds = release_ms_.load(std::memory_order_relaxed);
-            std::apply([&](auto&... limiter) {
-                (limiter.setReleaseMilliseconds(milliseconds), ...);
-            }, limiters_);
-        }
-        if (to_update_channel_delta_.check()) {
-            const auto decibels = channel_delta_db_.load(std::memory_order_relaxed);
-            std::apply([&](auto&... limiter) {
-                (limiter.setChannelDeltaDecibels(decibels), ...);
-            }, limiters_);
-        }
-        if (to_update_recovery_.check()) {
-            const auto percent = recovery_percent_.load(std::memory_order_relaxed);
-            std::apply([&](auto&... limiter) {
-                (limiter.setRecoveryPercent(percent), ...);
-            }, limiters_);
-        }
-
+        auto next_oversampling_index = oversampling_index_;
         if (to_update_oversampling_.check()) {
             const auto index = std::clamp(
                 oversampling_index_parameter_.load(std::memory_order_relaxed),
                 0, static_cast<int>(kOversamplingModeCount - 1));
-            selectOversampling(static_cast<size_t>(index));
+            next_oversampling_index = static_cast<size_t>(index);
         }
+
+        const auto update_all_parameters = next_oversampling_index != oversampling_index_;
+        size_t limiter_index = 0;
+        const auto update_limiter = [&](auto& limiter) {
+            if (limiter_index++ != next_oversampling_index) {
+                return;
+            }
+            // consume pending flags even when a newly selected limiter needs every parameter
+            if (to_update_output_ceiling_.check() || update_all_parameters) {
+                limiter.setOutputCeilingDecibels(output_ceiling_db_.load(std::memory_order_relaxed));
+            }
+            if (to_update_true_peak_.check() || update_all_parameters) {
+                limiter.setTruePeakEnabled(true_peak_enabled_.load(std::memory_order_relaxed));
+            }
+            if (to_update_lookahead_.check() || update_all_parameters) {
+                limiter.setLookaheadMilliseconds(lookahead_ms_.load(std::memory_order_relaxed));
+            }
+            if (to_update_attack_.check() || update_all_parameters) {
+                limiter.setAttackMilliseconds(attack_ms_.load(std::memory_order_relaxed));
+            }
+            if (to_update_release_.check() || update_all_parameters) {
+                limiter.setReleaseMilliseconds(release_ms_.load(std::memory_order_relaxed));
+            }
+            if (to_update_channel_delta_.check() || update_all_parameters) {
+                limiter.setChannelDeltaDecibels(channel_delta_db_.load(std::memory_order_relaxed));
+            }
+            if (to_update_recovery_.check() || update_all_parameters) {
+                limiter.setRecoveryPercent(recovery_percent_.load(std::memory_order_relaxed));
+            }
+        };
+        std::apply([&](auto&... limiter) {
+            (update_limiter(limiter), ...);
+        }, limiters_);
+
+        // apply parameters before resetting the selected limiter so recovery starts at its new targets
+        selectOversampling(next_oversampling_index);
     }
 
     void Controller::process(std::span<float*> buffer, const size_t num_samples, const bool host_bypassed) {
