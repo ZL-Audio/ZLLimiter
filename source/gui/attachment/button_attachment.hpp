@@ -70,7 +70,7 @@ namespace zlgui::attachment {
             updater_ref_.getFlag().signal();
         }
 
-        void buttonStateChanged(juce::Button*) override {
+        void buttonClicked(juce::Button*) override {
             if (isUpdatingFromParameter()) {
                 return;
             }
@@ -81,9 +81,6 @@ namespace zlgui::attachment {
             parameter_ref_.beginChangeGesture();
             parameter_ref_.setValueNotifyingHost(normalized_value);
             parameter_ref_.endChangeGesture();
-        }
-
-        void buttonClicked(juce::Button*) override {
         }
     };
 }
