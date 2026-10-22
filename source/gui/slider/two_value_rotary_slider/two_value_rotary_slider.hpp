@@ -256,12 +256,8 @@ namespace zlgui::slider {
         }
 
         void mouseUp(const juce::MouseEvent& event) override {
-            if (event.getNumberOfClicks() > 1 || event.mods.isCommandDown()) {
-                return;
-            }
-            if (event.mods.isLeftButtonDown()) {
-                slider1_.mouseUp(event);
-            } else if (show_slider2_ && event.mods.isRightButtonDown()) {
+            slider1_.mouseUp(event);
+            if constexpr (kUseSecondSlider) {
                 slider2_.mouseUp(event);
             }
         }
