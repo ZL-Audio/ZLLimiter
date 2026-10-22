@@ -38,6 +38,7 @@ namespace zldsp::analyzer {
 
         void reset() {
             dbs_.fill(0.f);
+            history_.fill({});
         }
 
         void run(const zldsp::container::FIFORange range,
@@ -48,38 +49,35 @@ namespace zldsp::analyzer {
             for (size_t channel = 0; channel < num_channels; ++channel) {
                 const auto* pre = gained_pre_samples[channel].data();
                 const auto* post = post_samples[channel].data();
-                const auto fifo_size = static_cast<int>(gained_pre_samples[channel].size());
-                if (fifo_size < 3) {
-                    continue;
-                }
+                auto history = history_[channel];
 
                 float min_gain = 1.f;
                 const auto measure = [&](const int start, const int count) {
                     for (int i = 0; i < count; ++i) {
-                        const int curr_idx = start + i;
-                        const int prev_idx = curr_idx == 0 ? fifo_size - 1 : curr_idx - 1;
-                        const int next_idx = curr_idx + 1 == fifo_size ? 0 : curr_idx + 1;
+                        const auto pre_next = std::abs(pre[start + i]);
+                        const auto post_next = std::abs(post[start + i]);
 
-                        const auto pre_val = std::abs(pre[curr_idx]);
+                        // evaluate the preceding sample only after its right neighbor arrives
+                        const auto pre_val = history.pre_curr;
                         if (pre_val > kThresholdLinear && std::isfinite(pre_val)) {
-                            const auto prev_val = std::abs(pre[prev_idx]);
-                            const auto next_val = std::abs(pre[next_idx]);
-
-                            if (pre_val >= prev_val && pre_val >= next_val) {
-                                const auto post_prev = std::abs(post[prev_idx]);
-                                const auto post_curr = std::abs(post[curr_idx]);
-                                const auto post_next = std::abs(post[next_idx]);
-                                const auto post_val = std::max({post_prev, post_curr, post_next});
+                            if (pre_val >= history.pre_prev && pre_val >= pre_next) {
+                                const auto post_val = std::max({history.post_prev, history.post_curr, post_next});
 
                                 if (std::isfinite(post_val) && post_val < min_gain * pre_val) {
                                     min_gain = post_val / pre_val;
                                 }
                             }
                         }
+
+                        history.pre_prev = history.pre_curr;
+                        history.pre_curr = pre_next;
+                        history.post_prev = history.post_curr;
+                        history.post_curr = post_next;
                     }
                 };
                 measure(range.start_index1, range.block_size1);
                 measure(range.start_index2, range.block_size2);
+                history_[channel] = history;
                 if (min_gain < 1.f) {
                     const auto raw_db = 20.f * std::log10(std::max(min_gain, 1e-6f));
                     dbs_[channel] = applySoftKnee(raw_db);
@@ -98,6 +96,14 @@ namespace zldsp::analyzer {
         }
 
     private:
+        struct History {
+            float pre_prev{0.f};
+            float pre_curr{0.f};
+            float post_prev{0.f};
+            float post_curr{0.f};
+        };
+
+        std::array<History, 2> history_{};
         std::array<float, 2> dbs_{0.f, 0.f};
     };
 }
