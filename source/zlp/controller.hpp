@@ -40,6 +40,8 @@ namespace zlp {
 
         void prepare(double sample_rate, size_t max_num_samples);
 
+        void reset();
+
         void process(std::span<float*> buffer, size_t num_samples, bool host_bypassed);
 
         auto& getMagAnalyzerSender() { return mag_analyzer_sender_; }

@@ -67,6 +67,27 @@ namespace zlp {
         p_ref_.setLatencySamples(static_cast<int>(latency));
     }
 
+    void Controller::reset() {
+        if (!is_prepared_) {
+            return;
+        }
+
+        resetActiveLimiter();
+        input_gain_.reset();
+        output_gain_.reset();
+
+        const auto latency = static_cast<int>(getActiveLatencySamples());
+        dry_delay_.setDelayInSamples(latency);
+        dry_delay_.reset();
+        gained_delay_.setDelayInSamples(latency);
+        gained_delay_.reset();
+        gained_delay_needs_reset_ = false;
+        gained_delay_needs_warmup_ = false;
+        gained_delay_fill_remaining_ = 0;
+
+        analyzer_generation_.fetch_add(1, std::memory_order_release);
+    }
+
     void Controller::prepareBuffer() {
         if (!is_prepared_ || !to_update_.check()) {
             return;
@@ -224,16 +245,9 @@ namespace zlp {
             return;
         }
         oversampling_index_ = clamped_index;
-        resetActiveLimiter();
-        input_gain_.reset();
-        output_gain_.reset();
+        reset();
 
         const auto latency = getActiveLatencySamples();
-        dry_delay_.setDelayInSamples(static_cast<int>(latency));
-        dry_delay_.reset();
-        gained_delay_needs_reset_ = true;
-        gained_delay_needs_warmup_ = false;
-        analyzer_generation_.fetch_add(1, std::memory_order_release);
         pending_latency_samples_.store(static_cast<int>(latency), std::memory_order_release);
         triggerAsyncUpdate();
     }

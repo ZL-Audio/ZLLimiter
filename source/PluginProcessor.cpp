@@ -91,6 +91,11 @@ void PluginProcessor::releaseResources() {
     expected_playhead_sample_.reset();
 }
 
+void PluginProcessor::reset() {
+    controller_.reset();
+    expected_playhead_sample_.reset();
+}
+
 bool PluginProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {
     if (layouts.getMainInputChannelSet() == juce::AudioChannelSet::stereo() &&
         layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo()) {

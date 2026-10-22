@@ -22,7 +22,6 @@ namespace zldsp::delay {
 
         void reset() {
             for (auto& s : states_) {
-                s.resize(static_cast<size_t>(capacity_));
                 std::fill(s.begin(), s.end(), FloatType(0));
             }
             head_ = 0;
@@ -38,6 +37,9 @@ namespace zldsp::delay {
             const auto maximum_delay_samples = static_cast<double>(maximum_delay_seconds) * sample_rate;
             capacity_ = static_cast<int>(std::ceil(maximum_delay_samples)) + static_cast<int>(max_num_samples) + 1;
             states_.resize(num_channels);
+            for (auto& s : states_) {
+                s.resize(static_cast<size_t>(capacity_));
+            }
 
             reset();
         }
