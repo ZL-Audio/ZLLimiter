@@ -123,20 +123,20 @@ namespace zldsp::limiter {
 
         void setAttackMilliseconds(const FloatType milliseconds) {
             attack_ms_ = std::max(milliseconds, FloatType(0));
-            common_support_.setAttackSeconds(static_cast<double>(attack_ms_) * 0.001);
+            common_support_.setAttackMilliseconds(static_cast<double>(attack_ms_));
         }
 
         void setReleaseMilliseconds(const FloatType milliseconds) {
             release_ms_ = std::max(milliseconds, FloatType(0));
-            common_support_.setReleaseSeconds(static_cast<double>(release_ms_) * 0.001);
+            common_support_.setReleaseMilliseconds(static_cast<double>(release_ms_));
         }
 
         void setChannelDeltaDecibels(const FloatType decibels) {
             channel_delta_db_ = std::max(decibels, FloatType(0));
         }
 
-        void setRecoveryPercent(const FloatType percent) {
-            recovery_.setRecoveryPercent(percent);
+        void setRecoveryMilliseconds(const FloatType milliseconds) {
+            recovery_.setRecoveryMilliseconds(milliseconds);
         }
 
         void setCeilingDecibels(const FloatType ceiling_db) {

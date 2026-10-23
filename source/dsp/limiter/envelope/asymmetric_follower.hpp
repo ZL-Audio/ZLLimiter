@@ -22,22 +22,22 @@ namespace zldsp::limiter {
     public:
         void prepare(const double sample_rate) {
             sample_rate_ = std::max(sample_rate, 1.0);
-            attack_step_ = stepForSeconds(attack_seconds_);
-            release_step_ = stepForSeconds(release_seconds_);
+            attack_step_ = stepForMilliseconds(attack_ms_);
+            release_step_ = stepForMilliseconds(release_ms_);
         }
 
         void reset(const FloatType value = FloatType(0)) {
             state_ = static_cast<double>(value);
         }
 
-        void setAttackSeconds(const double seconds) {
-            attack_seconds_ = std::max(seconds, 0.0);
-            attack_step_ = stepForSeconds(attack_seconds_);
+        void setAttackMilliseconds(const double milliseconds) {
+            attack_ms_ = std::max(milliseconds, 0.0);
+            attack_step_ = stepForMilliseconds(attack_ms_);
         }
 
-        void setReleaseSeconds(const double seconds) {
-            release_seconds_ = std::max(seconds, 0.0);
-            release_step_ = stepForSeconds(release_seconds_);
+        void setReleaseMilliseconds(const double milliseconds) {
+            release_ms_ = std::max(milliseconds, 0.0);
+            release_step_ = stepForMilliseconds(release_ms_);
         }
 
         FloatType processSample(const FloatType target) {
@@ -52,17 +52,17 @@ namespace zldsp::limiter {
 
     private:
         double sample_rate_{48000.0};
-        double attack_seconds_{0.0};
-        double release_seconds_{0.1};
+        double attack_ms_{0.0};
+        double release_ms_{100.0};
         double attack_step_{1.0};
         double release_step_{1.0};
         double state_{0.0};
 
-        [[nodiscard]] double stepForSeconds(const double seconds) const {
-            if (seconds <= 0.0) {
+        [[nodiscard]] double stepForMilliseconds(const double milliseconds) const {
+            if (milliseconds <= 1e-3) {
                 return 1.0;
             }
-            const auto exponent = std::log(0.1) / (seconds * sample_rate_);
+            const auto exponent = std::log(0.1) / (milliseconds * 0.001 * sample_rate_);
             return -std::expm1(exponent);
         }
     };

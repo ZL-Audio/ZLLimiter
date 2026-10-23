@@ -144,7 +144,7 @@ namespace zlp {
                 limiter.setChannelDeltaDecibels(channel_delta_db_.load(std::memory_order_relaxed));
             }
             if (to_update_recovery_.check() || update_all_parameters) {
-                limiter.setRecoveryPercent(recovery_percent_.load(std::memory_order_relaxed));
+                limiter.setRecoveryMilliseconds(recovery_ms_.load(std::memory_order_relaxed));
             }
         };
         std::apply([&](auto&... limiter) {

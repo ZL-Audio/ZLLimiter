@@ -281,7 +281,7 @@ namespace zlp {
     public:
         static constexpr auto kID = "attack";
         static constexpr auto kName = "Attack";
-        inline static const auto kRange = getLogMidRange(0.01f, 10000.f, 100.f, 0.01f);
+        inline static const auto kRange = getLogMidRangeShift(5.f, 2005.f, 105.f, 0.01f, -5.f);
         static constexpr auto kDefaultV = 100.f;
     };
 
@@ -289,7 +289,7 @@ namespace zlp {
     public:
         static constexpr auto kID = "release";
         static constexpr auto kName = "Release";
-        inline static const auto kRange = getLogMidRange(1.f, 10000.f, 500.f, 0.01f);
+        inline static const auto kRange = getLogMidRangeShift(25.f, 10025.f, 525.f, 0.01f, -25.f);
         static constexpr auto kDefaultV = 500.f;
     };
 
@@ -305,7 +305,7 @@ namespace zlp {
     public:
         static constexpr auto kID = "recovery";
         static constexpr auto kName = "Recovery";
-        inline static const auto kRange = juce::NormalisableRange<float>(0.f, 100.f, 0.01f);
+        inline static const auto kRange = getLogMidRangeShift(3.5f, 502.5f, 52.5f, 0.01f, -2.5f);
         static constexpr auto kDefaultV = 50.f;
     };
 

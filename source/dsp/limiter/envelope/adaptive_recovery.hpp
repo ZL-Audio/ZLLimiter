@@ -23,11 +23,11 @@ namespace zldsp::limiter {
             sample_rate_ = std::max(sample_rate, 1.0);
             ramp_samples_ = std::max(static_cast<size_t>(1), static_cast<size_t>(sample_rate_ * 0.02));
             persistence_.prepare(sample_rate_);
-            persistence_.setAttackSeconds(0.1);
-            persistence_.setReleaseSeconds(0.2);
+            persistence_.setAttackMilliseconds(100.0);
+            persistence_.setReleaseMilliseconds(200.0);
             depth_.prepare(sample_rate_);
-            depth_.setAttackSeconds(0.005);
-            depth_.setReleaseSeconds(0.1);
+            depth_.setAttackMilliseconds(5.0);
+            depth_.setReleaseMilliseconds(100.0);
             updateTargets();
             reset();
         }
@@ -40,12 +40,11 @@ namespace zldsp::limiter {
             ramp_remaining_ = 0;
         }
 
-        void setRecoveryPercent(const FloatType percent) {
-            const auto recovery = std::clamp(static_cast<double>(percent), 0.0, 100.0);
-            if (std::abs(recovery - recovery_percent_) < 1e-10) {
+        void setRecoveryMilliseconds(const FloatType milliseconds) {
+            if (std::abs(milliseconds - recovery_ms_) < 1e-10) {
                 return;
             }
-            recovery_percent_ = recovery;
+            recovery_ms_ = milliseconds;
             updateTargets();
             ramp_remaining_ = ramp_samples_;
             fast_increment_ = (target_fast_step_ - fast_step_) / static_cast<double>(ramp_samples_);
@@ -71,18 +70,24 @@ namespace zldsp::limiter {
 
     private:
         double sample_rate_{48000.0};
-        double recovery_percent_{50.0};
-        double fast_step_{-std::expm1(std::log(0.1) / (48000.0 * 0.05))};
-        double slow_step_{-std::expm1(std::log(0.1) / (48000.0 * 0.25))};
+        double recovery_ms_{50.0};
+        double fast_step_{-std::expm1(std::log(0.1) / (sample_rate_ * recovery_ms_ * 0.001))};
+        double slow_step_{-std::expm1(std::log(0.1) / (sample_rate_ * recovery_ms_ * 0.001 * 5.0))};
         double target_fast_step_{fast_step_}, target_slow_step_{slow_step_};
         double fast_increment_{0.0}, slow_increment_{0.0};
         size_t ramp_samples_{960}, ramp_remaining_{0};
         AsymmetricFollower<FloatType> persistence_{}, depth_{};
 
         void updateTargets() {
-            const auto fast_seconds = 0.025 * std::exp2(recovery_percent_ * 0.02);
-            target_fast_step_ = -std::expm1(std::log(0.1) / (sample_rate_ * fast_seconds));
-            target_slow_step_ = -std::expm1(std::log(0.1) / (sample_rate_ * fast_seconds * 5.0));
+            if (recovery_ms_ <= 1e-3) {
+                target_fast_step_ = 1.0;
+                target_slow_step_ = 1.0;
+                return;
+            }
+            // sustained limiting can extend it to 5x
+            const auto fast_samples = sample_rate_ * recovery_ms_ * 0.001;
+            target_fast_step_ = -std::expm1(std::log(0.1) / fast_samples);
+            target_slow_step_ = -std::expm1(std::log(0.1) / (fast_samples * 5.0));
         }
     };
 }

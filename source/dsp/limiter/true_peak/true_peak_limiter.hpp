@@ -125,13 +125,13 @@ namespace zldsp::limiter {
         static constexpr size_t kTruePeakAttackSamples = kLookaheadSamples - kTruePeakHoldSamples;
 
         void prepare(const double sample_rate, const size_t maximum_block_size, const size_t maximum_channels,
-                     const double release_seconds) {
+                     const double release_ms) {
             sample_rate_ = std::max(sample_rate, 1.0);
             estimator_.prepare(maximum_channels, maximum_block_size);
             lookahead_envelope_.prepareSamples(kLookaheadSamples, sample_rate_);
             release_.prepare(sample_rate_);
-            release_.setAttackSeconds(0.0);
-            release_.setReleaseSeconds(std::max(release_seconds, 0.0));
+            release_.setAttackMilliseconds(0.0);
+            release_.setReleaseMilliseconds(std::max(release_ms, 0.0));
             gains_.resize(maximum_block_size);
             reconstructed_peaks_.resize(maximum_block_size);
             channel_peaks_.resize(maximum_block_size);
@@ -412,14 +412,14 @@ namespace zldsp::limiter {
     class TruePeakLimiter {
     public:
         using StageMode = typename TruePeakCorrectionStage<FloatType>::StageMode;
-        static constexpr double kDefaultReleaseSeconds = 0.01;
+        static constexpr double kDefaultReleaseMilliseconds = 10.0;
 
         void prepare(const double sample_rate, const size_t maximum_block_size, const size_t maximum_channels,
                      const bool oversampling_enabled = true) {
             oversampling_enabled_ = oversampling_enabled;
-            first_.prepare(sample_rate, maximum_block_size, maximum_channels, kDefaultReleaseSeconds);
-            second_.prepare(sample_rate, maximum_block_size, maximum_channels, kDefaultReleaseSeconds);
-            third_.prepare(sample_rate, maximum_block_size, maximum_channels, kDefaultReleaseSeconds);
+            first_.prepare(sample_rate, maximum_block_size, maximum_channels, kDefaultReleaseMilliseconds);
+            second_.prepare(sample_rate, maximum_block_size, maximum_channels, kDefaultReleaseMilliseconds);
+            third_.prepare(sample_rate, maximum_block_size, maximum_channels, kDefaultReleaseMilliseconds);
             updateModes();
             setCeilingDecibels(ceiling_db_);
             reset();

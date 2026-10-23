@@ -49,7 +49,7 @@ namespace zlp {
         } else if (parameter_id == PRelease::kID) {
             controller_ref_.setRelease(value);
         } else if (parameter_id == PRecovery::kID) {
-            controller_ref_.setRecovery(value);
+            controller_ref_.setRecoveryMilliseconds(value);
         } else if (parameter_id == PChannelDelta::kID) {
             controller_ref_.setChannelDelta(value);
         } else if (parameter_id == PBypass::kID) {

@@ -126,8 +126,8 @@ namespace zlp {
             to_update_.signal();
         }
 
-        void setRecovery(const float percent) {
-            recovery_percent_.store(percent, std::memory_order_relaxed);
+        void setRecoveryMilliseconds(const float milliseconds) {
+            recovery_ms_.store(milliseconds, std::memory_order_relaxed);
             to_update_recovery_.signal();
             to_update_.signal();
         }
@@ -187,7 +187,7 @@ namespace zlp {
         std::atomic<float> attack_ms_{PAttack::kDefaultV};
         std::atomic<float> release_ms_{PRelease::kDefaultV};
         std::atomic<float> channel_delta_db_{PChannelDelta::kDefaultV};
-        std::atomic<float> recovery_percent_{PRecovery::kDefaultV};
+        std::atomic<float> recovery_ms_{PRecovery::kDefaultV};
 
         bool is_prepared_{false};
         bool bypass_enabled_{PBypass::kDefaultV};
