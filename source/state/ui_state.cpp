@@ -31,7 +31,6 @@ namespace zlgui {
         gui.setSensitivity(loadPara(zlstate::PWheelComboboxSensitivity::kID), kMouseWheelCombobox);
         gui.setIsMouseWheelShiftReverse(state_.getRawParameterValue(zlstate::PWheelShiftReverse::kID)->load() > .5f);
         gui.setRotaryStyleID(static_cast<size_t>(state_.getRawParameterValue(zlstate::PRotaryStyle::kID)->load()));
-        gui.setRotaryDragSensitivity(state_.getRawParameterValue(zlstate::PRotaryDragSensitivity::kID)->load());
         gui.setIsSliderDoubleClickOpenEditor(loadPara(zlstate::PSliderDoubleClickFunc::kID) > .5f);
         refresh_rate_id_.store(
             static_cast<size_t>(std::round(state_.getRawParameterValue(zlstate::PTargetRefreshSpeed::kID)->load())));
@@ -76,7 +75,6 @@ namespace zlgui {
         savePara(zlstate::PWheelShiftReverse::kID,
                  static_cast<float>(gui.getIsMouseWheelShiftReverse()));
         savePara(zlstate::PRotaryStyle::kID, static_cast<float>(gui.getRotaryStyleID()));
-        savePara(zlstate::PRotaryDragSensitivity::kID, gui.getRotaryDragSensitivity());
         savePara(zlstate::PSliderDoubleClickFunc::kID,
                  static_cast<float>(gui.getIsSliderDoubleClickOpenEditor()));
         savePara(zlstate::PTargetRefreshSpeed::kID,
