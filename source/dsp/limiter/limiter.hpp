@@ -23,6 +23,7 @@
 #include "../vector/vector.hpp"
 
 #include "limiter_definitions.hpp"
+#include "detector/spectral_detector.hpp"
 #include "detector/peak_detector.hpp"
 #include "envelope/safety_guardian.hpp"
 #include "gain/attenuation_interpolator.hpp"
@@ -96,6 +97,24 @@ namespace zldsp::limiter {
                                        attenuation_delay_seconds);
             attenuation_delay_.setDelayInSamples(static_cast<int>(attenuation_delay_samples_));
 
+            spectral_detector_.prepare(sample_rate_, maximum_channels);
+            base_low_frequency_weights_.resize(maximum_block_size);
+            low_frequency_weights_.resize(planning_block_size);
+            size_t upsampling_delay_samples{0};
+            if constexpr (NumOversamplingStages > 0) {
+                upsampling_delay_samples = static_cast<size_t>(std::round(
+                    oversampler_.getUpsamplingLatency() * static_cast<double>(kPlanningFactor)));
+            }
+            // align to the planner's fixed delay, independent of the lookahead setting
+            // score interpolation already contributes one base-rate sample of delay
+            constexpr size_t spectral_interpolation_delay = kPlanningFactor > 1 ? kPlanningFactor : 0;
+            spectral_delay_samples_ = style_.getMaximumDelaySamples() + upsampling_delay_samples -
+                spectral_interpolation_delay;
+            const auto spectral_delay_seconds =
+                static_cast<FloatType>(static_cast<double>(spectral_delay_samples_) / planning_rate);
+            spectral_delay_.prepare(planning_rate, planning_block_size, 1, spectral_delay_seconds);
+            spectral_delay_.setDelayInSamples(static_cast<int>(spectral_delay_samples_));
+
             guardian_delay_base_samples_ =
                 static_cast<size_t>(std::ceil(kDefaultGuardianLookaheadSeconds * sample_rate_));
             guardian_.prepare(processing_rate, processing_block_size, maximum_channels,
@@ -118,6 +137,10 @@ namespace zldsp::limiter {
                 oversampler_.reset();
             }
             style_.reset();
+            spectral_detector_.reset();
+            previous_low_frequency_weight_ = FloatType(0);
+            spectral_delay_.reset();
+            spectral_delay_.setDelayInSamples(static_cast<int>(spectral_delay_samples_));
             main_delay_.reset();
             main_delay_.setDelayInSamples(static_cast<int>(main_delay_samples_ * kProcessingFactor));
             attenuation_delay_.reset();
@@ -133,6 +156,7 @@ namespace zldsp::limiter {
             output_ceiling_db_ = ceiling_db;
             final_ceiling_linear_ = chore::decibelsToGain(output_ceiling_db_);
             style_.setCeilingDecibels(output_ceiling_db_);
+            spectral_detector_.setCeilingLinear(final_ceiling_linear_);
             guardian_.setCeilingLinear(chore::decibelsToGain(output_ceiling_db_));
             true_peak_limiter_.setCeilingDecibels(output_ceiling_db_);
         }
@@ -168,6 +192,11 @@ namespace zldsp::limiter {
             }
             const auto num_channels = buffer.size();
             const auto processing_samples = num_samples * kProcessingFactor;
+            const auto planning_samples = num_samples * kPlanningFactor;
+            // analyse signed audio before peak pooling, including during recovery tails
+            updateLowFrequencyWeights(std::span<const FloatType* const>{buffer.data(), num_channels}, num_samples);
+            const auto low_frequency_weights =
+                std::span<const FloatType>{low_frequency_weights_.data(), planning_samples};
 
             auto processing_buffer = buffer;
             // up-sample
@@ -179,14 +208,13 @@ namespace zldsp::limiter {
             const auto gains = std::span<FloatType*>{gain_pointers_.data(), num_channels};
             if constexpr (kPoolingFactor > 1) {
                 // pool to 4x, plan attenuation, then interpolate back to the processing rate
-                const auto planning_samples = num_samples * kPlanningFactor;
                 for (size_t channel = 0; channel < num_channels; ++channel) {
                     poolPeaks<kPoolingFactor>(processing_buffer[channel], peak_buffers_[channel].data(),
                                              planning_samples);
                 }
                 const auto attenuation = std::span<FloatType*>{attenuation_pointers_.data(), num_channels};
                 style_.process(std::span<const FloatType* const>{peak_pointers_.data(), num_channels},
-                               attenuation, planning_samples);
+                               attenuation, planning_samples, low_frequency_weights);
                 attenuation_delay_.process(attenuation, planning_samples);
                 for (size_t channel = 0; channel < num_channels; ++channel) {
                     attenuation_interpolators_[channel].template process<kPoolingFactor>(
@@ -195,7 +223,7 @@ namespace zldsp::limiter {
             } else {
                 // plan attenuation directly from processing-rate samples through 4x
                 style_.process(std::span<const FloatType* const>{processing_buffer.data(), num_channels},
-                               gains, processing_samples);
+                               gains, processing_samples, low_frequency_weights);
                 attenuation_delay_.process(gains, processing_samples);
                 for (size_t channel = 0; channel < num_channels; ++channel) {
                     attenuationToGain(gains[channel], processing_samples);
@@ -231,6 +259,7 @@ namespace zldsp::limiter {
         double sample_rate_{48000.0};
         size_t main_delay_samples_{0};
         size_t attenuation_delay_samples_{0};
+        size_t spectral_delay_samples_{0};
         size_t guardian_delay_base_samples_{0};
         size_t latency_samples_{0};
 
@@ -242,6 +271,8 @@ namespace zldsp::limiter {
                                                    oversample::OverSampler<FloatType, NumOversamplingStages>>;
         [[no_unique_address]] OverSamplerType oversampler_{};
         Style style_{};
+        SpectralDetector<FloatType> spectral_detector_{};
+        delay::IntegerDelay<FloatType> spectral_delay_{};
         delay::IntegerDelay<FloatType> main_delay_{};
         delay::IntegerDelay<FloatType> attenuation_delay_{};
         SafetyGuardian<FloatType> guardian_{};
@@ -254,6 +285,30 @@ namespace zldsp::limiter {
         std::vector<const FloatType*> peak_pointers_{};
         std::vector<FloatType*> attenuation_pointers_{};
         std::vector<AttenuationInterpolator<FloatType>> attenuation_interpolators_{};
+        std::vector<FloatType> base_low_frequency_weights_{};
+        std::vector<FloatType> low_frequency_weights_{};
+        FloatType previous_low_frequency_weight_{FloatType(0)};
+
+        void updateLowFrequencyWeights(std::span<const FloatType* const> input, const size_t num_samples) {
+            spectral_detector_.process(input, {base_low_frequency_weights_.data(), num_samples});
+            if constexpr (kPlanningFactor == 1) {
+                std::copy_n(base_low_frequency_weights_.data(), num_samples, low_frequency_weights_.data());
+            } else {
+                for (size_t i = 0; i < num_samples; ++i) {
+                    const auto current = base_low_frequency_weights_[i];
+                    const auto delta = current - previous_low_frequency_weight_;
+                    for (size_t phase = 0; phase < kPlanningFactor; ++phase) {
+                        const auto fraction =
+                            static_cast<FloatType>(phase) / static_cast<FloatType>(kPlanningFactor);
+                        low_frequency_weights_[i * kPlanningFactor + phase] =
+                            previous_low_frequency_weight_ + fraction * delta;
+                    }
+                    previous_low_frequency_weight_ = current;
+                }
+            }
+            auto* weights = low_frequency_weights_.data();
+            spectral_delay_.process(std::span<FloatType*>{&weights, 1}, num_samples * kPlanningFactor);
+        }
 
         void applyOutputClamp(std::span<FloatType*> buffer, const size_t num_samples) {
             for (auto* channel : buffer) {

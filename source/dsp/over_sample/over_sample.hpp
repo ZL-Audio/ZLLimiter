@@ -79,6 +79,19 @@ namespace zldsp::oversample {
         }
 
         /**
+         * @return the upsampling delay in base-rate samples, including fractional samples
+         */
+        [[nodiscard]] double getUpsamplingLatency() const {
+            double total_latency{0.0};
+            double inverse_factor{1.0};
+            for (const auto& stage : stages_) {
+                total_latency += stage.getUpsamplingLatency() * inverse_factor;
+                inverse_factor *= 0.5;
+            }
+            return total_latency;
+        }
+
+        /**
          * process samples up
          * @param buffer input samples
          * @param num_samples

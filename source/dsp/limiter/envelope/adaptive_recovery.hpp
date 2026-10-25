@@ -51,7 +51,8 @@ namespace zldsp::limiter {
             slow_increment_ = (target_slow_step_ - slow_step_) / static_cast<double>(ramp_samples_);
         }
 
-        FloatType processSample(const FloatType maximum_planned_db) {
+        FloatType processSample(const FloatType maximum_planned_db,
+                                const FloatType low_frequency_weight = FloatType(0)) {
             if (ramp_remaining_ > 0) {
                 fast_step_ += fast_increment_;
                 slow_step_ += slow_increment_;
@@ -65,10 +66,15 @@ namespace zldsp::limiter {
             const auto persistence = persistence_.processSample(activity);
             const auto depth = std::min(depth_.processSample(demand) / FloatType(12), FloatType(1));
             const auto severity = persistence + FloatType(0.25) * (FloatType(1) - persistence) * depth;
-            return static_cast<FloatType>(fast_step_ + static_cast<double>(severity) * (slow_step_ - fast_step_));
+            const auto weight = std::clamp(low_frequency_weight, FloatType(0), FloatType(1));
+            // bias toward the slow endpoint within the existing recovery range
+            const auto spectral_severity = severity + kSpectralAmount * weight * (FloatType(1) - severity);
+            return static_cast<FloatType>(
+                fast_step_ + static_cast<double>(spectral_severity) * (slow_step_ - fast_step_));
         }
 
     private:
+        static constexpr FloatType kSpectralAmount{FloatType(0.5)};
         double sample_rate_{48000.0};
         double recovery_ms_{50.0};
         double fast_step_{-std::expm1(std::log(0.1) / (sample_rate_ * recovery_ms_ * 0.001))};

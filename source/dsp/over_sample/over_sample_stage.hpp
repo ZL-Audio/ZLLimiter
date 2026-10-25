@@ -87,6 +87,13 @@ namespace zldsp::oversample {
             return latency_;
         }
 
+        /**
+         * @return the upsampling delay in this stage's input-rate samples
+         */
+        [[nodiscard]] double getUpsamplingLatency() const {
+            return static_cast<double>(up_coeff_.size()) * 0.5;
+        }
+
         template <bool use_simd = false>
         void upsample(std::span<FloatType*> buffer, const size_t num_samples) {
             for (size_t chan = 0; chan < buffer.size(); ++chan) {

@@ -143,9 +143,14 @@ namespace zldsp::limiter {
             ceiling_db_ = ceiling_db;
         }
 
+        /**
+         * process peaks with optional low-frequency weights aligned to the fixed-delay lookahead output
+         * @param low_frequency_weights an empty span uses only planned attenuation for recovery
+         */
         void process(std::span<const FloatType* const> peak_buffers,
                      std::span<FloatType* const> attenuation_buffers,
-                     const size_t num_samples) {
+                     const size_t num_samples,
+                     const std::span<const FloatType> low_frequency_weights = {}) {
             const auto num_channels = peak_buffers.size();
             if (num_channels == 0) {
                 return;
@@ -162,7 +167,9 @@ namespace zldsp::limiter {
                     fast_[channel] = lookahead_[channel].processSample(attenuation_buffers[channel][i], weights);
                     maximum_planned = std::max(maximum_planned, fast_[channel]);
                 }
-                const auto release_step = recovery_.processSample(maximum_planned);
+                const auto low_frequency_weight =
+                    low_frequency_weights.empty() ? FloatType(0) : low_frequency_weights[i];
+                const auto release_step = recovery_.processSample(maximum_planned, low_frequency_weight);
                 FloatType maximum_fast{0};
                 for (size_t channel = 0; channel < num_channels; ++channel) {
                     const auto planned = fast_[channel];
