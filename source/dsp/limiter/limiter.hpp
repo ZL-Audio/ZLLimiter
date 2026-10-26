@@ -269,7 +269,12 @@ namespace zldsp::limiter {
 
         using OverSamplerType = std::conditional_t<NumOversamplingStages == 0, std::monostate,
                                                    oversample::OverSampler<FloatType, NumOversamplingStages>>;
-        [[no_unique_address]] OverSamplerType oversampler_{};
+#if __has_cpp_attribute(msvc::no_unique_address)
+        [[msvc::no_unique_address]]
+#elif __has_cpp_attribute(no_unique_address)
+        [[no_unique_address]]
+#endif
+        OverSamplerType oversampler_{};
         Style style_{};
         SpectralDetector<FloatType> spectral_detector_{};
         delay::IntegerDelay<FloatType> spectral_delay_{};
