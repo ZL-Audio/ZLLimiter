@@ -183,7 +183,11 @@ target_compile_definitions(SharedCode
         JUCE_VST3_CAN_REPLACE_VST2=0
         JUCE_USE_FLAC=0
         JUCE_USE_OGGVORBIS=0
+        JUCE_USE_OPUS=0
         JUCE_USE_WEBP=0
+        JUCE_USE_MP3AUDIOFORMAT=0
+        JUCE_USE_LAME_AUDIO_FORMAT=0
+        JUCE_USE_WINDOWS_MEDIA_FORMAT=0
 
         # lets the app known if we're Debug or Release
         CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
