@@ -15,6 +15,7 @@
 #include "../../../../chore/thread/tri_buffer.hpp"
 #include "../../../../gui/gui.hpp"
 #include "../../../helper/atomic_bound.hpp"
+#include "../../../helper/history_timing.hpp"
 #include "../../../../dsp/analyzer/analyzer_base/fifo_transfer_buffer.hpp"
 #include "../../../../dsp/analyzer/mag_analyzer/limit_reduction_receiver.hpp"
 #include "../../../../dsp/analyzer/mag_analyzer/magnitude_receiver.hpp"
@@ -29,9 +30,15 @@ namespace zlpanel {
 
         void paint(juce::Graphics& g) override;
 
-        void run(double next_time_stamp,
+        void run(const juce::Thread& thread, double next_time_stamp,
                  zldsp::analyzer::FIFOTransferBuffer<zlp::Controller::kAnalyzerStreamNum>& transfer_buffer,
                  size_t consumer_id, const MagDBRange& db_range);
+
+        // called on the analyzer thread
+        [[nodiscard]] bool shouldResetHistory(double next_time_stamp) const;
+
+        // discard pending samples before resetting history
+        void resetHistory(double time_stamp);
 
         void resized() override;
 
@@ -68,6 +75,7 @@ namespace zlpanel {
 
         double start_time_{0.0};
         double motion_start_time_{0.0};
+        double previous_time_stamp_{kUnsetHistoryTimeStamp};
 
         enum class MoveType {
             kSync, kSlow, kRoll

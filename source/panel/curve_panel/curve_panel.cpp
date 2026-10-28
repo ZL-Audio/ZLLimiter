@@ -9,6 +9,8 @@
 
 #include "curve_panel.hpp"
 
+#include <mutex>
+
 namespace zlpanel {
     CurvePanel::CurvePanel(PluginProcessor& p, zlgui::UIState& base,
                            const multilingual::TooltipHelper& tooltip_helper) :
@@ -84,6 +86,9 @@ namespace zlpanel {
     }
 
     void CurvePanel::repaintCallBack(const double time_stamp) {
+        if (!isValidHistoryTimeStamp(time_stamp)) {
+            return;
+        }
         next_stamp_.store(time_stamp, std::memory_order_relaxed);
         repaint();
     }
@@ -112,6 +117,11 @@ namespace zlpanel {
             if (threadShouldExit()) {
                 return;
             }
+            const auto time_stamp = next_stamp_.load(std::memory_order_relaxed);
+            if (!isValidHistoryTimeStamp(time_stamp)) {
+                continue;
+            }
+            const auto reset_history = peak_panel_.getDisplayPanel().shouldResetHistory(time_stamp);
             auto& controller = p_ref_.getController();
             auto& sender = controller.getMagAnalyzerSender();
             double value_sample_rate = 0.0;
@@ -119,7 +129,10 @@ namespace zlpanel {
             bool reset_values = false;
             bool measure_values = false;
             {
-                const std::lock_guard guard(sender.getLock());
+                const std::unique_lock lock{sender.getLock(), std::try_to_lock};
+                if (!lock.owns_lock() || threadShouldExit()) {
+                    continue;
+                }
                 if (sender.getSampleRate() <= 0.0 || sender.getMaxNumSamples() == 0) {
                     continue;
                 }
@@ -147,10 +160,31 @@ namespace zlpanel {
                     auto& fifo = sender.getAbstractFIFO();
                     fifo.finishRead(fifo.getNumReady());
                 }
-                transfer_buffer_.processTransfer(sender.getAbstractFIFO(), sender.getSampleFIFOs());
+                if (reset_history) {
+                    // discard stale samples before restarting history
+                    auto& sender_fifo{sender.getAbstractFIFO()};
+                    const auto num_ready = sender_fifo.getNumReady();
+                    (void)sender_fifo.prepareToRead(num_ready);
+                    sender_fifo.finishRead(num_ready);
+
+                    auto& fifo{transfer_buffer_.getMulticastFIFO()};
+                    for (const auto consumer_id : {peak_consumer_, meter_consumer_}) {
+                        const auto num_pending = fifo.getNumReady(consumer_id);
+                        if (num_pending > 0) {
+                            (void)fifo.prepareToRead(consumer_id, num_pending);
+                            fifo.finishRead(consumer_id, num_pending);
+                        }
+                    }
+                } else {
+                    transfer_buffer_.processTransfer(sender.getAbstractFIFO(), sender.getSampleFIFOs());
+                }
             }
             if (threadShouldExit()) {
                 return;
+            }
+            if (reset_history) {
+                peak_panel_.getDisplayPanel().resetHistory(time_stamp);
+                meter_panel_.getDisplayPanel().resetTiming(time_stamp);
             }
             if (value_num_channels > 0) {
                 value_panel_.getDisplayPanel().prepare(value_sample_rate, value_num_channels);
@@ -159,12 +193,11 @@ namespace zlpanel {
             }
             const MagDBRange range(0.f, zlstate::PAnalyzerMinDB::getDBFromIndex(
                                        min_db_ref_.load(std::memory_order_relaxed)));
-            const auto stamp = next_stamp_.load(std::memory_order_relaxed);
-            peak_panel_.getDisplayPanel().run(stamp, transfer_buffer_, peak_consumer_, range);
+            peak_panel_.getDisplayPanel().run(*this, time_stamp, transfer_buffer_, peak_consumer_, range);
             if (threadShouldExit()) {
                 return;
             }
-            meter_panel_.getDisplayPanel().run(stamp, transfer_buffer_, meter_consumer_, range);
+            meter_panel_.getDisplayPanel().run(time_stamp, transfer_buffer_, meter_consumer_, range);
             if (threadShouldExit()) {
                 return;
             }

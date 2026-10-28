@@ -9,6 +9,7 @@
 
 #include "meter_display_panel.hpp"
 
+#include "../../../helper/history_timing.hpp"
 #include "../../../helper/panel_constants.hpp"
 
 namespace zlpanel {
@@ -34,19 +35,7 @@ namespace zlpanel {
     MeterDisplayPanel::~MeterDisplayPanel() = default;
 
     void MeterDisplayPanel::reset() {
-        is_first_point_ = true;
-        missing_seconds_ = 0.0;
-        pre_receiver_.reset();
-        out_receiver_.reset();
-        limit_reduction_receiver_.reset();
-        previous_pre_.fill(-240.f);
-        previous_out_.fill(-240.f);
-        previous_reduction_.fill(0.f);
-        pre_decay_mul_.fill(1.f);
-        out_decay_mul_.fill(1.f);
-        target_gap_db_.fill(0.0);
-        gap_remaining_seconds_.fill(0.0);
-        circular_min_max_.clear();
+        resetTiming(kUnsetHistoryTimeStamp);
         reset_peaks_.store(true, std::memory_order::relaxed);
     }
 
@@ -129,10 +118,30 @@ namespace zlpanel {
                                      out_peak_.load(std::memory_order::relaxed));
     }
 
+    void MeterDisplayPanel::resetTiming(const double time_stamp) {
+        start_time_ = time_stamp;
+        is_first_point_ = true;
+        previous_reduction_.fill(0.f);
+        previous_pre_.fill(-240.f);
+        previous_out_.fill(-240.f);
+        pre_decay_mul_.fill(1.f);
+        out_decay_mul_.fill(1.f);
+        target_gap_db_.fill(0.0);
+        gap_remaining_seconds_.fill(0.0);
+        circular_min_max_.clear();
+        missing_seconds_ = 0.0;
+        pre_receiver_.reset();
+        out_receiver_.reset();
+        limit_reduction_receiver_.reset();
+    }
+
     void MeterDisplayPanel::run(const double next_time_stamp,
                                 zldsp::analyzer::FIFOTransferBuffer<zlp::Controller::kAnalyzerStreamNum>&
                                 transfer_buffer,
                                 const size_t consumer_id, const MagDBRange& db_range) {
+        if (!isValidHistoryTimeStamp(next_time_stamp)) {
+            return;
+        }
         updateSize();
         const auto true_peak = analyzer_mag_type_ref_.load(std::memory_order::relaxed) > .5f;
         if (true_peak != true_peak_) {
@@ -142,6 +151,9 @@ namespace zlpanel {
         if (is_first_point_) {
             is_first_point_ = false;
             start_time_ = next_time_stamp;
+            return;
+        }
+        if (next_time_stamp <= start_time_) {
             return;
         }
         if (reset_peaks_.exchange(false, std::memory_order::relaxed)) {

@@ -41,6 +41,9 @@ namespace zlpanel {
 
         void repaintCallBackSlow();
 
+        // reset display timing on the analyzer thread, keeping peak holds
+        void resetTiming(double time_stamp);
+
     private:
         static constexpr float kReductionDecayPerSecond = 16.f;
         static constexpr float kMeterDecayPerSecond = 2.f;
