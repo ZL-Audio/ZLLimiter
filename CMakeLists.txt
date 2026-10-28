@@ -9,8 +9,10 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake-includes")
 include(GitVersion)
 include(PamplejuceVersion)
 
-# Configures universal binaries and decides which version of macOS to support
-include(PamplejuceMacOS)
+# XcodePrettify enables schemes only for the plugin targets.
+if (CMAKE_HOST_APPLE)
+    set(CMAKE_XCODE_GENERATE_SCHEME OFF)
+endif ()
 
 # Change me!
 # This is the internal name of the project and the name of JUCE's shared code "target"
