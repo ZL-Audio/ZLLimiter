@@ -27,6 +27,7 @@ namespace zlpanel {
         const auto box_alignment = combobox_helper::getAlignment(base_.gui.getComboboxAlignment());
         link_box_.getLAF().setItemAlignment(box_alignment);
         addAndMakeVisible(link_box_);
+        input_slider_.setComponentID(zlp::PInputGain::kID);
         addAndMakeVisible(input_slider_);
     }
 

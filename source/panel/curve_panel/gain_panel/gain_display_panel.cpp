@@ -18,6 +18,7 @@ namespace zlpanel {
         base_(base), updater_(),
         gain_slider_(base.gui, ""),
         gain_slider_attach_(gain_slider_, p.parameters_, zlp::PInputGain::kID, updater_) {
+        setComponentID(zlp::PInputGain::kID);
         for (auto const s : {&gain_slider_}) {
             s->setSliderStyle(base_.gui.getRotaryStyle());
             s->setTextBoxStyle(juce::Slider::TextEntryBoxPosition::NoTextBox, true, 0, 0);
@@ -83,11 +84,17 @@ namespace zlpanel {
     }
 
     void GainDisplayPanel::mouseDown(const juce::MouseEvent& event) {
+        if (event.mods.isRightButtonDown()) {
+            return;
+        }
         updateDragDistance(event.mods.isShiftDown());
         gain_slider_.mouseDown(event);
     }
 
     void GainDisplayPanel::mouseDrag(const juce::MouseEvent& event) {
+        if (event.mods.isRightButtonDown()) {
+            return;
+        }
         gain_slider_.mouseDrag(event);
     }
 

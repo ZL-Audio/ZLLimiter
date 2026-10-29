@@ -49,7 +49,7 @@ namespace zlpanel {
             slider->getSlider().setSliderSnapsToMousePosition(false);
             addAndMakeVisible(slider);
         }
-        ceiling_slider_.getSlider().setComponentID(zlp::POutputCeiling::kID);
+        ceiling_slider_.setComponentID(zlp::POutputCeiling::kID);
 
         oversample_box_.getLAF().setAlignment(zlgui::combobox::Alignment::kRight);
         oversample_box_.setScrollEnabled(true);

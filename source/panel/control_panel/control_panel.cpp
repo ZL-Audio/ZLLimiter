@@ -66,7 +66,6 @@ namespace zlpanel {
 
         for (size_t i = 0; i < sliders_.size(); ++i) {
             sliders_[i].setComponentID(ids[i]);
-            sliders_[i].getSlider1().setComponentID(ids[i]);
             attachments_[i] = std::make_unique<zlgui::attachment::SliderAttachment<true>>(
                 sliders_[i].getSlider1(), p.parameters_, ids[i], updater_);
             addAndMakeVisible(sliders_[i]);
