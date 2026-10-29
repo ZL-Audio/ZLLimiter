@@ -74,6 +74,14 @@ def build_package():
     if not artifacts:
         raise ValueError("No plugin artifacts were provided. Set at least one supported *_PATH variable.")
 
+    standalone_entitlements = None
+    if developer_id_app and any(artifact[0] == "Standalone" for artifact in artifacts):
+        default_entitlements = (build_path / f"{project_name}_artefacts" / "JuceLibraryCode"
+                                / f"{project_name}_Standalone.entitlements")
+        standalone_entitlements = Path(os.getenv("Standalone_ENTITLEMENTS_PATH", str(default_entitlements)))
+        if not standalone_entitlements.is_file():
+            raise FileNotFoundError(f"Standalone entitlements file does not exist: {standalone_entitlements}")
+
     # root
     root = ET.Element("installer-gui-script", minSpecVersion="1")
     # title
@@ -102,9 +110,14 @@ def build_package():
     print("Create packages")
     for plugin_format, extension, install_path, plugin_path in artifacts:
         if developer_id_app != "" and extension != "aax":
-            subprocess.run(
-                ["codesign", "--force", "-s", developer_id_app, "-v", plugin_path,
-                 "--deep", "--strict", "--options=runtime", "--timestamp"], check=True)
+            signing_command = ["codesign", "--force", "-s", developer_id_app, "-v", plugin_path,
+                               "--strict", "--options=runtime", "--timestamp"]
+            if plugin_format == "Standalone":
+                # Apply application entitlements only to the standalone executable.
+                signing_command.extend(["--entitlements", str(standalone_entitlements)])
+            else:
+                signing_command.append("--deep")
+            subprocess.run(signing_command, check=True)
 
         identifier = "{}.{}.{}.pkg".format(bundle_id, project_name, extension)
         pkg_path = build_path / "{}.{}.pkg".format(product_name, extension).replace(" ", "_")
