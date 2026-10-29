@@ -147,8 +147,10 @@ namespace zlp {
         using Limiter32x = zldsp::limiter::Limiter<float, 5>;
         using LimiterTuple = std::tuple<Limiter1x, Limiter2x, Limiter4x, Limiter8x, Limiter16x, Limiter32x>;
         static constexpr size_t kOversamplingModeCount = std::tuple_size_v<LimiterTuple>;
+        static constexpr size_t kMaximumLimiterBlockSize = 512;
 
         LimiterTuple limiters_{};
+        std::vector<float*> limiter_chunk_pointers_{};
         zldsp::gain::Gain<float> input_gain_{};
         zldsp::gain::Gain<float> output_gain_{};
         zldsp::delay::IntegerDelay<float> dry_delay_{};

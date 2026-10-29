@@ -234,8 +234,10 @@ namespace zlp {
     void Controller::prepareLimiters(const double sample_rate,
                                      const size_t maximum_block_size,
                                      const size_t maximum_channels) {
+        const auto limiter_block_size = std::min(maximum_block_size, kMaximumLimiterBlockSize);
+        limiter_chunk_pointers_.resize(maximum_channels);
         std::apply([&](auto&... limiter) {
-            (limiter.prepare(sample_rate, maximum_block_size, maximum_channels), ...);
+            (limiter.prepare(sample_rate, limiter_block_size, maximum_channels), ...);
         }, limiters_);
     }
 
@@ -279,24 +281,37 @@ namespace zlp {
     }
 
     void Controller::processActiveLimiter(std::span<float*> buffer, const size_t num_samples) {
+        const auto process_limiter = [&](auto& limiter) {
+            if (num_samples <= kMaximumLimiterBlockSize) {
+                limiter.process(buffer, num_samples);
+                return;
+            }
+            const auto chunk = std::span<float*>{limiter_chunk_pointers_.data(), buffer.size()};
+            for (size_t offset = 0; offset < num_samples; offset += kMaximumLimiterBlockSize) {
+                for (size_t channel = 0; channel < buffer.size(); ++channel) {
+                    chunk[channel] = buffer[channel] + offset;
+                }
+                limiter.process(chunk, std::min(kMaximumLimiterBlockSize, num_samples - offset));
+            }
+        };
         switch (oversampling_index_) {
         case 0:
-            std::get<0>(limiters_).process(buffer, num_samples);
+            process_limiter(std::get<0>(limiters_));
             break;
         case 1:
-            std::get<1>(limiters_).process(buffer, num_samples);
+            process_limiter(std::get<1>(limiters_));
             break;
         case 2:
-            std::get<2>(limiters_).process(buffer, num_samples);
+            process_limiter(std::get<2>(limiters_));
             break;
         case 3:
-            std::get<3>(limiters_).process(buffer, num_samples);
+            process_limiter(std::get<3>(limiters_));
             break;
         case 4:
-            std::get<4>(limiters_).process(buffer, num_samples);
+            process_limiter(std::get<4>(limiters_));
             break;
         case 5:
-            std::get<5>(limiters_).process(buffer, num_samples);
+            process_limiter(std::get<5>(limiters_));
             break;
         default:
             jassertfalse;
