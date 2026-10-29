@@ -93,7 +93,6 @@ juce_add_plugin("${PROJECT_NAME}"
         COMPANY_NAME "${COMPANY_NAME}"
         BUNDLE_ID "${BUNDLE_ID}"
 
-        # On MacOS, plugin is copied to ~/Users/yourname/Library/Audio/Plug-Ins/
         COPY_PLUGIN_AFTER_BUILD ${ZL_JUCE_COPY_PLUGIN}
         AAX_COPY_DIR "${JUCE_AAX_COPY_DIR}"
 
@@ -108,6 +107,7 @@ juce_add_plugin("${PROJECT_NAME}"
         PLUGIN_CODE "${PLUGIN_CODE}"
         FORMATS "${FORMATS}"
         LV2URI "${LV2URI}"
+        LV2_PLUGIN_CLASS LimiterPlugin
 
         IS_SYNTH FALSE
         NEEDS_MIDI_INPUT FALSE
@@ -138,19 +138,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND (WITH_ADDRESS_SANITIZER OR WITH_THREA
             endif ()
         endif ()
     endforeach ()
-endif ()
-
-# Add LV2 tags
-if ("LV2" IN_LIST FORMATS)
-    set(LV2_TARGET "${PROJECT_NAME}_LV2")
-    set(LV2_SHORT_TAGS dynamics limiter)
-    find_package(Python3 REQUIRED COMPONENTS Interpreter)
-    set(PATCH_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/packaging/patch_lv2.py")
-    add_custom_command(TARGET ${LV2_TARGET} POST_BUILD
-            COMMAND Python3::Interpreter "${PATCH_SCRIPT}" "$<TARGET_FILE_DIR:${LV2_TARGET}>" ${LV2_SHORT_TAGS}
-            COMMENT "Running Python script to patch LV2 tags: ${LV2_SHORT_TAGS}..."
-            VERBATIM
-    )
 endif ()
 
 # This lets us use our code in both the JUCE targets and our Test target
