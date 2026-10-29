@@ -3,9 +3,9 @@ name: macOS/Windows/Linux Heavy Test
 on:
   workflow_dispatch:
 
-# When pushing new commits, cancel any running builds on that branch
+# Cancel older runs of this workflow on the same ref.
 concurrency:
-  group: ${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
