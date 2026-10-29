@@ -39,12 +39,12 @@ def configure_command(settings: dict[str, str], runner_os: str) -> list[str]:
 
     command += [f"-DZL_JUCE_FORMATS={settings['formats']}", f"-DZL_HWY_STATIC_TARGET={settings['simd']}"]
     sanitizer = settings["sanitizer"]
-    if sanitizer in {"address", "thread"}:
+    if sanitizer in {"none", "address", "thread"}:
         command += [
             f"-DWITH_ADDRESS_SANITIZER={'ON' if sanitizer == 'address' else 'OFF'}",
             f"-DWITH_THREAD_SANITIZER={'ON' if sanitizer == 'thread' else 'OFF'}",
         ]
-    elif sanitizer != "none":
+    else:
         raise ValueError(f"Unknown sanitizer: {sanitizer}")
     command += [line.strip() for line in settings.get("cmake-extra-args", "").splitlines() if line.strip()]
     return command
