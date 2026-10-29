@@ -35,7 +35,7 @@ namespace zlpanel {
 
         void resized() override;
 
-        void repaintCallBack(double time_stamp);
+        void repaintCallBack(double time_stamp, double actual_refresh_rate);
 
         void repaintCallBackSlow();
 
@@ -59,6 +59,7 @@ namespace zlpanel {
         size_t peak_consumer_, meter_consumer_, value_consumer_;
         uint64_t generation_{std::numeric_limits<uint64_t>::max()};
         std::atomic<double> next_stamp_{kUnsetHistoryTimeStamp};
+        std::atomic<double> actual_refresh_rate_{1.0};
 
 
         void run() override;

@@ -85,10 +85,11 @@ namespace zlpanel {
         }
     }
 
-    void CurvePanel::repaintCallBack(const double time_stamp) {
+    void CurvePanel::repaintCallBack(const double time_stamp, const double actual_refresh_rate) {
         if (!isValidHistoryTimeStamp(time_stamp)) {
             return;
         }
+        actual_refresh_rate_.store(actual_refresh_rate, std::memory_order_relaxed);
         next_stamp_.store(time_stamp, std::memory_order_relaxed);
         repaint();
     }
@@ -197,7 +198,8 @@ namespace zlpanel {
             if (threadShouldExit()) {
                 return;
             }
-            meter_panel_.getDisplayPanel().run(time_stamp, transfer_buffer_, meter_consumer_, range);
+            meter_panel_.getDisplayPanel().run(time_stamp, transfer_buffer_, meter_consumer_, range,
+                                               actual_refresh_rate_.load(std::memory_order_relaxed));
             if (threadShouldExit()) {
                 return;
             }

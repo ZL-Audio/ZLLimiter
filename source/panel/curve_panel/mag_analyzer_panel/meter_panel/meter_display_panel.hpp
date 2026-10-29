@@ -33,7 +33,7 @@ namespace zlpanel {
 
         void run(double next_time_stamp,
                  zldsp::analyzer::FIFOTransferBuffer<zlp::Controller::kAnalyzerStreamNum>& transfer_buffer,
-                 size_t consumer_id, const MagDBRange& db_range);
+                 size_t consumer_id, const MagDBRange& db_range, double actual_refresh_rate);
 
         void resized() override;
 
@@ -48,6 +48,8 @@ namespace zlpanel {
         static constexpr float kReductionDecayPerSecond = 16.f;
         static constexpr float kMeterDecayPerSecond = 2.f;
         static constexpr double kMeterGapConvergenceSeconds = 1.0;
+        // Bound the one-second hold at the meter's 1 ms minimum update interval.
+        static constexpr size_t kMaximumHoldUpdates = 1000;
         zlgui::UIState& base_;
         MeterTopPanel meter_top_panel_;
 

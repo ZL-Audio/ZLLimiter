@@ -94,7 +94,7 @@ namespace zlpanel {
             if (preset_browser_.isVisible()) {
                 preset_browser_.flushPendingScroll();
             }
-            curve_panel_.repaintCallBack(time_stamp);
+            curve_panel_.repaintCallBack(time_stamp, refresh_handler_.getActualRefreshRate());
         }
     }
 

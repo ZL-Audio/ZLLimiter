@@ -20,10 +20,10 @@ namespace zlpanel {
 
         const auto target_refresh_id = base_.getStateAPVTS().getRawParameterValue(
             zlstate::PTargetRefreshSpeed::kID)->load(std::memory_order::relaxed);
-        const auto circular_capacity = static_cast<size_t>(
+        const auto initial_hold_size = static_cast<size_t>(
             zlstate::PTargetRefreshSpeed::kRates[static_cast<size_t>(std::round(target_refresh_id))]);
-        circular_min_max_.setCapacity(circular_capacity);
-        circular_min_max_.setSize(circular_capacity);
+        circular_min_max_.setCapacity(kMaximumHoldUpdates);
+        circular_min_max_.setSize(initial_hold_size);
 
         pre_receiver_.prepare(2);
         out_receiver_.prepare(2);
@@ -138,7 +138,8 @@ namespace zlpanel {
     void MeterDisplayPanel::run(const double next_time_stamp,
                                 zldsp::analyzer::FIFOTransferBuffer<zlp::Controller::kAnalyzerStreamNum>&
                                 transfer_buffer,
-                                const size_t consumer_id, const MagDBRange& db_range) {
+                                const size_t consumer_id, const MagDBRange& db_range,
+                                const double actual_refresh_rate) {
         if (!isValidHistoryTimeStamp(next_time_stamp)) {
             return;
         }
@@ -210,6 +211,13 @@ namespace zlpanel {
 
         }
         // update reduction short-term max display
+        if (std::isfinite(actual_refresh_rate) && actual_refresh_rate > 0.0) {
+            const auto hold_size = static_cast<size_t>(std::round(std::clamp(
+                actual_refresh_rate, 1.0, static_cast<double>(kMaximumHoldUpdates))));
+            if (hold_size != circular_min_max_.getSize()) {
+                circular_min_max_.setSize(hold_size);
+            }
+        }
         float reduction_max_value = std::max(0.f, std::max(-reduction_dbs[0], -reduction_dbs[1]));
         reduction_max_value = circular_min_max_.push(reduction_max_value);
         float reduction_max_pos = -db_range.getReductionYProportion(reduction_max_value) * bound.getHeight();
