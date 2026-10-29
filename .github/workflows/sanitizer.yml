@@ -26,28 +26,28 @@ jobs:
         include:
           - name: macOS Address Sanitizer
             os: macos-latest
-            pluginval-binary: ./pluginval/Builds/pluginval_artefacts/RelWithDebugInfo/pluginval.app/Contents/MacOS/pluginval
+            pluginval-binary: ./pluginval/Builds/pluginval_artefacts/RelWithDebInfo/pluginval.app/Contents/MacOS/pluginval
             sanitizer: address
             formats: VST3;AU
             simd: NEON
             pluginval_disabled: Plugin state restoration
           - name: macOS Thread Sanitizer
             os: macos-latest
-            pluginval-binary: ./pluginval/Builds/pluginval_artefacts/RelWithDebugInfo/pluginval.app/Contents/MacOS/pluginval
+            pluginval-binary: ./pluginval/Builds/pluginval_artefacts/RelWithDebInfo/pluginval.app/Contents/MacOS/pluginval
             sanitizer: thread
             formats: VST3;AU
             simd: NEON
             pluginval_disabled: Plugin state restoration
           - name: Linux Address Sanitizer
             os: ubuntu-latest
-            pluginval-binary: ./pluginval/Builds/pluginval_artefacts/RelWithDebugInfo/pluginval
+            pluginval-binary: ./pluginval/Builds/pluginval_artefacts/RelWithDebInfo/pluginval
             sanitizer: address
             formats: VST3
             simd: AVX2
             pluginval_disabled: Plugin state restoration
           - name: Linux Thread Sanitizer
             os: ubuntu-latest
-            pluginval-binary: ./pluginval/Builds/pluginval_artefacts/RelWithDebugInfo/pluginval
+            pluginval-binary: ./pluginval/Builds/pluginval_artefacts/RelWithDebInfo/pluginval
             sanitizer: thread
             formats: VST3
             simd: AVX2
@@ -65,7 +65,7 @@ jobs:
         with:
           formats: ${{ matrix.formats }}
           simd: ${{ matrix.simd }}
-          build-type: RelWithDebugInfo
+          build-type: RelWithDebInfo
           sanitizer: ${{ matrix.sanitizer }}
           linux-extra-packages: ladspa-sdk
 
