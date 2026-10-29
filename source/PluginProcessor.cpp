@@ -51,7 +51,8 @@ bool PluginProcessor::isMidiEffect() const {
 }
 
 double PluginProcessor::getTailLengthSeconds() const {
-    return 0.0;
+    const auto sample_rate = getSampleRate();
+    return sample_rate > 10.0 ? 80.0 / sample_rate : 0.0;
 }
 
 int PluginProcessor::getNumPrograms() {
