@@ -105,6 +105,7 @@ jobs:
           python3 -u packaging/packager_macOS.py
         env:
           DEVELOPER_ID_APPLICATION: ${{ secrets.DEVELOPER_ID_APPLICATION }}
+          MACOS_ARCH: ${{ matrix.architecture }}
 
       - name: Sign Final Package (macOS)
         if: ${{ (runner.os == 'macOS') && (env.APPLE_INSTALLER_DEV != '') }}
