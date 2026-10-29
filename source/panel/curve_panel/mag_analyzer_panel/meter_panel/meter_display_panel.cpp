@@ -161,7 +161,7 @@ namespace zlpanel {
             out_peak_.store(-240.f, std::memory_order::relaxed);
         }
 
-        const auto delta_time = std::clamp(next_time_stamp - start_time_, 0.01, 1.0);
+        const auto delta_time = std::clamp(next_time_stamp - start_time_, 0.001, 1.0);
         start_time_ = next_time_stamp;
         // run meter receiver
         auto& fifo{transfer_buffer.getMulticastFIFO()};
