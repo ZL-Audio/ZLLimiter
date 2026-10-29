@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import xml.etree.cElementTree as ET
 from pathlib import Path
@@ -43,11 +44,15 @@ def build_package():
     artifact_name = os.getenv("ARTIFACT_NAME", "")
     developer_id_app = os.getenv("DEVELOPER_ID_APPLICATION", "")
     macos_arch = os.getenv("MACOS_ARCH", "x86_64,arm64")
+    macos_deployment_target = os.getenv("MACOS_DEPLOYMENT_TARGET", "").strip()
 
     if not build_dir.strip():
         raise ValueError("BUILD_DIR must be set and nonempty")
     if not artifact_name.strip():
         raise ValueError("ARTIFACT_NAME must be set and nonempty")
+    if not re.fullmatch(r"[1-9][0-9]*(?:\.[0-9]+){0,2}", macos_deployment_target):
+        raise ValueError("MACOS_DEPLOYMENT_TARGET must be a numeric macOS version matching "
+                         "the deployment target used to build the packaged artifacts")
     build_path = Path(build_dir)
     if not build_path.is_dir():
         raise NotADirectoryError(f"BUILD_DIR is not an existing directory: {build_path}")
@@ -104,6 +109,9 @@ def build_package():
                            enable_anywhere="false",
                            enable_currentUserHome="false",
                            enable_localSystem="true")
+    volume_check = ET.SubElement(root, "volume-check", script="true")
+    allowed_os_versions = ET.SubElement(volume_check, "allowed-os-versions")
+    ET.SubElement(allowed_os_versions, "os-version", min=macos_deployment_target)
     # choices outline
     outline = ET.SubElement(root, "choices-outline")
 
