@@ -210,6 +210,7 @@ set(ZL_HWY_STATIC_TARGET "NONE" CACHE STRING "Target architecture for static dis
 if (ZL_HWY_STATIC_TARGET STREQUAL "NONE")
     message(FATAL_ERROR "ZL_HWY_STATIC_TARGET must be set: SSE2/SEE42/AVX2/NEON.")
 endif ()
+set(HWY_ENABLE_CONTRIB OFF CACHE BOOL "Disable highway contrib library" FORCE)
 set(HWY_ENABLE_EXAMPLES OFF CACHE BOOL "Disable highway examples" FORCE)
 set(HWY_ENABLE_TESTS OFF CACHE BOOL "Disable highway tests" FORCE)
 set(HWY_COMPILE_ONLY_STATIC ON CACHE BOOL "Force highway static dispatch" FORCE)
