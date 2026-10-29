@@ -234,10 +234,13 @@ namespace zlp {
     void Controller::prepareLimiters(const double sample_rate,
                                      const size_t maximum_block_size,
                                      const size_t maximum_channels) {
-        const auto limiter_block_size = std::min(maximum_block_size, kMaximumLimiterBlockSize);
         limiter_chunk_pointers_.resize(maximum_channels);
+        const auto prepare_limiter = [&]<typename LimiterType>(LimiterType& limiter) {
+            constexpr auto limiter_block_size = kMaximumOversampledBlockSize / LimiterType::kProcessingFactor;
+            limiter.prepare(sample_rate, std::min(maximum_block_size, limiter_block_size), maximum_channels);
+        };
         std::apply([&](auto&... limiter) {
-            (limiter.prepare(sample_rate, limiter_block_size, maximum_channels), ...);
+            (prepare_limiter(limiter), ...);
         }, limiters_);
     }
 
@@ -281,17 +284,18 @@ namespace zlp {
     }
 
     void Controller::processActiveLimiter(std::span<float*> buffer, const size_t num_samples) {
-        const auto process_limiter = [&](auto& limiter) {
-            if (num_samples <= kMaximumLimiterBlockSize) {
+        const auto process_limiter = [&]<typename LimiterType>(LimiterType& limiter) {
+            constexpr auto limiter_block_size = kMaximumOversampledBlockSize / LimiterType::kProcessingFactor;
+            if (num_samples <= limiter_block_size) {
                 limiter.process(buffer, num_samples);
                 return;
             }
             const auto chunk = std::span<float*>{limiter_chunk_pointers_.data(), buffer.size()};
-            for (size_t offset = 0; offset < num_samples; offset += kMaximumLimiterBlockSize) {
+            for (size_t offset = 0; offset < num_samples; offset += limiter_block_size) {
                 for (size_t channel = 0; channel < buffer.size(); ++channel) {
                     chunk[channel] = buffer[channel] + offset;
                 }
-                limiter.process(chunk, std::min(kMaximumLimiterBlockSize, num_samples - offset));
+                limiter.process(chunk, std::min(limiter_block_size, num_samples - offset));
             }
         };
         switch (oversampling_index_) {
