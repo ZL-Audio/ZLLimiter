@@ -273,7 +273,7 @@ namespace zlp {
     public:
         static constexpr auto kID = "lookahead";
         static constexpr auto kName = "Lookahead";
-        inline static const auto kRange = juce::NormalisableRange<float>(0.f, 5.f, 0.01f);
+        inline static const auto kRange = juce::NormalisableRange<float>(0.f, 10.f, 0.01f);
         static constexpr auto kDefaultV = 2.f;
     };
 

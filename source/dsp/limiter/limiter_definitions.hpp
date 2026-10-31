@@ -10,6 +10,6 @@
 #pragma once
 
 namespace zldsp::limiter {
-    inline constexpr double kMaximumLookaheadSeconds = 0.005;
+    inline constexpr double kMaximumLookaheadSeconds = 0.01;
     inline constexpr double kDefaultGuardianLookaheadSeconds = 0.00025;
 }
