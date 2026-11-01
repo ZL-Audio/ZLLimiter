@@ -28,6 +28,7 @@ namespace zlpanel {
         link_box_.getLAF().setItemAlignment(box_alignment);
         addAndMakeVisible(link_box_);
         input_slider_.setComponentID(zlp::PInputGain::kID);
+        input_slider_.getSlider().setDraggingEnabled(false);
         addAndMakeVisible(input_slider_);
     }
 
