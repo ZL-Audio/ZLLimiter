@@ -36,6 +36,7 @@ namespace {
 namespace zlpanel {
     PeakDisplayPanel::PeakDisplayPanel(PluginProcessor& p, zlgui::UIState& base) :
         base_(base),
+        bypass_ref_(*p.parameters_.getRawParameterValue(zlp::PBypass::kID)),
         output_ceiling_ref_(*p.parameters_.getRawParameterValue(zlp::POutputCeiling::kID)),
         pre_curve_display_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PPreCurveDisplay::kID)),
         post_curve_display_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PPostCurveDisplay::kID)),
@@ -95,7 +96,10 @@ namespace zlpanel {
         }
         if (delta_curve_display_ref_.load(std::memory_order::relaxed) > .5f) {
             reduction_path_.pull();
-            g.setColour(base_.getColourByIdx(zlgui::ColourIdx::kReductionColour));
+            const auto reduction_colour = base_.getColourByIdx(zlgui::ColourIdx::kReductionColour);
+            g.setColour(bypass_ref_.load(std::memory_order::relaxed) > .5f
+                ? base_.gui.getColourBlendedWithBackground(reduction_colour, .5f)
+                : reduction_colour);
             g.strokePath(reduction_path_.getReader(),
                          juce::PathStrokeType(curve_thickness_,
                                               juce::PathStrokeType::curved,
