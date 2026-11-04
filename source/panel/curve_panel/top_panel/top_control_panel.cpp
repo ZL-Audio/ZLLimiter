@@ -57,9 +57,11 @@ namespace zlpanel {
         oversample_box_.setBufferedToImage(true);
         addAndMakeVisible(oversample_box_);
 
+        true_peak_button_.setImageAlpha(.5f, .75f, 1.f, 1.f);
+        delta_button_.setImageAlpha(.5f, .75f, 1.f, 1.f);
+        bypass_button_.setImageAlpha(1.f, 1.f, .5f, .75f);
         for (auto* button : {&true_peak_button_, &delta_button_, &bypass_button_}) {
             button->getButton().setClickingTogglesState(true);
-            button->setImageAlpha(.5f, .75f, 1.f, 1.f);
             addAndMakeVisible(button);
         }
         updater_.updateComponents();
