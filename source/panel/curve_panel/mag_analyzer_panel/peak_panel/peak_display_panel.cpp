@@ -36,6 +36,7 @@ namespace {
 namespace zlpanel {
     PeakDisplayPanel::PeakDisplayPanel(PluginProcessor& p, zlgui::UIState& base) :
         base_(base),
+        output_ceiling_ref_(*p.parameters_.getRawParameterValue(zlp::POutputCeiling::kID)),
         pre_curve_display_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PPreCurveDisplay::kID)),
         post_curve_display_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PPostCurveDisplay::kID)),
         delta_curve_display_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PDeltaCurveDisplay::kID)),
@@ -79,6 +80,19 @@ namespace zlpanel {
                                               juce::PathStrokeType::curved,
                                               juce::PathStrokeType::rounded));
         }
+        {
+            const auto ceiling_y = ceiling_y_.load(std::memory_order::relaxed);
+            const auto zero_reduction_y = atomic_bound_.getY();
+            const auto ceiling_distance = ceiling_y - zero_reduction_y;
+            const auto fade_start = 1.f * curve_thickness_;
+            const auto fade_end = 4.f * curve_thickness_;
+            if (curve_thickness_ > 0.01f && ceiling_distance >= fade_start) {
+                const auto alpha = .5f * std::min((ceiling_distance - fade_start) / (fade_end - fade_start), 1.f);
+                g.setColour(base_.gui.getTextColour().withAlpha(alpha));
+                g.fillRect(juce::Rectangle<float>{0.f, ceiling_y - curve_thickness_ * .5f,
+                                                  static_cast<float>(getWidth()), curve_thickness_});
+            }
+        }
         if (delta_curve_display_ref_.load(std::memory_order::relaxed) > .5f) {
             reduction_path_.pull();
             g.setColour(base_.getColourByIdx(zlgui::ColourIdx::kReductionColour));
@@ -105,8 +119,8 @@ namespace zlpanel {
             return true;
         }
         return !is_first_point_ &&
-               (next_time_stamp - start_time_ > history_length ||
-                getHistoryAdvance(next_time_stamp, start_time_, second_per_point_, pre_ys_.size()).needs_reset);
+        (next_time_stamp - start_time_ > history_length ||
+            getHistoryAdvance(next_time_stamp, start_time_, second_per_point_, pre_ys_.size()).needs_reset);
     }
 
     void PeakDisplayPanel::resetHistory(const double time_stamp) {
@@ -154,8 +168,8 @@ namespace zlpanel {
         const auto max_num_samples = transfer_buffer.getMaxNumSamples();
 
         const auto settings_changed = std::abs(sample_rate_ - sample_rate) > 0.1 ||
-                                      max_num_samples_ != max_num_samples ||
-                                      std::abs(time_length_idx_ - time_length_idx) > 0.1 || move_type_ != move_type;
+            max_num_samples_ != max_num_samples ||
+            std::abs(time_length_idx_ - time_length_idx) > 0.1 || move_type_ != move_type;
         if (settings_changed) {
             sample_rate_ = sample_rate;
             max_num_samples_ = max_num_samples;
@@ -179,6 +193,8 @@ namespace zlpanel {
         }
 
         updateYMapping(bound, db_range, false);
+        ceiling_y_.store(std::fma(output_ceiling_ref_.load(std::memory_order::relaxed),
+                                  db_to_y_scale_, db_to_y_bias_), std::memory_order::relaxed);
         if (settings_changed) {
             resetHistory(next_time_stamp);
         }

@@ -50,6 +50,7 @@ namespace zlpanel {
         static constexpr int kTooMuchResetThreshold = 64;
         zlgui::UIState& base_;
 
+        std::atomic<float>& output_ceiling_ref_;
         std::atomic<float>& pre_curve_display_ref_;
         std::atomic<float>& post_curve_display_ref_;
         std::atomic<float>& delta_curve_display_ref_;
@@ -71,6 +72,7 @@ namespace zlpanel {
         float reduction_y_bias_{0.f};
         bool is_y_mapping_initialized_{false};
 
+        std::atomic<float> ceiling_y_{0.f};
         float curve_thickness_{0.f};
 
         double start_time_{0.0};
