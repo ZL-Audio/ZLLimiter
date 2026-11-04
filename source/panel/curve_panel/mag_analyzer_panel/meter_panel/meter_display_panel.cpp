@@ -16,6 +16,7 @@ namespace zlpanel {
     MeterDisplayPanel::MeterDisplayPanel(PluginProcessor& p, zlgui::UIState& base) :
         base_(base),
         meter_top_panel_(base),
+        bypass_ref_(*p.parameters_.getRawParameterValue(zlp::PBypass::kID)),
         analyzer_mag_type_ref_(*p.parameters_NA_.getRawParameterValue(zlstate::PAnalyzerMagType::kID)) {
 
         const auto target_refresh_id = base_.getStateAPVTS().getRawParameterValue(
@@ -42,7 +43,10 @@ namespace zlpanel {
     void MeterDisplayPanel::paint(juce::Graphics& g) {
         g.setFont(base_.gui.getFontSize());
         const auto text_height = base_.gui.getFontSize() * 1.25f;
-        g.setColour(base_.getColourByIdx(zlgui::ColourIdx::kReductionColour));
+        const auto reduction_colour = base_.getColourByIdx(zlgui::ColourIdx::kReductionColour);
+        g.setColour(bypass_ref_.load(std::memory_order::relaxed) > .5f
+            ? base_.gui.getColourBlendedWithBackground(reduction_colour, .67f)
+            : reduction_colour);
         for (auto& a_bound : reduction_rect_) {
             g.fillRect(a_bound.load());
         }

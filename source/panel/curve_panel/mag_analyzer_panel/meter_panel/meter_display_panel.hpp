@@ -53,6 +53,7 @@ namespace zlpanel {
         zlgui::UIState& base_;
         MeterTopPanel meter_top_panel_;
 
+        std::atomic<float>& bypass_ref_;
         std::atomic<float>& analyzer_mag_type_ref_;
 
         AtomicBound<float> pending_bound_;

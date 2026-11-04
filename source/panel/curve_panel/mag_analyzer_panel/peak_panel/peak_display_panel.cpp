@@ -98,7 +98,7 @@ namespace zlpanel {
             reduction_path_.pull();
             const auto reduction_colour = base_.getColourByIdx(zlgui::ColourIdx::kReductionColour);
             g.setColour(bypass_ref_.load(std::memory_order::relaxed) > .5f
-                ? base_.gui.getColourBlendedWithBackground(reduction_colour, .5f)
+                ? base_.gui.getColourBlendedWithBackground(reduction_colour, .67f)
                 : reduction_colour);
             g.strokePath(reduction_path_.getReader(),
                          juce::PathStrokeType(curve_thickness_,
