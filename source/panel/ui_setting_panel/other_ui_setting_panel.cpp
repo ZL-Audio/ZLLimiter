@@ -96,12 +96,13 @@ namespace zlpanel {
     void OtherUISettingPanel::resetSetting() {
         refresh_rate_box_.getBox().setSelectedItemIndex(zlstate::PTargetRefreshSpeed::kDefaultI);
         combobox_alignment_box_.getBox().setSelectedItemIndex(zlstate::PComboboxAlignment::kDefaultI);
-        mag_curve_slider_.getSlider().setValue(zlstate::PMagCurveThickness::kDefaultV);
         tooltip_box_.getBox().setSelectedItemIndex(zlstate::PTooltipLang::kDefaultI);
-        font_mode_box_.getBox().setSelectedItemIndex(zlstate::PFontMode::kDefaultI);
-        font_scale_slider_.getSlider().setValue(zlstate::PFontScale::kDefaultV);
-        static_font_size_slider_.getSlider().setValue(base_.gui.getFontSize());
+        font_mode_box_.getBox().setSelectedItemIndex(zlstate::PFontMode::kDefaultI, juce::sendNotificationSync);
         window_size_fix_box_.getBox().setSelectedItemIndex(zlstate::PWindowSizeFix::kDefaultI);
+        for (auto* slider : {&mag_curve_slider_, &font_scale_slider_, &static_font_size_slider_}) {
+            slider->getSlider().setValue(slider->getSlider().getDoubleClickReturnValue());
+        }
+        comboBoxChanged(&font_mode_box_.getBox());
         saveSetting();
     }
 

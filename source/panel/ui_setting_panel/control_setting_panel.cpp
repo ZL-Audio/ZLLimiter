@@ -94,12 +94,8 @@ namespace zlpanel {
     }
 
     void ControlSettingPanel::resetSetting() {
-        constexpr std::array defaults{zlstate::PWheelSensitivity::kDefaultV,
-            zlstate::PWheelFineSensitivity::kDefaultV, zlstate::PSliderSensitivity::kDefaultV,
-            zlstate::PSliderFineSensitivity::kDefaultV, zlstate::PDraggerSensitivity::kDefaultV,
-            zlstate::PDraggerFineSensitivity::kDefaultV, zlstate::PWheelComboboxSensitivity::kDefaultV};
-        for (size_t i = 0; i < defaults.size(); ++i) {
-            sensitivity_sliders_[i].getSlider().setValue(defaults[i]);
+        for (auto& slider : sensitivity_sliders_) {
+            slider.getSlider().setValue(slider.getSlider().getDoubleClickReturnValue());
         }
         wheel_reverse_box_.getBox().setSelectedItemIndex(zlstate::PWheelShiftReverse::kDefaultI);
         rotary_style_box_.getBox().setSelectedItemIndex(zlstate::PRotaryStyle::kDefaultI);
