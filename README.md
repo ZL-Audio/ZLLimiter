@@ -69,4 +69,10 @@ JUCE template from [pamplejuce](https://github.com/sudara/pamplejuce)
 
 [inter](https://github.com/rsms/inter) by [The Inter Project Authors](https://github.com/rsms/inter)
 
+[xoshiro256**](https://prng.di.unimi.it/xoshiro256starstar.c) by David Blackman and Sebastiano Vigna, with [SplitMix](https://prng.di.unimi.it/splitmix.c) seeding by Sebastiano Vigna ([license](licenses/xoshiro256starstar_LICENSE.txt)).
+
+ATH A noise-shaping reference from [SSRC](https://github.com/shibatch/SSRC) by Naoki Shibata ([license](licenses/SSRC_LICENSE.txt)).
+
 Yuriy Ivantsov. *On the Ideal Bilinear and Biquadratic Digital Filter*. (2025).
+
+Hans Georg Brachtendorf and Christoph Dalpiaz. [*Near-optimal Multiplier-Less Broadband Noise Shaping Filters*](https://doi.org/10.1007/s11265-023-01889-1). (2023).

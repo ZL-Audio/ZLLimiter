@@ -27,14 +27,23 @@ namespace zlpanel {
         zlgui::UIState& base_;
 
         static constexpr auto kText =
-            "ZL Limiter is Free and Open-source. ZL Limiter is licensed under AGPLv3, except for the logo of ZL Audio and the logo of ZL Limiter. You can obtain the corresponding source code at https://github.com/ZL-Audio/ZLLimiter or https://gitee.com/ZL-Audio/ZLLimiter.\n\n"
-            "Copyright (c) 2025-2026 [zsliu98](https://github.com/zsliu98)\n\n"
+            "ZL Limiter is Free and Open-source. ZL Limiter is licensed under AGPLv3, "
+            "except for the logo of ZL Audio and the logo of ZL Limiter. "
+            "You can obtain the corresponding source code at https://github.com/ZL-Audio/ZLLimiter "
+            "or https://gitee.com/ZL-Audio/ZLLimiter.\n\n"
+            "Copyright (c) 2023-2026 [zsliu98](https://github.com/zsliu98)\n\n"
             "JUCE framework from [JUCE](https://github.com/juce-framework/JUCE)\n\n"
             "JUCE template from [pamplejuce](https://github.com/sudara/pamplejuce)\n\n"
             "[Highway](https://github.com/google/highway) by [Google](https://github.com/google)\n\n"
             "[Material Symbols](https://github.com/google/material-design-icons) by [Google](https://github.com/google)\n\n"
             "[inter](https://github.com/rsms/inter) by [The Inter Project Authors](https://github.com/rsms/inter)\n\n"
-            "Yuriy Ivantsov. On the ideal bilinear and biquadratic digital filter. (2025).";
+            "xoshiro256** by David Blackman and Sebastiano Vigna; "
+            "SplitMix by Sebastiano Vigna (https://prng.di.unimi.it/).\n\n"
+            "ATH A noise-shaping reference from [SSRC](https://github.com/shibatch/SSRC) "
+            "by Naoki Shibata.\n\n"
+            "Yuriy Ivantsov. On the ideal bilinear and biquadratic digital filter. (2025).\n\n"
+            "Hans Georg Brachtendorf and Christoph Dalpiaz. "
+            "Near-optimal Multiplier-Less Broadband Noise Shaping Filters. (2023).";
 
         [[nodiscard]] juce::TextLayout getTipTextLayout(const juce::String& text,
                                                         const float w, const float h) const {

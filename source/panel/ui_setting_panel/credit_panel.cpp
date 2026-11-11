@@ -23,6 +23,6 @@ namespace zlpanel {
     }
 
     int CreditPanel::getIdealHeight() const {
-        return static_cast<int>(std::ceil(base_.gui.getFontSize() * 1.5f * 23));
+        return static_cast<int>(std::ceil(base_.gui.getFontSize() * 1.5f * 40));
     }
 }
