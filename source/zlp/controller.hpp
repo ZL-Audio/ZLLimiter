@@ -20,6 +20,8 @@
 #include "../chore/thread/notifier.hpp"
 #include "../dsp/analyzer/analyzer_base/analyzer_sender_base.hpp"
 #include "../dsp/delay/integer_delay.hpp"
+#include "../dsp/dither/dither.hpp"
+#include "../dsp/dither/silence_gate.hpp"
 #include "../dsp/gain/gain.hpp"
 #include "../dsp/limiter/limiter.hpp"
 #include "../dsp/vector/vector.hpp"
@@ -132,6 +134,18 @@ namespace zlp {
             to_update_.signal();
         }
 
+        void setDitherModeIndex(const int index) {
+            dither_mode_index_.store(index, std::memory_order_relaxed);
+            to_update_dither_.signal();
+            to_update_.signal();
+        }
+
+        void setDitherBitDepthIndex(const int index) {
+            dither_bit_depth_index_.store(index, std::memory_order_relaxed);
+            to_update_dither_.signal();
+            to_update_.signal();
+        }
+
     private:
         juce::AudioProcessor& p_ref_;
         zldsp::analyzer::AnalyzerSenderBase<float, kAnalyzerStreamNum> mag_analyzer_sender_;
@@ -153,6 +167,9 @@ namespace zlp {
         std::vector<float*> limiter_chunk_pointers_{};
         zldsp::gain::Gain<float> input_gain_{};
         zldsp::gain::Gain<float> output_gain_{};
+        zldsp::dither::Dither<float> dither_{};
+        zldsp::dither::SilenceGate dither_gate_{};
+        std::vector<double> dither_envelope_{};
         zldsp::delay::IntegerDelay<float> dry_delay_{};
         std::vector<zldsp::vector::aligned_vector<float>> dry_buffers_{};
         std::vector<float*> dry_pointers_{};
@@ -177,6 +194,7 @@ namespace zlp {
         zlchore::thread::Notifier to_update_release_{true};
         zlchore::thread::Notifier to_update_channel_delta_{true};
         zlchore::thread::Notifier to_update_recovery_{true};
+        zlchore::thread::Notifier to_update_dither_{true};
 
         std::atomic<float> input_gain_db_{PInputGain::kDefaultV};
         std::atomic<bool> input_output_link_{PInputOutputLink::kDefaultI > 0};
@@ -190,7 +208,10 @@ namespace zlp {
         std::atomic<float> release_ms_{PRelease::kDefaultV};
         std::atomic<float> channel_delta_db_{PChannelDelta::kDefaultV};
         std::atomic<float> recovery_ms_{PRecovery::kDefaultV};
+        std::atomic<int> dither_mode_index_{PDitherMode::kDefaultI};
+        std::atomic<int> dither_bit_depth_index_{PDitherBitDepth::kDefaultI};
 
+        double sample_rate_{48000.0};
         bool is_prepared_{false};
         bool bypass_enabled_{PBypass::kDefaultV};
         bool delta_enabled_{PDelta::kDefaultV};

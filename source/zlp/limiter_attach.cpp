@@ -56,6 +56,10 @@ namespace zlp {
             controller_ref_.setBypassEnabled(value > 0.5f);
         } else if (parameter_id == PDelta::kID) {
             controller_ref_.setDeltaEnabled(value > 0.5f);
+        } else if (parameter_id == PDitherMode::kID) {
+            controller_ref_.setDitherModeIndex(static_cast<int>(std::lround(value)));
+        } else if (parameter_id == PDitherBitDepth::kID) {
+            controller_ref_.setDitherBitDepthIndex(static_cast<int>(std::lround(value)));
         }
     }
 }

@@ -34,6 +34,7 @@ namespace zlp {
                                          PTruePeak::kID, POversampling::kID,
                                          PLookahead::kID, PAttack::kID, PRelease::kID, PChannelDelta::kID,
                                          PBypass::kID, PDelta::kID, PRecovery::kID,
+                                         PDitherMode::kID, PDitherBitDepth::kID,
         };
 
         void parameterChanged(const juce::String& parameter_id, float value) override;

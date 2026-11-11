@@ -61,7 +61,7 @@ namespace zldsp::dither {
 
         void reset(const bool active = false) noexcept {
             gain_ = active ? 1.0 : 0.0;
-            target_ = gain_;
+            target_active_ = active;
             increment_ = 0.0;
             ramp_remaining_ = 0;
             opening_remaining_ = 0;
@@ -87,16 +87,16 @@ namespace zldsp::dither {
                 activity_pending_ = true;
                 opening_pending_ = false;
                 gain_ = 1.0;
-                target_ = 1.0;
+                target_active_ = true;
                 increment_ = 0.0;
                 ramp_remaining_ = 0;
             } else {
                 const auto opening_due = opening_pending_ && opening_remaining_ == 0;
                 if (opening_due || (activity_pending_ && gain_ > 0.0)) {
                     opening_pending_ = false;
-                    startRamp(1.0, opening_samples_);
+                    startRamp(true, opening_samples_);
                 } else if (!activity_pending_) {
-                    startRamp(0.0, fade_out_samples_);
+                    startRamp(false, fade_out_samples_);
                 }
                 advanceRamp();
             }
@@ -150,11 +150,12 @@ namespace zldsp::dither {
             return samples >= static_cast<double>(maximum) ? maximum : static_cast<size_t>(samples);
         }
 
-        void startRamp(const double target, const size_t samples) noexcept {
-            if (target_ == target) {
+        void startRamp(const bool active, const size_t samples) noexcept {
+            if (target_active_ == active) {
                 return;
             }
-            target_ = target;
+            target_active_ = active;
+            const auto target = active ? 1.0 : 0.0;
             ramp_remaining_ = samples;
             if (samples == 0) {
                 gain_ = target;
@@ -169,7 +170,7 @@ namespace zldsp::dither {
                 return;
             }
             if (--ramp_remaining_ == 0) {
-                gain_ = target_;
+                gain_ = target_active_ ? 1.0 : 0.0;
             } else {
                 gain_ = std::clamp(gain_ + increment_, 0.0, 1.0);
             }
@@ -179,7 +180,7 @@ namespace zldsp::dither {
         size_t hold_samples_{24000}, fade_in_samples_{48}, warm_up_samples_{48}, fade_out_samples_{480};
         size_t opening_samples_{0}, opening_delay_samples_{0}, prediction_hold_samples_{24000};
         size_t opening_remaining_{0}, activity_remaining_{0}, ramp_remaining_{0};
-        double gain_{0.0}, target_{0.0}, increment_{0.0};
-        bool opening_pending_{false}, activity_pending_{false};
+        double gain_{0.0}, increment_{0.0};
+        bool target_active_{false}, opening_pending_{false}, activity_pending_{false};
     };
 }

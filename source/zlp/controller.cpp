@@ -23,10 +23,13 @@ namespace zlp {
     void Controller::prepare(const double sample_rate, const size_t maximum_block_size) {
         cancelPendingUpdate();
         is_prepared_ = false;
+        sample_rate_ = sample_rate;
         const auto maximum_channels = static_cast<size_t>(p_ref_.getMainBusNumInputChannels());
         prepareLimiters(sample_rate, maximum_block_size, maximum_channels);
         input_gain_.prepare(sample_rate, maximum_block_size, 0.25);
         output_gain_.prepare(sample_rate, maximum_block_size, 0.25);
+        dither_.prepare(sample_rate, maximum_channels);
+        dither_envelope_.resize(maximum_block_size);
 
         dry_buffers_.resize(maximum_channels);
         dry_pointers_.resize(maximum_channels);
@@ -76,14 +79,20 @@ namespace zlp {
         input_gain_.reset();
         output_gain_.reset();
 
-        const auto latency = static_cast<int>(getActiveLatencySamples());
-        dry_delay_.setDelayInSamples(latency);
+        const auto latency = getActiveLatencySamples();
+        dry_delay_.setDelayInSamples(static_cast<int>(latency));
         dry_delay_.reset();
-        gained_delay_.setDelayInSamples(latency);
+        gained_delay_.setDelayInSamples(static_cast<int>(latency));
         gained_delay_.reset();
         gained_delay_needs_reset_ = false;
         gained_delay_needs_warmup_ = false;
         gained_delay_fill_remaining_ = 0;
+
+        dither_.reset();
+        const auto minimum_delay = std::get<0>(limiters_).getLatencySamples();
+        // symmetric FIR ringing spans both sides of the oversampling latency
+        const auto maximum_delay = latency + (latency - minimum_delay);
+        dither_gate_.prepare(sample_rate_, minimum_delay, maximum_delay);
 
         analyzer_generation_.fetch_add(1, std::memory_order_release);
     }
@@ -153,6 +162,21 @@ namespace zlp {
 
         // apply parameters before resetting the selected limiter so recovery starts at its new targets
         selectOversampling(next_oversampling_index);
+
+        if (to_update_dither_.check()) {
+            const auto mode = static_cast<zldsp::dither::Mode>(std::clamp(
+                dither_mode_index_.load(std::memory_order_relaxed),
+                0, static_cast<int>(zldsp::dither::Mode::kATHA)));
+            const auto bit_depth = static_cast<zldsp::dither::BitDepth>(std::clamp(
+                dither_bit_depth_index_.load(std::memory_order_relaxed),
+                0, static_cast<int>(zldsp::dither::BitDepth::k24)));
+            const auto changed = dither_.getMode() != mode || dither_.getBitDepth() != bit_depth;
+            dither_.setMode(mode);
+            dither_.setBitDepth(bit_depth);
+            if (changed) {
+                dither_gate_.reset();
+            }
+        }
     }
 
     void Controller::process(std::span<float*> buffer, const size_t num_samples, const bool host_bypassed) {
@@ -160,9 +184,20 @@ namespace zlp {
             return;
         }
         prepareBuffer();
-        auto dry_buffer = std::span<float*>{dry_pointers_.data(), buffer.size()};
+        const auto dither_on = dither_.getEffectiveMode() != zldsp::dither::Mode::kOff;
+        const auto dry_buffer = std::span<float*>{dry_pointers_.data(), buffer.size()};
         dry_delay_.process(buffer, dry_buffer, num_samples);
         input_gain_.process(buffer, num_samples);
+
+        if (dither_on) {
+            // preserve per-frame activity before in-place limiting overwrites the input
+            for (size_t index = 0; index < num_samples; ++index) {
+                dither_envelope_[index] = std::any_of(
+                    buffer.begin(), buffer.end(), [index](const float* samples) {
+                    return samples[index] != 0.0f;
+                }) ? 1.0 : 0.0;
+            }
+        }
 
         auto gained_buffer = std::span<float*>{gained_pointers_.data(), buffer.size()};
         bool gained_delay_ready = false;
@@ -192,6 +227,16 @@ namespace zlp {
             }
         }
         output_gain_.process(buffer, num_samples);
+
+        if (dither_on) {
+            for (size_t index = 0; index < num_samples; ++index) {
+                const auto output_active = std::any_of(buffer.begin(), buffer.end(), [index](const float* samples) {
+                    return samples[index] != 0.0f;
+                });
+                dither_envelope_[index] = dither_gate_.processSample(dither_envelope_[index] != 0.0, output_active);
+            }
+            dither_.process(buffer, std::span<const double>{dither_envelope_.data(), num_samples});
+        }
 
         if (gained_delay_ready && analyzer_on) {
             if (static_cast<size_t>(mag_analyzer_sender_.getAbstractFIFO().getNumFree()) >= num_samples) {
@@ -228,6 +273,7 @@ namespace zlp {
         to_update_release_.signal();
         to_update_channel_delta_.signal();
         to_update_recovery_.signal();
+        to_update_dither_.signal();
         to_update_.signal();
     }
 

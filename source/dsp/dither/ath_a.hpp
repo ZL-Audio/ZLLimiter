@@ -35,11 +35,10 @@ namespace zldsp::dither {
             }
         };
 
-        /// Updates shared coefficients only; returns false outside 44.1-192 kHz.
         bool prepare(const double sample_rate) noexcept {
             available_ = false;
             coefficients_ = {};
-            if (!std::isfinite(sample_rate) || sample_rate < 44100.0 || sample_rate > 192000.0) {
+            if (!std::isfinite(sample_rate) || sample_rate < 44000.0 || sample_rate > 500000.0) {
                 return false;
             }
 
@@ -72,7 +71,6 @@ namespace zldsp::dither {
             return available_;
         }
 
-        /// Filters q - v (including dither) into the next sample's correction.
         void processError(const double error, State& state) const noexcept {
             auto input = error;
             double next_correction{0.0};

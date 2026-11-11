@@ -26,6 +26,8 @@ namespace zlp {
     class PRelease;
     class PChannelDelta;
     class PRecovery;
+    class PDitherMode;
+    class PDitherBitDepth;
 
     template <typename FloatType>
     inline juce::NormalisableRange<FloatType> getLogMidRange(
@@ -309,13 +311,30 @@ namespace zlp {
         static constexpr auto kDefaultV = 50.f;
     };
 
+    class PDitherMode : public ChoiceParameters<PDitherMode> {
+    public:
+        static constexpr auto kID = "dither_mode";
+        static constexpr auto kName = "Dither Mode";
+        inline static const auto kChoices = juce::StringArray{"Off", "Flat", "Shaped"};
+        static constexpr auto kDefaultI = 0;
+    };
+
+    class PDitherBitDepth : public ChoiceParameters<PDitherBitDepth> {
+    public:
+        static constexpr auto kID = "dither_bit_depth";
+        static constexpr auto kName = "Dither Bit Depth";
+        inline static const auto kChoices = juce::StringArray{"16-bit", "24-bit"};
+        static constexpr auto kDefaultI = 0;
+    };
+
     inline juce::AudioProcessorValueTreeState::ParameterLayout getParameterLayout() {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;
         layout.add(PInputGain::get(), PInputOutputLink::get(), POutputCeiling::get(),
                    PTruePeak::get(), POversampling::get(),
                    PLookahead::get(), PRecovery::get(), PAttack::get(), PRelease::get(),
                    PChannelDelta::get(),
-                   PBypass::get(), PDelta::get());
+                   PBypass::get(), PDelta::get(),
+                   PDitherMode::get(), PDitherBitDepth::get());
         return layout;
     }
 

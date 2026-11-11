@@ -35,7 +35,6 @@ namespace zldsp::dither {
     public:
         static_assert(std::is_same_v<FloatType, float> || std::is_same_v<FloatType, double>);
 
-        /// Restarts channels from the retained seed; unsupported ATH A rates use TPDF.
         void prepare(const double sample_rate, const size_t maximum_channels) {
             sample_rate_ = sample_rate;
             shaper_.prepare(sample_rate);
@@ -43,14 +42,12 @@ namespace zldsp::dither {
             setSeed(seed_);
         }
 
-        /// Clears shaping history without reseeding.
         void reset() noexcept {
             for (auto& channel : channels_) {
                 channel.reset();
             }
         }
 
-        /// Restarts streams 2^128 outputs apart; use for reproducible setup only.
         void setSeed(const std::uint64_t seed) noexcept {
             seed_ = seed;
             zlchore::rng::Xoshiro256StarStar stream(seed_);
@@ -89,13 +86,11 @@ namespace zldsp::dither {
             return bit_depth_;
         }
 
-        /// Full-level zero-input preroll: 1 ms for ATH A, otherwise zero.
         [[nodiscard]] size_t getWarmUpSamples() const noexcept {
             return getEffectiveMode() == Mode::kATHA ?
                 static_cast<size_t>(std::ceil(sample_rate_ * 0.001)) : 0;
         }
 
-        /// Warms active shaping histories on zero input, discarding output.
         void warmUp(const size_t num_samples) noexcept {
             if (getEffectiveMode() != Mode::kATHA) {
                 return;
@@ -107,10 +102,7 @@ namespace zldsp::dither {
             }
         }
 
-        /// Processes planar audio at full dither; channels must fit the prepared maximum.
-        /// Off bypasses exactly; active modes quantize to the selected PCM grid.
         void process(std::span<FloatType*> buffer, const size_t num_samples) noexcept {
-            assert(buffer.size() <= channels_.size());
             switch (getEffectiveMode()) {
                 case Mode::kATHA:
                     processBlock<true>(buffer, num_samples);
@@ -123,13 +115,7 @@ namespace zldsp::dither {
             }
         }
 
-        /**
-         * one shared envelope value per frame scales feedback and dither
-         * reduced levels require exact silence on all channels; any audio forces one
-         * zero mutes dither and clears history without reseeding
-         */
         void process(std::span<FloatType*> buffer, std::span<const double> envelope) noexcept {
-            assert(buffer.size() <= channels_.size());
             switch (getEffectiveMode()) {
                 case Mode::kATHA:
                     processEnvelope<true>(buffer, envelope);
@@ -181,7 +167,7 @@ namespace zldsp::dither {
                 auto amount = std::isfinite(envelope[index]) ? std::clamp(envelope[index], 0.0, 1.0) : 1.0;
                 if (amount < 1.0) {
                     for (const auto* samples : buffer) {
-                        if (samples[index] != FloatType(0)) {
+                        if (std::fpclassify(samples[index]) != FP_ZERO) {
                             // any audio forces full dither on all channels
                             amount = 1.0;
                             break;
