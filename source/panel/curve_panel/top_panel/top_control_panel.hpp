@@ -13,8 +13,11 @@
 
 #include "../../../PluginProcessor.hpp"
 #include "../../../gui/gui.hpp"
+#include "../../common/setting_label.hpp"
 #include "../../helper/panel_constants.hpp"
 #include "../../multilingual/tooltip_helper.hpp"
+
+#include "dither_setting_label.hpp"
 
 namespace zlpanel {
     class TopControlPanel final : public juce::Component {
@@ -47,5 +50,7 @@ namespace zlpanel {
 
         zlgui::button::ClickButton bypass_button_;
         zlgui::attachment::ButtonAttachment<true> bypass_attachment_;
+
+        DitherSettingLabel dither_setting_label_;
     };
 }

@@ -33,7 +33,8 @@ namespace zlpanel {
         bypass_button_(base.gui,
                        juce::Drawable::createFromImageData(BinaryData::bypass_svg, BinaryData::bypass_svgSize),
                        true, tooltip_helper.getToolTipText(multilingual::kBypass)),
-        bypass_attachment_(bypass_button_.getButton(), p.parameters_, zlp::PBypass::kID, updater_) {
+        bypass_attachment_(bypass_button_.getButton(), p.parameters_, zlp::PBypass::kID, updater_),
+        dither_setting_label_(p, base) {
         label_laf_.setFontScale(1.5f);
         for (auto* label : {&ceiling_label_, &oversample_label_}) {
             label->setLookAndFeel(&label_laf_);
@@ -64,6 +65,10 @@ namespace zlpanel {
             button->getButton().setClickingTogglesState(true);
             addAndMakeVisible(button);
         }
+
+        dither_setting_label_.setBufferedToImage(true);
+        addAndMakeVisible(dither_setting_label_);
+
         updater_.updateComponents();
     }
 
@@ -83,12 +88,15 @@ namespace zlpanel {
         bound.removeFromRight(padding);
 
         true_peak_button_.setBounds(bound.removeFromRight(button_width));
-        bound.removeFromRight(5 * padding);
+        bound.removeFromRight(padding);
+
+        dither_setting_label_.setBounds(bound.removeFromRight(3 * button_width));
+        bound.removeFromRight(padding);
 
         oversample_box_.setBounds(bound.removeFromRight(value_width - padding));
         bound.removeFromRight(padding);
         oversample_label_.setBounds(bound.removeFromRight(label_width));
-        bound.removeFromRight(3 * padding);
+        bound.removeFromRight(padding);
 
         ceiling_slider_.setBounds(bound.removeFromRight(value_width));
         bound.removeFromRight(padding);
@@ -100,6 +108,7 @@ namespace zlpanel {
     }
 
     void TopControlPanel::repaintCallBackSlow() {
+        dither_setting_label_.repaintCallBackSlow();
         updater_.updateComponents();
     }
 }

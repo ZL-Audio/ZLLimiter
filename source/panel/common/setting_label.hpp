@@ -22,7 +22,7 @@ namespace zlpanel {
                                private juce::ValueTree::Listener {
     public:
         explicit SettingLabel(PluginProcessor&, zlgui::UIState& base,
-                              juce::String label, zlgui::PanelSettingIdx setting_idx,
+                              const juce::String& label, zlgui::PanelSettingIdx setting_idx,
                               const juce::String& tooltip_text = "");
 
         ~SettingLabel() override;

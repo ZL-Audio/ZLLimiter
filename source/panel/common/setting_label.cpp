@@ -13,7 +13,7 @@
 
 namespace zlpanel {
     SettingLabel::SettingLabel(PluginProcessor&, zlgui::UIState& base,
-                               const juce::String label, const zlgui::PanelSettingIdx setting_idx,
+                               const juce::String& label, const zlgui::PanelSettingIdx setting_idx,
                                const juce::String& tooltip_text) :
         base_(base), setting_idx_(setting_idx),
         control_background_(base),
