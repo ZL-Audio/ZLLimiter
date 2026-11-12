@@ -41,9 +41,7 @@ namespace zlpanel {
             "SplitMix by Sebastiano Vigna (https://prng.di.unimi.it/).\n\n"
             "ATH A noise-shaping reference from [SSRC](https://github.com/shibatch/SSRC) "
             "by Naoki Shibata.\n\n"
-            "Yuriy Ivantsov. On the ideal bilinear and biquadratic digital filter. (2025).\n\n"
-            "Hans Georg Brachtendorf and Christoph Dalpiaz. "
-            "Near-optimal Multiplier-Less Broadband Noise Shaping Filters. (2023).";
+            "Yuriy Ivantsov. On the ideal bilinear and biquadratic digital filter. (2025).";
 
         [[nodiscard]] juce::TextLayout getTipTextLayout(const juce::String& text,
                                                         const float w, const float h) const {

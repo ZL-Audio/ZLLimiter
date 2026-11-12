@@ -59,20 +59,18 @@ ZL Limiter is licensed under AGPLv3, as found in the [LICENSE.md](LICENSE.md) fi
 
 Copyright (c) 2023-2026 [zsliu98](https://github.com/zsliu98)
 
-JUCE framework from [JUCE](https://github.com/juce-framework/JUCE)
+JUCE framework from [JUCE](https://github.com/juce-framework/JUCE) ([license](licenses/JUCE_LICENSE.md)).
 
-JUCE template from [pamplejuce](https://github.com/sudara/pamplejuce)
+JUCE template from [pamplejuce](https://github.com/sudara/pamplejuce) ([license](licenses/pamplejuce_LICENSE.txt)).
 
-[Highway](https://github.com/google/highway) by [Google](https://github.com/google)
+[Highway](https://github.com/google/highway) by [Google](https://github.com/google) ([license](licenses/highway_LICENSE.md)).
 
-[Material Symbols](https://github.com/google/material-design-icons) by [Google](https://github.com/google)
+[Material Symbols](https://github.com/google/material-design-icons) by [Google](https://github.com/google) ([license](licenses/material-design-icons_LICENSE.txt)).
 
-[inter](https://github.com/rsms/inter) by [The Inter Project Authors](https://github.com/rsms/inter)
+[inter](https://github.com/rsms/inter) by [The Inter Project Authors](https://github.com/rsms/inter) ([license](licenses/inter_OFL.md)).
 
 [xoshiro256**](https://prng.di.unimi.it/xoshiro256starstar.c) by David Blackman and Sebastiano Vigna, with [SplitMix](https://prng.di.unimi.it/splitmix.c) seeding by Sebastiano Vigna ([license](licenses/xoshiro256starstar_LICENSE.txt)).
 
 ATH A noise-shaping reference from [SSRC](https://github.com/shibatch/SSRC) by Naoki Shibata ([license](licenses/SSRC_LICENSE.txt)).
 
 Yuriy Ivantsov. *On the Ideal Bilinear and Biquadratic Digital Filter*. (2025).
-
-Hans Georg Brachtendorf and Christoph Dalpiaz. [*Near-optimal Multiplier-Less Broadband Noise Shaping Filters*](https://doi.org/10.1007/s11265-023-01889-1). (2023).
