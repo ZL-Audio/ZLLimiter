@@ -55,6 +55,10 @@ namespace zlpanel::multilingual::en {
         "Displays current (left) and maximum (right) short-term loudness.",
         "Displays the loudness range. Brackets indicate a provisional measurement.",
         "Displays the integrated loudness.",
+        // dither
+        "Toggles the dither settings panel.",
+        "Selects dither mode.\nOff: disables dither.\nFlat: applies unshaped TPDF dither.\nShaped: shifts noise to less audible frequencies.",
+        "Selects dither bit depth.",
         " "
     };
 }

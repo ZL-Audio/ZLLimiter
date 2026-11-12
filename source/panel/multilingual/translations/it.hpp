@@ -56,6 +56,10 @@ namespace zlpanel::multilingual::it {
         "Mostra il loudness a breve termine attuale (sinistra) e massimo (destra).",
         "Mostra l'intervallo di loudness. Le parentesi indicano una misurazione provvisoria.",
         "Mostra il loudness integrato.",
+        // dither
+        "Mostra/nasconde il pannello delle impostazioni del dither.",
+        "Seleziona la modalità di dither.\nOff: disattiva il dither.\nFlat: applica il dither TPDF non modellato.\nShaped: sposta il rumore verso frequenze meno udibili.",
+        "Seleziona la profondità in bit del dither.",
         " "
     };
 }

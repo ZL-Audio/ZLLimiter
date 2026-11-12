@@ -13,15 +13,18 @@
 #include "../../helper/combobox_helper.hpp"
 
 namespace zlpanel {
-    DitherSettingPanel::DitherSettingPanel(PluginProcessor& p, zlgui::UIState& base) :
+    DitherSettingPanel::DitherSettingPanel(PluginProcessor& p, zlgui::UIState& base,
+                                           const multilingual::TooltipHelper& tooltip_helper) :
         base_(base), background_(base), label_laf_(base.gui),
         labels_{
             juce::Label("Mode", "Mode"),
             juce::Label("Depth", "Depth")
         },
         boxes_{
-            zlgui::combobox::CompactCombobox(zlp::PDitherMode::kChoices, base.gui),
-            zlgui::combobox::CompactCombobox(zlp::PDitherBitDepth::kChoices, base.gui)
+            zlgui::combobox::CompactCombobox(zlp::PDitherMode::kChoices, base.gui,
+                                             tooltip_helper.getToolTipText(multilingual::kDitherMode)),
+            zlgui::combobox::CompactCombobox(zlp::PDitherBitDepth::kChoices, base.gui,
+                                             tooltip_helper.getToolTipText(multilingual::kDitherBit))
         } {
         background_.setInterceptsMouseClicks(false, false);
         background_.setBufferedToImage(true);

@@ -24,7 +24,7 @@ namespace zlpanel {
         value_panel_(p, base, tooltip_helper),
         gain_panel_(p, base, tooltip_helper),
         analyzer_setting_panel_(p, base, tooltip_helper),
-        dither_setting_panel_(p, base),
+        dither_setting_panel_(p, base, tooltip_helper),
         value_setting_panel_(p, base),
         peak_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()),
         meter_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()),

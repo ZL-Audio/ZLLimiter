@@ -34,7 +34,7 @@ namespace zlpanel {
                        juce::Drawable::createFromImageData(BinaryData::bypass_svg, BinaryData::bypass_svgSize),
                        true, tooltip_helper.getToolTipText(multilingual::kBypass)),
         bypass_attachment_(bypass_button_.getButton(), p.parameters_, zlp::PBypass::kID, updater_),
-        dither_setting_label_(p, base) {
+        dither_setting_label_(p, base, tooltip_helper.getToolTipText(multilingual::kDitherOpen)) {
         label_laf_.setFontScale(1.5f);
         for (auto* label : {&ceiling_label_, &oversample_label_}) {
             label->setLookAndFeel(&label_laf_);

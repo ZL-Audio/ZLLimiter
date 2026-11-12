@@ -52,6 +52,11 @@ namespace zlpanel::multilingual {
         kValueLUFSS,
         kValueLRA,
         kValueLUFSI,
+        // dither
+        kDitherOpen,
+        kDitherMode,
+        kDitherBit,
+        //
         kLabelNum
     };
 }

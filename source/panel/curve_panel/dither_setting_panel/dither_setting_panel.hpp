@@ -14,11 +14,13 @@
 #include "../../../PluginProcessor.hpp"
 #include "../../../gui/gui.hpp"
 #include "../../common/panel_background.hpp"
+#include "../../multilingual/tooltip_helper.hpp"
 
 namespace zlpanel {
     class DitherSettingPanel final : public juce::Component, private juce::ValueTree::Listener {
     public:
-        DitherSettingPanel(PluginProcessor& p, zlgui::UIState& base);
+        DitherSettingPanel(PluginProcessor& p, zlgui::UIState& base,
+                           const multilingual::TooltipHelper& tooltip_helper);
 
         ~DitherSettingPanel() override;
 

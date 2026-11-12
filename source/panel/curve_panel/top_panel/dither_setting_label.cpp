@@ -12,13 +12,15 @@
 #include "../../helper/panel_constants.hpp"
 
 namespace zlpanel {
-    DitherSettingLabel::DitherSettingLabel(PluginProcessor& p, zlgui::UIState& base) :
+    DitherSettingLabel::DitherSettingLabel(PluginProcessor& p, zlgui::UIState& base,
+                                           const juce::String& tooltip_text) :
         base_(base),
         dither_mode_ref_(*p.parameters_.getRawParameterValue(zlp::PDitherMode::kID)),
         dither_bit_ref_(*p.parameters_.getRawParameterValue(zlp::PDitherBitDepth::kID)),
         control_background_(base),
         label_laf_(base.gui),
         label_("", "") {
+        SettableTooltipClient::setTooltip(tooltip_text);
 
         control_background_.setInterceptsMouseClicks(false, false);
         addChildComponent(control_background_);

@@ -56,6 +56,10 @@ namespace zlpanel::multilingual::es {
         "Muestra la sonoridad a corto plazo actual (izquierda) y máxima (derecha).",
         "Muestra el rango de sonoridad. Los paréntesis indican una medición provisional.",
         "Muestra la sonoridad integrada.",
+        // dither
+        "Muestra/oculta el panel de ajustes de dither.",
+        "Selecciona el modo de dither.\nOff: desactiva el dither.\nFlat: aplica dither TPDF sin modelado.\nShaped: desplaza el ruido hacia frecuencias menos audibles.",
+        "Selecciona la profundidad de bits del dither.",
         " "
     };
 }

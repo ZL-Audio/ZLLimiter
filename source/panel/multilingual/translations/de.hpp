@@ -56,6 +56,10 @@ namespace zlpanel::multilingual::de {
         "Zeigt die aktuelle (links) und maximale (rechts) Kurzzeit-Lautheit an.",
         "Zeigt den Lautheitsbereich an. Klammern kennzeichnen eine vorläufige Messung.",
         "Zeigt die integrierte Lautheit an.",
+        // dither
+        "Blendet das Bedienfeld für Dither-Einstellungen ein/aus.",
+        "Wählt den Dither-Modus aus.\nOff: Deaktiviert Dither.\nFlat: Wendet ungeformtes TPDF-Dither an.\nShaped: Verschiebt Rauschen in weniger hörbare Frequenzbereiche.",
+        "Wählt die Dither-Bittiefe aus.",
         " "
     };
 }

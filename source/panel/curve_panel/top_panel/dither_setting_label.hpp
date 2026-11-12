@@ -21,7 +21,8 @@ namespace zlpanel {
                                        public juce::SettableTooltipClient,
                                        private juce::ValueTree::Listener {
     public:
-        explicit DitherSettingLabel(PluginProcessor& p, zlgui::UIState& base);
+        explicit DitherSettingLabel(PluginProcessor& p, zlgui::UIState& base,
+                                    const juce::String& tooltip_text = "");
 
         ~DitherSettingLabel() override;
 
