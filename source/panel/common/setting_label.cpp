@@ -71,17 +71,21 @@ namespace zlpanel {
     void SettingLabel::valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier& property) {
         if (base_.isPanelIdentifier(setting_idx_, property)) {
             const auto f = static_cast<double>(base_.getPanelProperty(setting_idx_));
-            control_background_.setVisible(f > .5);
             updateAlpha(f > .5);
         }
     }
 
     void SettingLabel::updateAlpha(const bool is_panel_open) {
         if (is_panel_open) {
+            control_background_.setVisible(true);
+            control_background_.setAlpha(1.f);
             setAlpha(1.f);
         } else if (is_over_) {
+            control_background_.setVisible(true);
+            control_background_.setAlpha(.6666f);
             setAlpha(.75f);
         } else {
+            control_background_.setVisible(false);
             setAlpha(.5f);
         }
     }

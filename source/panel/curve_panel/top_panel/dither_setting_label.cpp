@@ -34,7 +34,6 @@ namespace zlpanel {
             addAndMakeVisible(l);
         }
 
-        setAlpha(.5f);
         setInterceptsMouseClicks(true, false);
 
         base_.getPanelValueTree().addListener(this);

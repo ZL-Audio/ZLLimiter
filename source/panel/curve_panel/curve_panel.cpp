@@ -24,6 +24,7 @@ namespace zlpanel {
         value_panel_(p, base, tooltip_helper),
         gain_panel_(p, base, tooltip_helper),
         analyzer_setting_panel_(p, base, tooltip_helper),
+        dither_setting_panel_(p, base),
         value_setting_panel_(p, base),
         peak_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()),
         meter_consumer_(transfer_buffer_.getMulticastFIFO().addConsumer()),
@@ -38,6 +39,8 @@ namespace zlpanel {
         addAndMakeVisible(gain_panel_);
         analyzer_setting_panel_.setBufferedToImage(true);
         addChildComponent(analyzer_setting_panel_);
+        dither_setting_panel_.setBufferedToImage(true);
+        addChildComponent(dither_setting_panel_);
         value_setting_panel_.setBufferedToImage(true);
         addChildComponent(value_setting_panel_);
         addMouseListener(this, true);
@@ -103,6 +106,7 @@ namespace zlpanel {
             updateBounds();
         }
         analyzer_setting_panel_.repaintCallBackSlow();
+        dither_setting_panel_.repaintCallBackSlow();
         value_setting_panel_.repaintCallBackSlow();
         meter_panel_.repaintCallBackSlow();
         peak_panel_.repaintCallBackSlow();
@@ -214,6 +218,11 @@ namespace zlpanel {
             !top_panel_.isParentOf(event.originalComponent)) {
             base_.setPanelProperty(zlgui::kAnalyzerSettingPanel, 0.f);
         }
+        if (event.originalComponent != &dither_setting_panel_ &&
+            !dither_setting_panel_.isParentOf(event.originalComponent) &&
+            !top_panel_.isParentOf(event.originalComponent)) {
+            base_.setPanelProperty(zlgui::kDitherSettingPanel, 0.f);
+        }
         if (event.originalComponent != &value_setting_panel_ &&
             !value_setting_panel_.isParentOf(event.originalComponent) &&
             !value_panel_.isParentOf(event.originalComponent)) {
@@ -235,5 +244,9 @@ namespace zlpanel {
         }
         peak_panel_.setBounds(bound);
         top_panel_.setBounds(bound.removeFromTop(top_panel_.getIdealHeight()));
+        const auto& dither_label = top_panel_.getDitherSettingLabel();
+        const auto dither_label_bound = getLocalArea(&dither_label, dither_label.getLocalBounds());
+        dither_setting_panel_.setBounds(dither_label_bound.getX(), top_panel_.getBottom(),
+                                        dither_setting_panel_.getIdealWidth(), dither_setting_panel_.getIdealHeight());
     }
 }

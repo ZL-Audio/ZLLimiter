@@ -29,6 +29,8 @@ namespace zlpanel {
 
         void repaintCallBackSlow();
 
+        const DitherSettingLabel& getDitherSettingLabel() const { return dither_setting_label_; }
+
     private:
         zlgui::UIState& base_;
         zlgui::attachment::ComponentUpdater updater_;

@@ -30,6 +30,10 @@ namespace zlpanel {
 
         void repaintCallBackSlow();
 
+        const DitherSettingLabel& getDitherSettingLabel() const {
+            return top_control_panel_.getDitherSettingLabel();
+        }
+
     private:
         zlgui::UIState& base_;
         LogoPanel logo_panel_;
