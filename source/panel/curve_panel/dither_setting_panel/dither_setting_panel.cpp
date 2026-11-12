@@ -17,7 +17,7 @@ namespace zlpanel {
                                            const multilingual::TooltipHelper& tooltip_helper) :
         base_(base), background_(base), label_laf_(base.gui),
         labels_{
-            juce::Label("Mode", "Mode"),
+            juce::Label("Dither", "Dither"),
             juce::Label("Depth", "Depth")
         },
         boxes_{
