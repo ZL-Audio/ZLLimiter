@@ -19,7 +19,7 @@ namespace zlpanel {
         gradient.point2 = bound.getTopRight();
 
         gradient.addColour(0.0, background_colour.withAlpha(.75f));
-        gradient.addColour(1.0, juce::Colours::transparentBlack);
+        gradient.addColour(1.0, background_colour.withAlpha(0.f));
         g.setGradientFill(gradient);
         g.fillRect(bound);
     }

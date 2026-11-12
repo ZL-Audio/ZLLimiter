@@ -19,7 +19,6 @@ namespace zlpanel {
         control_background_(base),
         label_laf_(base.gui),
         label_("", "") {
-        // SettableTooltipClient::setTooltip(tooltip_text);
 
         control_background_.setInterceptsMouseClicks(false, false);
         addChildComponent(control_background_);

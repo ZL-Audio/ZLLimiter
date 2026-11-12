@@ -49,7 +49,7 @@ namespace zlpanel {
             gradient.point2 = bound.getBottomLeft();
 
             gradient.addColour(0.0, base_.gui.getBackgroundColour().withAlpha(1.f));
-            gradient.addColour(1.0, juce::Colours::transparentBlack);
+            gradient.addColour(1.0, base_.gui.getBackgroundColour().withAlpha(0.f));
             g.setGradientFill(gradient);
             g.fillRect(bound);
         }
